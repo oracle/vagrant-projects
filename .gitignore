@@ -1,0 +1,4 @@
+.vagrant/
+database/
+*.zip
+.DS_Store

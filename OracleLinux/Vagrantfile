@@ -20,7 +20,7 @@ VAGRANTFILE_API_VERSION = "2"
 NAME = "ol7-vagrant"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "http://yum.oracle.com/boxes/oraclelinux/ol73/ol73.box"
+  config.vm.box = "http://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   
   config.vm.box_check_update = false
   

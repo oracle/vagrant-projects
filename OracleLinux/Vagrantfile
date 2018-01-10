@@ -27,6 +27,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.name = "ol7-vagrant"
   end
 
+  # VM hostname
+  config.vm.hostname = "ol7-vagrant"
+  
   # Oracle port forwarding
   config.vm.network "forwarded_port", guest: 22, host: 2220
 

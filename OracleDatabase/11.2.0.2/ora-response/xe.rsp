@@ -22,7 +22,7 @@ ORACLE_LISTENER_PORT=1521
 #   SYSTEM                                                                    #
 #                                                                             #
 ###############################################################################
-ORACLE_PASSWORD=password
+ORACLE_PASSWORD=###ORACLE_PWD###
 
 ###############################################################################
 #                                                                             #
@@ -34,7 +34,7 @@ ORACLE_PASSWORD=password
 #   ORACLE_CONFIRM_PASSWORD should be same as ORACLE_PASSWORD                 #
 #                                                                             #
 ###############################################################################
-ORACLE_CONFIRM_PASSWORD=password
+ORACLE_CONFIRM_PASSWORD=###ORACLE_PWD###
 
 ###############################################################################
 #                                                                             #

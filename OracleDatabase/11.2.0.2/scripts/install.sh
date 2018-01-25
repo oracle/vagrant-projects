@@ -18,7 +18,9 @@ yum upgrade -y
 
 echo 'INSTALLER: System updated'
 
-yum install -y bc oracle-database-server-12cR2-preinstall
+yum install -y bc oracle-database-server-12cR2-preinstall openssl
+
+echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # fix locale warning
 yum reinstall -y glibc-common
@@ -30,12 +32,18 @@ echo 'INSTALLER: Locale set'
 echo 'INSTALLER: Oracle directories created'
 
 # install Oracle
-unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /vagrant
-sudo rpm -i /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm
-rm -rf /vagrant/Disk1
+unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /vagrant && \
+sudo rpm -i /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
+rm -rf /vagrant/Disk1 && \
+sudo ln -s /u01/app/oracle /opt/oracle
 
 echo 'INSTALLER: Oracle software installed'
 
+# Auto generate ORACLE PWD if not passed on
+export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
+echo "ORACLE PASSWORD FOR SYS AND SYSTEM: $ORACLE_PWD";
+
+sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
 sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp
 
 echo 'INSTALLER: Database created'
@@ -47,5 +55,10 @@ echo "export ORACLE_SID=XE" >> /home/oracle/.bashrc   && \
 echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
 echo 'INSTALLER: Environment variables set'
+
+sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
+sudo chmod a+rx /home/oracle/setPassword.sh
+
+echo "INSTALLER: setPassword.sh file setup"
 
 echo 'INSTALLER: Installation complete, database ready to use!'

@@ -25,14 +25,16 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
-# install Oracle Database prereq packages
-yum install -y oracle-database-server-12cR2-preinstall
+# Install Oracle Database prereq and openssl packages
+yum install -y oracle-database-server-12cR2-preinstall openssl
 
-echo 'INSTALLER: Oracle preinstall complete'
+echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir $ORACLE_BASE
-chown oracle:oinstall -R $ORACLE_BASE
+mkdir $ORACLE_BASE && \
+chown oracle:oinstall -R $ORACLE_BASE && \
+mkdir /u01/app && \
+ln -s $ORACLE_BASE /u01/app/oracle
 
 echo 'INSTALLER: Oracle directories created'
 
@@ -44,7 +46,8 @@ echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
 echo 'INSTALLER: Environment variables set'
 
-# install Oracle
+# Install Oracle
+
 unzip /vagrant/linux*122*.zip -d /vagrant
 cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
 sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp && \
@@ -62,11 +65,17 @@ echo 'INSTALLER: Oracle software installed'
 su -l oracle -c "netca -silent -responseFile /vagrant/ora-response/netca.rsp"
 echo 'INSTALLER: Listener created'
 
-# create database
+# Create database
+
+# Auto generate ORACLE PWD if not passed on
+export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
+echo "ORACLE PASSWORD FOR SYS, SYSTEM AND PDBADMIN: $ORACLE_PWD";
+
 cp /vagrant/ora-response/dbca.rsp.tmpl /vagrant/ora-response/dbca.rsp
 sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp && \
 sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp
+sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp && \
+sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/dbca.rsp
 su -l oracle -c "dbca -silent -createDatabase -responseFile /vagrant/ora-response/dbca.rsp"
 su -l oracle -c "sqlplus / as sysdba <<EOF
    ALTER PLUGGABLE DATABASE $ORACLE_PDB SAVE STATE;
@@ -86,5 +95,10 @@ sudo systemctl daemon-reload
 sudo systemctl enable oracle-rdbms
 sudo systemctl start oracle-rdbms
 echo "INSTALLER: Created and enabled oracle-rdbms systemd's service"
+
+sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
+sudo chmod a+rx /home/oracle/setPassword.sh
+
+echo "INSTALLER: setPassword.sh file setup"
 
 echo 'INSTALLER: Installation complete, database ready to use!'

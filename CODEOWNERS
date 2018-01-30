@@ -1,0 +1,4 @@
+# The last matching pattern has the most precedence.
+*                         @gvenzl
+/OracleDatabase/          @gvenzl
+/OracleLinux/             @scoter-oracle

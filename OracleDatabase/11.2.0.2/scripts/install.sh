@@ -41,7 +41,6 @@ echo 'INSTALLER: Oracle software installed'
 
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
-echo "ORACLE PASSWORD FOR SYS AND SYSTEM: $ORACLE_PWD";
 
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
 sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp
@@ -59,6 +58,8 @@ echo 'INSTALLER: Environment variables set'
 sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
 sudo chmod a+rx /home/oracle/setPassword.sh
 
-echo "INSTALLER: setPassword.sh file setup"
+echo "INSTALLER: setPassword.sh file setup";
 
-echo 'INSTALLER: Installation complete, database ready to use!'
+echo "ORACLE PASSWORD FOR SYS AND SYSTEM: $ORACLE_PWD";
+
+echo "INSTALLER: Installation complete, database ready to use!";

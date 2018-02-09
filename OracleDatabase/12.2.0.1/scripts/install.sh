@@ -69,7 +69,6 @@ echo 'INSTALLER: Listener created'
 
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
-echo "ORACLE PASSWORD FOR SYS, SYSTEM AND PDBADMIN: $ORACLE_PWD";
 
 cp /vagrant/ora-response/dbca.rsp.tmpl /vagrant/ora-response/dbca.rsp
 sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp && \
@@ -99,6 +98,8 @@ echo "INSTALLER: Created and enabled oracle-rdbms systemd's service"
 sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
 sudo chmod a+rx /home/oracle/setPassword.sh
 
-echo "INSTALLER: setPassword.sh file setup"
+echo "INSTALLER: setPassword.sh file setup";
 
-echo 'INSTALLER: Installation complete, database ready to use!'
+echo "ORACLE PASSWORD FOR SYS, SYSTEM AND PDBADMIN: $ORACLE_PWD";
+
+echo "INSTALLER: Installation complete, database ready to use!";

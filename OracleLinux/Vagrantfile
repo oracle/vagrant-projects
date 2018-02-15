@@ -34,7 +34,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = NAME
   
   # Oracle port forwarding
-  config.vm.network "forwarded_port", guest: 22, host: 2220
+  # config.vm.network "forwarded_port", guest: 22, host: 2220
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh"

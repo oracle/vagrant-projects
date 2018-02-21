@@ -7,12 +7,13 @@ A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Orac
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. Run `vagrant up`
+2. cd vagrant-boxes/OracleLinux
+3. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection!
    2. The Vagrant file allows for customization, if desired (see [Customization](#customization))
-3. SSH into the VM either by using `vagrant ssh` 
+4. SSH into the VM either by using `vagrant ssh` 
    If required, by Vagrantfile you can also setup ssh port forwarding.
-4. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+5. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 ## Other info
 

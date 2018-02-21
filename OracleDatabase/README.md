@@ -19,5 +19,5 @@ This directory contains Vagrant build files to provision an Oracle Database auto
 ## Acknowledgements
 Based on:
 @steveswinsburg's work here: https://github.com/steveswinsburg/oracle12c-vagrant  
-@totalamateurhour's work here: https://github.com/totalamateurhour/oracle-12.2-vagrant
+@totalamateurhour's work here: https://github.com/totalamateurhour/oracle-12.2-vagrant  
 @gvenzl's work here: https://github.com/gvenzl/vagrant-boxes

@@ -40,7 +40,7 @@ sudo ln -s /u01/app/oracle /opt/oracle
 echo 'INSTALLER: Oracle software installed'
 
 # Auto generate ORACLE PWD if not passed on
-export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
+export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -hex 8`"}
 
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
 sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp

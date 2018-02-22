@@ -16,11 +16,12 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-# Name of the VM and the hostname inside
+# define hostname
 NAME = "oracle-12201-vagrant"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "http://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.box = "ol7-latest-box"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   
   config.vm.box_check_update = false
   

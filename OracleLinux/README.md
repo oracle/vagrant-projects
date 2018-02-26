@@ -1,5 +1,5 @@
-# ol7-vagrant
-A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
+# Oracle Linux Vagrant boxes
+This directory contains Vagrant build files to provision an Oracle Linux system automatically, using Vagrant and a shell script.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
@@ -7,15 +7,10 @@ A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Orac
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. cd vagrant-boxes/OracleLinux
-3. Run `vagrant up`
-   1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection!
-   2. The Vagrant file allows for customization, if desired (see [Customization](#customization))
-4. SSH into the VM either by using `vagrant ssh` 
-   If required, by Vagrantfile you can also setup ssh port forwarding.
+2. Change into the desired version folder
+3. Download the installation zip files from OTN into this folder - first time only:
+[http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html)
+4. Run `vagrant up`
 5. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
-## Other info
-
-* If you need to, you can connect to the machine via `vagrant ssh`.
-* On the guest OS, the directory `/vagrant` is a shared folder and maps to wherever you have this file checked out.
+**For more information please check the individual README within each folder!**

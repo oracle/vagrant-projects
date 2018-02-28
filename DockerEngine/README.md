@@ -7,7 +7,7 @@ A Vagrantfile that installs and configures Docker engine on Oracle Linux 7 with 
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. Change into the DockerEngine folder
+2. Change into the `DockerEngine` folder
 3. Run `vagrant up; vagrant ssh`
 4. Within the guest, run Docker commands, for example `sudo docker run -it oraclelinux:6-slim`
 

@@ -61,8 +61,36 @@ rm /vagrant/ora-response/db_install.rsp
 
 echo 'INSTALLER: Oracle software installed'
 
-# create listener via netca
-su -l oracle -c "netca -silent -responseFile /vagrant/ora-response/netca.rsp"
+# create sqlnet.ora, listener.ora and tnsnames.ora
+su -l oracle -c "mkdir -p $ORACLE_HOME/network/admin"
+su -l oracle -c "echo 'NAME.DIRECTORY_PATH= (TNSNAMES, EZCONNECT, HOSTNAME)' > $ORACLE_HOME/network/admin/sqlnet.ora"
+
+# Listener.ora
+su -l oracle -c "echo 'LISTENER = 
+(DESCRIPTION_LIST = 
+  (DESCRIPTION = 
+    (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1)) 
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521)) 
+  ) 
+) 
+
+DEDICATED_THROUGH_BROKER_LISTENER=ON
+DIAG_ADR_ENABLED = off
+' > $ORACLE_HOME/network/admin/listener.ora"
+
+su -l oracle -c "echo '$ORACLE_SID=localhost:1521/$ORACLE_SID' > $ORACLE_HOME/network/admin/tnsnames.ora"
+su -l oracle -c "echo '$ORACLE_PDB= 
+(DESCRIPTION = 
+  (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
+  (CONNECT_DATA =
+    (SERVER = DEDICATED)
+    (SERVICE_NAME = $ORACLE_PDB)
+  )
+)' >> $ORACLE_HOME/network/admin/tnsnames.ora"
+
+# Start LISTENER
+su -l oracle -c "lsnrctl start"
+
 echo 'INSTALLER: Listener created'
 
 # Create database

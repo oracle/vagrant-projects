@@ -12,7 +12,7 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
-TokenFile="/vagrant/token"
+JoinCommand="/vagrant/join-command.sh"
 
 if [ ${EUID} -ne 0 ]
 then
@@ -40,7 +40,10 @@ echo "$0: Copying admin.conf into host directory"
 sed -e 's/192.168.99.100/127.0.0.1/' </etc/kubernetes/admin.conf >/vagrant/admin.conf
 
 echo "$0: Saving token for worker nodes"
-kubeadm token list | grep default | cut -d ' ' -f 1 > "${TokenFile}"
+# 'token list' doesn't provide token hash, we have re-issue a new token to
+# capture the hash -- See https://github.com/kubernetes/kubeadm/issues/519
+kubeadm token create --print-join-command |
+  sed -e 's/kubeadm/kubeadm-setup.sh/' > "${JoinCommand}"
 
 echo "$0: Master node ready, run"
 echo -e "\t/vagrant/scripts/kubeadm-setup-worker.sh"

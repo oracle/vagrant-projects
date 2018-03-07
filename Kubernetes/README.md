@@ -31,8 +31,9 @@ Within the master guest you can check the status of the cluster (as the
 
 ## About the Vagrantfile
 
-The Vagrant provisioning script uses the _Oracle Linux 7 Preview channel_ for
-both Docker Engine and Kubernetes.
+The Vagrant provisioning script uses the _Oracle Linux 7 Preview_ and
+_Add-ons_ channels for both Docker Engine and Kubernetes (latest version is
+select by `yum`).
 
 The VMs communicate via a private network:
 

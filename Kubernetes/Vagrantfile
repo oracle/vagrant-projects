@@ -19,6 +19,8 @@
 #   - Worker i: 192.168.99.(100+i)
 #
 # /!\ Uses the "technology preview" build of Docker / Kubernetes /!\
+# The script installs the latest version which can be either in 'addons'
+# or in 'preview' channel.
 #
 # The provisioning script only pre-loads k8s and satisfies pre-requisites.
 # When the VMs are provisioned run (as root):

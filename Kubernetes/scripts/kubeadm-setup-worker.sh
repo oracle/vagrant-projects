@@ -11,7 +11,7 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
-TokenFile="/vagrant/token"
+JoinCommand="/vagrant/join-command.sh"
 
 if [ ${EUID} -ne 0 ]
 then
@@ -19,12 +19,11 @@ then
   exit 1
 fi
 
-if [ ! -f "${TokenFile}" ]
+if [ ! -f "${JoinCommand}" ]
 then
   echo "$0: Token not found. Is the master already configured?"
   exit 1
 fi
-Token=$(cat "${TokenFile}")
 
 echo "$0: Login to container registry"
 docker login container-registry.oracle.com
@@ -35,6 +34,6 @@ then
 fi
 
 echo "$0: Setup Worker node"
-kubeadm-setup.sh join --token ${Token} 192.168.99.100:6443
+bash "${JoinCommand}"
 
 echo "$0: Worker node ready"

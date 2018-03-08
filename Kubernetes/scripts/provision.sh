@@ -4,7 +4,7 @@
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
 #
-# Since: July, 2017
+# Since: March, 2018
 # Author: philippe.vanhaesendonck@oracle.com
 # Description: Installs Docker Engine, Kubernetes packages and satisfy
 #              pre-requisites

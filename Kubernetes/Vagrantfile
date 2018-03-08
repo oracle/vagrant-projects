@@ -54,7 +54,7 @@ Vagrant.configure("2") do |config|
 
   # We start from the latest OL 7 Box
   config.vm.box = "ol7-latest-box"
-  config.vm.box_url = "http://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
 
   # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs
   # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and

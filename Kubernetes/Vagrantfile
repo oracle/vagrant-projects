@@ -39,6 +39,9 @@
 #         see https://github.com/tmatilai/vagrant-proxyconf for configuration
 #
 
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
 # Number of worker nodes to provision
 NB_WORKERS = 2
 # To manage your cluster from the vagrant host, set the following variable
@@ -50,7 +53,7 @@ BIND_PROXY = true
 # Memory for the VMs (2GB)
 MEMORY = 2048
 
-Vagrant.configure("2") do |config|
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # We start from the latest OL 7 Box
   config.vm.box = "ol7-latest-box"

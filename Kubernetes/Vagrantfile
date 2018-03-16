@@ -1,0 +1,125 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+# Since: March, 2018
+# Author: philippe.vanhaesendonck@oracle.com
+# Description: Installs Docker Engine and setup Kubernetes cluster
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# This Vagrantfile provisions one master and n worker nodes (2 by default)
+# VMs communicate via a private network:
+#   - Master  : 192.168.99.100
+#   - Worker i: 192.168.99.(100+i)
+#
+# /!\ Uses the "technology preview" build of Docker / Kubernetes /!\
+# The script installs the latest version which can be either in 'addons'
+# or in 'preview' channel.
+#
+# The provisioning script only pre-loads k8s and satisfies pre-requisites.
+# When the VMs are provisioned run (as root):
+#    on master:
+#        /vagrant/scripts/kubeadm-setup-master.sh
+#        (You will be prompted for your userid/password for
+#        container-registry.oracle.com)
+#    on each worker:
+#    	/vagrant/scripts/kubeadm-setup-worker.sh
+#        (You will be prompted for your userid/password for
+#        container-registry.oracle.com)
+#
+# Optional plugins:
+#     vagrant-hosts (maintains /etc/hosts for the VMs)
+#     vagrant-proxyconf (if you don't have direct access to the Internet)
+#         see https://github.com/tmatilai/vagrant-proxyconf for configuration
+#
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# Number of worker nodes to provision
+NB_WORKERS = 2
+# To manage your cluster from the vagrant host, set the following variable
+# to true
+MANAGE_FROM_HOST = false
+# The following will bind the manager default kubernetes proxy port (8001) to
+# the vagrant host
+BIND_PROXY = true
+# Memory for the VMs (2GB)
+MEMORY = 2048
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # We start from the latest OL 7 Box
+  config.vm.box = "ol7-latest-box"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+
+  # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs
+  # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
+  # 'blacklist' *all* IPs
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.no_proxy = "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
+  end
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = MEMORY
+  end
+
+  # Define VMs:
+  # - Manager
+  config.vm.define "master", primary: true do |master|
+    master.vm.hostname = "master.vagrant.vm"
+    master.vm.network "private_network", ip: "192.168.99.100"
+    if Vagrant.has_plugin?("vagrant-hosts")
+      master.vm.provision :hosts, :sync_hosts => true
+    end
+    if MANAGE_FROM_HOST
+      # Bind kubernetes admin port so we can administrate from host
+      master.vm.network "forwarded_port", guest: 6443, host: 6443
+    end
+    if BIND_PROXY
+      # Bind kubernetes default proxy port
+      master.vm.network "forwarded_port", guest: 8001, host: 8001
+    end
+    # kubeadm will use the first network interface, which is the NAT interface
+    # on VirtualBox and is not routable -- See OraBug 26540925
+    master.vm.provision :shell, inline: <<-SHELL
+      sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-advertise-address=192.168.99.100 \\1/' /usr/bin/kubeadm-setup.sh
+      sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=eth1"/' /usr/local/share/kubeadm/flannel-ol.yaml
+    SHELL
+    if MANAGE_FROM_HOST
+      # Add localhost to the list of allowed clients
+      master.vm.provision :shell, inline: <<-SHELL
+        sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-cert-extra-sans=localhost,localhost.localdomain,127.0.0.1 \\1/' /usr/bin/kubeadm-setup.sh
+      SHELL
+    end
+    if BIND_PROXY
+      # Bind on all interfaces and accept connections from any hosts
+      master.vm.provision :shell, inline: <<-SHELL
+	sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf
+	systemctl daemon-reload
+      SHELL
+    end
+  end
+  # - Workers
+  (1..NB_WORKERS).each do |i|
+    config.vm.define "worker#{i}" do |worker|
+      worker.vm.hostname = "worker#{i}.vagrant.vm"
+      ip = 100 + i
+      worker.vm.network "private_network", ip: "192.168.99.#{ip}"
+      if Vagrant.has_plugin?("vagrant-hosts")
+        worker.vm.provision :hosts, :sync_hosts => true
+      end
+    end
+  end
+
+  # Provisioning: install Docker and Kubernetes
+  config.vm.provision "shell", path: "scripts/provision.sh"
+end

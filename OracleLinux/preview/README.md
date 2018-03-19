@@ -7,7 +7,7 @@ A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Orac
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. cd vagrant-boxes/OracleLinux/7.5-preview
+2. cd vagrant-boxes/OracleLinux/preview
 3. Run `vagrant status` to check Vagrantfile status and possible plugin(s) required
 4. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection!

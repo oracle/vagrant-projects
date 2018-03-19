@@ -24,4 +24,4 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
-echo 'INSTALLER: Installation complete, Oracle Linux ready to use!'
+echo 'INSTALLER: Going to reboot to get updated system'

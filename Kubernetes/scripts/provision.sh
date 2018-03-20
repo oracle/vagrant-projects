@@ -12,10 +12,28 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
+# YUM repo selection.
+YumRepos="--disablerepo=ol7_preview"
+
+# Parse arguments
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    "--preview")
+      YumRepos="--enablerepo=ol7_preview"
+      shift
+      ;;
+    *)
+      echo "Invalid parameter"
+      exit 1
+      ;;
+  esac
+done
+
 echo "Installing and configuring Docker Engine"
 
 # Install Docker
-yum install -y docker-engine btrfs-progs
+yum ${YumRepos} install -y docker-engine btrfs-progs
 
 # Create and mount a BTRFS partition for docker.
 docker-storage-config -f -s btrfs -d /dev/sdb
@@ -35,7 +53,7 @@ systemctl start docker
 echo "Installing and configuring Kubernetes packages"
 
 # Install Kubernetes packages from the "preview" channel fulfil pre-requisites
-yum --enablerepo ol7_preview install -y  kubeadm
+yum ${YumRepos} install -y  kubeadm
 # Set SeLinux to Permissive
 /usr/sbin/setenforce 0
 sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config

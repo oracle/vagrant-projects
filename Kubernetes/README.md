@@ -31,10 +31,6 @@ Within the master guest you can check the status of the cluster (as the
 
 ## About the Vagrantfile
 
-The Vagrant provisioning script uses the _Oracle Linux 7 Preview_ and
-_Add-ons_ channels for both Docker Engine and Kubernetes (latest version is
-select by `yum`).
-
 The VMs communicate via a private network:
 
 - Master node: 192.168.99.100 / master.vagrant.vm
@@ -52,6 +48,10 @@ The Vagrantfile can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
 - `NB_WORKERS` (default: 2): the number of worker nodes to provision.
+- `USE_PREVIEW` (default: `true`): when `true`, Vagrant provisioning script
+will use the _Oracle Linux 7 Preview_ and _Add-ons_ channels for both Docker
+Engine and Kubernetes (latest version is select by `yum`).  
+Otherwhise it will only use the _Add-ons_ channel.
 - `MANAGE_FROM_HOST` (default: `false`): when `true`, Vagrant will bind port
 `6443` from the master node to the host.
 This allows you to manage the cluster from the host itself using the generated

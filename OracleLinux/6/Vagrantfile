@@ -30,7 +30,7 @@ unless Vagrant.has_plugin?("vagrant-proxyconf")
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "ol6-latest-box"
+  config.vm.box = "ol6-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol6-latest.box"
   
   config.vm.box_check_update = false

@@ -56,7 +56,7 @@ MEMORY = 2048
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # We start from the latest OL 7 Box
-  config.vm.box = "ol7-latest-box"
+  config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
 
   # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs

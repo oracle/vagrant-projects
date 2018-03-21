@@ -18,10 +18,6 @@
 #   - Master  : 192.168.99.100
 #   - Worker i: 192.168.99.(100+i)
 #
-# /!\ Uses the "technology preview" build of Docker / Kubernetes /!\
-# The script installs the latest version which can be either in 'addons'
-# or in 'preview' channel.
-#
 # The provisioning script only pre-loads k8s and satisfies pre-requisites.
 # When the VMs are provisioned run (as root):
 #    on master:
@@ -44,6 +40,8 @@ VAGRANTFILE_API_VERSION = "2"
 
 # Number of worker nodes to provision
 NB_WORKERS = 2
+# Use the "Preview" channel for both Docker Engine and Kubernetes
+USE_PREVIEW = true
 # To manage your cluster from the vagrant host, set the following variable
 # to true
 MANAGE_FROM_HOST = false
@@ -121,5 +119,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # Provisioning: install Docker and Kubernetes
-  config.vm.provision "shell", path: "scripts/provision.sh"
+  config.vm.provision "shell",
+    path: "scripts/provision.sh",
+    args: USE_PREVIEW ? ["--preview"] : []
 end

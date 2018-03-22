@@ -18,7 +18,8 @@
 #   - Master  : 192.168.99.100
 #   - Worker i: 192.168.99.(100+i)
 #
-# The provisioning script only pre-loads k8s and satisfies pre-requisites.
+# Unless you have a paswordless local registry (see below) the provisioning
+# script only pre-loads k8s and satisfies pre-requisites.
 # When the VMs are provisioned run (as root):
 #    on master:
 #        /vagrant/scripts/kubeadm-setup-master.sh
@@ -50,15 +51,33 @@ MANAGE_FROM_HOST = false
 BIND_PROXY = true
 # Memory for the VMs (2GB)
 MEMORY = 2048
+
 # Local Registry configuration -- Use the following parameters if you have
 # configured a Local Registry
 # Repository and prefix - e.g. for local-registry.example.com:5000/kubernetes:
 # KUBE_REPO = "local-registry.example.com:5000"
 # KUBE_PREFIX = "/kubernetes"
-# Does the registry requires login?
+# Does the registry requires login? If no login is required, the provisioning
+# script will be able to run kubadm-setup on all nodes!
 # KUBE_LOGIN = false
-# Does the registry uses SSL?
+# Does the registry use SSL?
 # KUBE_SSL = false
+
+def setup_local_repo (node, vm)
+  if defined? KUBE_REPO
+    registry = KUBE_REPO + ((defined? KUBE_PREFIX) ? KUBE_PREFIX : "")
+    vm.provision :shell, inline: <<-SHELL
+	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
+    SHELL
+    if (defined? KUBE_LOGIN) && ! KUBE_LOGIN
+      # If registry login is not required, we can run kubeadm
+      vm.provision "shell",
+        path: "scripts/kubeadm-setup-#{node}.sh",
+        args: ["--no-login"],
+        env: {"KUBE_REPO_PREFIX" => "#{registry}"}
+    end
+  end
+end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
@@ -114,18 +133,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	systemctl daemon-reload
       SHELL
     end
-    if defined? KUBE_REPO
-      master.vm.provision :shell, inline: <<-SHELL
-	echo 'export KUBE_REPO_PREFIX="#{KUBE_REPO}#{KUBE_PREFIX}"' >> ~/.bashrc
-      SHELL
-    end
-    if (defined? KUBE_LOGIN) && ! KUBE_LOGIN
-      # If registry login is not required, we can run kubeadm
-      master.vm.provision "shell",
-        path: "scripts/kubeadm-setup-master.sh",
-        args: ["--no-login"],
-        env: {"KUBE_REPO_PREFIX" => "#{KUBE_REPO}#{KUBE_PREFIX}"}
-    end
+    setup_local_repo("master", master.vm)
   end
   # - Workers
   (1..NB_WORKERS).each do |i|
@@ -136,18 +144,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true
       end
-      if defined? KUBE_REPO
-        worker.vm.provision :shell, inline: <<-SHELL
-	  echo 'export KUBE_REPO_PREFIX="#{KUBE_REPO}#{KUBE_PREFIX}"' >> ~/.bashrc
-        SHELL
-      end
-      if (defined? KUBE_LOGIN) && ! KUBE_LOGIN
-        # If registry login is not required, we can run kubeadm
-        worker.vm.provision "shell",
-          path: "scripts/kubeadm-setup-worker.sh",
-          args: ["--no-login"],
-          env: {"KUBE_REPO_PREFIX" => "#{KUBE_REPO}#{KUBE_PREFIX}"}
-      end
+      setup_local_repo("worker", worker.vm)
     end
   end
 

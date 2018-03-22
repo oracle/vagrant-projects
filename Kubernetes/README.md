@@ -63,6 +63,24 @@ It is an easier alternative to ssh tunnel.
 - `MEMORY` (default: 2048): all VMs are provisioned with 2GB memory. This
 can be slightly reduced if memory is a concern.
 
+### Registry Mirror
+If you are using an [Oracle Container Registry Mirror](https://docs.oracle.com/cd/E52668_01/E88884/html/requirements-registry-mirror.html)
+you can use the following two parameters:
+- `KUBE_REPO`: registry hostname (e.g.: `container-registry-ash.oracle.com`)
+- `KUBE_PREFIX`: image prefix (e.g.: `/kubernetes`)
+
+### Local Registry
+You can also setup a [Local Registry](https://docs.oracle.com/cd/E52668_01/E88884/html/requirements-registry-local.html).
+In addition to the `KUBE_REPO` and `KUBE_PREFIX` parameters you can also define:
+- `KUBE_LOGIN` (default: `undefined`/`true`): set to `false` if your registry
+does not require authentication.
+- `KUBE_SSL` (default: `undefined`/`true`): set to `false` if your registry
+does not use SSL.
+
+__Note__: if you have a password-less registry (`KUBE_LOGIN = false`) the
+Vagrant provisioning script will also run the `kubeadm-setup-master.sh` / `kubeadm-setup-worker.sh` scripts. In other words, your Kubernetes
+cluster will be fully operational after a `vagrant up`!
+
 ## Optional plugins
 You might want to install the following Vagrant plugins:
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains

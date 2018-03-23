@@ -39,6 +39,12 @@ then
   exit 1
 fi
 
+if [ "$0" = "${SUDO_COMMAND%% *}" ]
+then
+  echo "$0: This script should not be called directly with 'sudo'"
+  exit 1
+fi
+
 if [ -z "${NoLogin}" ]
 then
   echo "$0: Login to ${Registry}"

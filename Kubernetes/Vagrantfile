@@ -68,6 +68,7 @@ def setup_local_repo (node, vm)
     registry = KUBE_REPO + ((defined? KUBE_PREFIX) ? KUBE_PREFIX : "")
     vm.provision :shell, inline: <<-SHELL
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
+	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~vagrant/.bashrc
     SHELL
     if (defined? KUBE_LOGIN) && ! KUBE_LOGIN
       # If registry login is not required, we can run kubeadm

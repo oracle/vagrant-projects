@@ -13,6 +13,21 @@
 
 echo 'INSTALLER: Started up'
 
+# get yum-config-manager to enable/disable repo
+yum install -y yum-utils.noarch
+
+# enable UEK4 latest repo
+yum-config-manager --enable ol6_UEKR4
+
+# disable UEK(2) latest repo
+yum-config-manager --disable ol6_UEK_latest
+
+# fix /etc/dracut.conf.d/01-dracut-vm.conf configuration file
+echo 'add_drivers+=" xen_netfront xen_blkfront "' > /etc/dracut.conf.d/01-dracut-vm.conf
+echo 'add_drivers+=" virtio_blk virtio_net virtio virtio_pci virtio_balloon "' >> /etc/dracut.conf.d/01-dracut-vm.conf
+echo 'add_drivers+=" hyperv_keyboard hv_netvsc hid_hyperv hv_utils hv_storvsc hyperv_fb "' >> /etc/dracut.conf.d/01-dracut-vm.conf
+echo 'add_drivers+=" ahci libahci "' >> /etc/dracut.conf.d/01-dracut-vm.conf
+
 # get up to date
 yum upgrade -y
 

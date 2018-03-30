@@ -14,6 +14,7 @@
 
 # YUM repo selection.
 YumRepos="--disablerepo=ol7_preview"
+Insecure=""
 
 # Parse arguments
 while [ $# -gt 0 ]
@@ -22,6 +23,15 @@ do
     "--preview")
       YumRepos="--enablerepo=ol7_preview"
       shift
+      ;;
+    "--insecure")
+      if [ $# -lt 2 ]
+      then
+        echo "Missing parameter"
+	exit 1
+      fi
+      Insecure="$2"
+      shift; shift
       ;;
     *)
       echo "Invalid parameter"
@@ -42,6 +52,12 @@ docker-storage-config -f -s btrfs -d /dev/sdb
 # Alternatively you could use firewalld as described in the Kubernetes User's Guide
 # On the ol74 box, firewalld is installed but disabled by default.
 sed -i "s/^OPTIONS='\(.*\)'/OPTIONS='\1 --iptables=false'/" /etc/sysconfig/docker
+
+# Configure insecure (non-ssl) registry if needed
+if [ -n "${Insecure}" ]
+then
+  sed -i "s/\"$/\",\n    \"insecure-registries\": [\"${Insecure}\"]/" /etc/docker/daemon.json
+fi
 
 # Add vagrant user to docker group
 usermod -a -G docker vagrant

@@ -12,10 +12,35 @@
 #
 
 JoinCommand="/vagrant/join-command.sh"
+LogFile="kubeadm-setup.log"
+Registry="${KUBE_REPO_PREFIX:-container-registry.oracle.com}"
+Registry="${Registry%%/*}"
+NoLogin=""
+
+# Parse arguments
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    "--no-login")
+      NoLogin=1
+      shift
+      ;;
+    *)
+     echo "$0: Invalid parameter"
+     exit 1
+     ;;
+  esac
+done
 
 if [ ${EUID} -ne 0 ]
 then
   echo "$0: This script must be run as root"
+  exit 1
+fi
+
+if [ "$0" = "${SUDO_COMMAND%% *}" ]
+then
+  echo "$0: This script should not be called directly with 'sudo'"
   exit 1
 fi
 
@@ -25,12 +50,15 @@ then
   exit 1
 fi
 
-echo "$0: Login to container registry"
-docker login container-registry.oracle.com
-if [ $? -ne 0 ]
+if [ -z "${NoLogin}" ]
 then
-  echo "$0: Authentication failure"
-  exit 1
+  echo "$0: Login to ${Registry}"
+  docker login ${Registry}
+  if [ $? -ne 0 ]
+  then
+    echo "$0: Authentication failure"
+    exit 1
+  fi
 fi
 
 echo "$0: Setup Worker node"

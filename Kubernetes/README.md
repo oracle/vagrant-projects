@@ -13,11 +13,11 @@ _Container Services_ Business Area.
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
 1. Change into the `vagrant-boxes/Kubernetes` folder
 1. Run `vagrant up master; vagrant ssh master`
-1. Within the master guest, run as `root`:
+1. Within the master guest, run as `root`: <sup>[(\*)](#note-1)</sup>  
 `/vagrant/scripts/kubeadm-setup-master.sh`  
 You will be asked to log in to the Oracle Container Registry
 1. Run `vagrant up worker1; vagrant ssh worker1`
-1. Within the worker1 guest, run as `root`:
+1. Within the worker1 guest, run as `root`: <sup>[(\*)](#note-1)</sup>  
 `/vagrant/scripts/kubeadm-setup-worker.sh`  
 You will be asked to log in to the Oracle Container Registry
 1. Repeat the last 2 steps for worker2
@@ -29,6 +29,9 @@ Within the master guest you can check the status of the cluster (as the
 - `kubectl get nodes`
 - `kubectl get pods --namespace=kube-system`
 
+<a id="note-1"></a>(\*) If you have a password-less local container registry
+skip steps 4 and 6  (see [Local Registry](#local-registry)).
+
 ## About the Vagrantfile
 
 The VMs communicate via a private network:
@@ -38,7 +41,8 @@ The VMs communicate via a private network:
 
 The Vagrant provisioning script pre-loads Kubernetes and satisfies the
 pre-requisites.
-It does **not** run `kubeadm-setup.sh` as this requires authentication to the
+Unless you have a password-less [Local Registry](#local-registry) it does
+**not** run `kubeadm-setup.sh` as this requires authentication to the
 [Oracle Container Registry](https://container-registry.oracle.com). This is
 done by the `kubeadm-setup-master.sh` and `kubeadm-setup-worker.sh` helper
 scripts.
@@ -62,6 +66,42 @@ Dashboard or any other application from _outside_ the cluster.
 It is an easier alternative to ssh tunnel.
 - `MEMORY` (default: 2048): all VMs are provisioned with 2GB memory. This
 can be slightly reduced if memory is a concern.
+
+### Registry Mirror
+If you are using an [Oracle Container Registry Mirror](https://docs.oracle.com/cd/E52668_01/E88884/html/requirements-registry-mirror.html)
+you can use the following two parameters:
+- `KUBE_REPO`: registry hostname
+- `KUBE_PREFIX`: image prefix for Kubernetes container images
+
+__Example__: to use the Oracle Container Registry mirror in Frankfurt, define
+```ruby
+KUBE_REPO = "container-registry-fra.oracle.com"
+KUBE_PREFIX = "/kubernetes"
+```
+
+### Local Registry
+You can also setup a [Local Registry](https://docs.oracle.com/cd/E52668_01/E88884/html/requirements-registry-local.html).
+In addition to the `KUBE_REPO` and `KUBE_PREFIX` parameters you can also define:
+- `KUBE_LOGIN` (default: `undefined`/`true`): set to `false` if your registry
+does not require authentication.
+- `KUBE_SSL` (default: `undefined`/`true`): set to `false` if your registry
+does not use SSL.
+
+__Example__: you have a local repository on host.example.com, without authentication and SSL is not configured; this registry has been populated with:
+```shell
+kubeadm-registry.sh --to host.example.com:5000/kubernetes --version 1.9.1
+```
+You will then define in tour Vagrantfile:
+```ruby
+KUBE_REPO = "host.example.com:5000"
+KUBE_PREFIX = "/kubernetes"
+KUBE_LOGIN = false
+KUBE_SSL = false
+```
+
+__Note__: if you have a password-less registry (`KUBE_LOGIN = false`) the
+Vagrant provisioning script will also run the `kubeadm-setup-master.sh` / `kubeadm-setup-worker.sh` scripts. In other words, your Kubernetes
+cluster will be fully operational after a `vagrant up`!
 
 ## Optional plugins
 You might want to install the following Vagrant plugins:

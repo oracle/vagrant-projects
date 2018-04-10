@@ -77,5 +77,16 @@ sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config
 modprobe br_netfilter
 echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
 sysctl -p /etc/sysctl.d/k8s.conf
+# Ensure kubelet uses the right IP address
+IP=$(ip addr | awk -F'[ /]+' '/192.168.99.255/ {print $3}')
+KubeletNode="/etc/systemd/system/kubelet.service.d/90-node-ip.conf"
+cat <<-EOF >${KubeletNode}
+	[Service]
+	Environment="KUBELET_NODE_IP_ARGS=--node-ip=${IP}"
+	ExecStart=
+	ExecStart=/usr/bin/kubelet \$KUBELET_KUBECONFIG_ARGS \$KUBELET_SYSTEM_PODS_ARGS \$KUBELET_NETWORK_ARGS \$KUBELET_DNS_ARGS \$KUBELET_AUTHZ_ARGS \$KUBELET_CGROUP_ARGS \$KUBELET_CADVISOR_ARGS \$KUBELET_CERTIFICATE_ARGS \$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ARGS \$KUBELET_FLAGS
+EOF
+chmod 755 ${KubeletNode}
+systemctl daemon-reload
 
 echo "Your Kubernetes VM is ready to use!"

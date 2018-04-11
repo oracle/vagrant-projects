@@ -48,22 +48,24 @@ echo "phpinfo();" >> /opt/rh/httpd24/root/var/www/html/info.php
 echo "?>" >> /opt/rh/httpd24/root/var/www/html/info.php
 systemctl restart httpd24-httpd
 
-echo "" > /etc/motd
-echo "Welcome to Oracle Linux Server release 7.4" >> /etc/motd
-echo "LAMP architecture based on Oracle Linux Software Collections:" >> /etc/motd
-echo " - Apache 2.4, MySQL Community 5.7 and PHP 7.1" >> /etc/motd
-echo "" >> /etc/motd
-echo "The Oracle Linux End-User License Agreement can be viewed here:" >> /etc/motd
-echo "" >> /etc/motd
-echo "    * /usr/share/eula/eula.en_US" >> /etc/motd
-echo "" >> /etc/motd
-echo "For additional packages, updates, documentation and community help, see:" >> /etc/motd
-echo "" >> /etc/motd
-echo "    * http://yum.oracle.com/" >> /etc/motd
-echo "" >> /etc/motd
-echo "To test your environment is correctly working, just open following URL from your Host OS:" >> /etc/motd
-echo " http://localhost:8080/info.php" >> /etc/motd
-echo "" >> /etc/motd
-echo "Please use following commands to enable Software Collection environments:" >> /etc/motd
-echo "Apache 2.4: # scl enable httpd24 /bin/bash" >> /etc/motd
-echo "PHP 7.1: # scl enable rh-php71 /bin/bash" >> /etc/motd
+cat > /etc/motd << EOF
+
+Welcome to Oracle Linux Server release 7.4
+LAMP architecture based on Oracle Linux Software Collections:
+ - Apache 2.4, MySQL Community 5.7 and PHP 7.1
+
+The Oracle Linux End-User License Agreement can be viewed here:
+
+    * /usr/share/eula/eula.en_US
+
+For additional packages, updates, documentation and community help, see:
+
+    * http://yum.oracle.com/
+
+To test your environment is correctly working, just open following URL from your Host OS:
+http://localhost:8080/info.php
+
+Please use following commands to enable Software Collection environments:
+- Apache 2.4: # scl enable httpd24 /bin/bash
+- PHP 7.1: # scl enable rh-php71 /bin/bash
+EOF

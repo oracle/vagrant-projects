@@ -16,13 +16,6 @@ echo 'INSTALLER: Started up'
 echo 'Setup Oracle Linux Preview Yum Channels'
 cat >> /etc/yum.repos.d/public-yum-ol7.repo << EOF
 
-[ol7_preview]
-name=Oracle Linux $releasever Preview ($basearch)
-baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/preview/x86_64/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=1
-enabled=0
-
 [ol7_uek5_preview]
 name=Oracle Linux $releasever UEK5 Preview ($basearch)
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/developer_UEKR5/x86_64/

@@ -20,16 +20,7 @@ yum install yum-utils -y
 yum-config-manager --enable ol7_software_collections
 
 # enable MySQL yum repository
-cat >> /etc/yum.repos.d/public-yum-ol7.repo << EOF
-
-[ol7_MySQL80]
-name=MySQL 5.7 for Oracle Linux 7 ($basearch)
-baseurl=http://yum.oracle.com/repo/OracleLinux/OL7/MySQL80_community/x86_64/
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-gpgcheck=1
-enabled=1
-
-EOF
+yum-config-manager --enable ol7_MySQL80
 
 echo 'INSTALLER: Installing Apache Web Server from Oracle Linux Software Collections'
 

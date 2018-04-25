@@ -20,7 +20,7 @@ yum install yum-utils -y
 yum-config-manager --enable ol7_software_collections
 
 # enable MySQL yum repository
-yum-config-manager --enable ol7_MySQL57
+yum-config-manager --enable ol7_MySQL80
 
 echo 'INSTALLER: Installing Apache Web Server from Oracle Linux Software Collections'
 
@@ -29,9 +29,9 @@ yum install httpd24 -y
 systemctl enable httpd24-httpd
 systemctl start httpd24-httpd
 
-echo 'INSTALLER: Installing MySQL Community Release 5.7'
+echo 'INSTALLER: Installing MySQL Community Release 8'
 
-# get MySQL Community 5.7
+# get MySQL Community 8
 yum install mysql-community-server.x86_64 mysql-community-client.x86_64 -y
 systemctl enable mysqld
 systemctl start mysqld
@@ -43,16 +43,19 @@ systemctl enable rh-php71-php-fpm
 systemctl start rh-php71-php-fpm
 
 echo 'INSTALLER: Configuring Apache Server'
-echo "<?php" > /opt/rh/httpd24/root/var/www/html/info.php
-echo "phpinfo();" >> /opt/rh/httpd24/root/var/www/html/info.php
-echo "?>" >> /opt/rh/httpd24/root/var/www/html/info.php
+cat > /opt/rh/httpd24/root/var/www/html/info.php << EOF
+<?php
+phpinfo();
+?>
+EOF
+
 systemctl restart httpd24-httpd
 
 cat > /etc/motd << EOF
 
-Welcome to Oracle Linux Server release 7.4
+Welcome to Oracle Linux Server release 7.5
 LAMP architecture based on Oracle Linux Software Collections:
- - Apache 2.4, MySQL Community 5.7 and PHP 7.1
+ - Apache 2.4, MySQL Community 8 and PHP 7.1
 
 The Oracle Linux End-User License Agreement can be viewed here:
 

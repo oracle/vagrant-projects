@@ -66,7 +66,7 @@ mount -o loop /tmp/VBoxGuestAdditions_5.2.10.iso /media
 /media/VBoxLinuxAdditions.run
 
 echo 'INSTALLER: Compiling VirtualBox Modules for UEK5 Kernel...'
-echo 'export KERN_VER=`ls /lib/modules |grep 4.14`' > /tmp/compile_vboxga_uek5.sh
+echo 'export KERN_VER=`ls /lib/modules |grep "^4.14"`' > /tmp/compile_vboxga_uek5.sh
 echo '/sbin/rcvboxadd setup' >> /tmp/compile_vboxga_uek5.sh
 chmod 700 /tmp/compile_vboxga_uek5.sh
 /tmp/compile_vboxga_uek5.sh

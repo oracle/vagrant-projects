@@ -56,24 +56,6 @@ echo 'INSTALLER: Locale set'
 echo 'INSTALLER: System updated'
 
 echo 'INSTALLER: Upgrading VirtualBox Guest Additions to 5.2 for UEK5'
-echo ''
-echo 'INSTALLER: Getting required dependencies...'
-yum install bzip2 kernel-uek-devel -y
-wget https://download.virtualbox.org/virtualbox/5.2.10/VBoxGuestAdditions_5.2.10.iso -O /tmp/VBoxGuestAdditions_5.2.10.iso -o /tmp/vboxguestadd-download.log
-
-echo 'INSTALLER: Installing VirtualBox Guest Additions 5.2.10...'
-mount -o loop /tmp/VBoxGuestAdditions_5.2.10.iso /media
-/media/VBoxLinuxAdditions.run
-
-echo 'INSTALLER: Compiling VirtualBox Modules for UEK5 Kernel...'
-echo 'export KERN_VER=`ls /lib/modules |grep "^4.14"`' > /tmp/compile_vboxga_uek5.sh
-echo '/sbin/rcvboxadd setup' >> /tmp/compile_vboxga_uek5.sh
-chmod 700 /tmp/compile_vboxga_uek5.sh
-/tmp/compile_vboxga_uek5.sh
-rm -f /tmp/compile_vboxga_uek5.sh
-
-echo 'INSTALLER: Cleaning up installation...'
-umount /media
-rm -f /tmp/VBoxGuestAdditions_5.2.10.iso
+yum install kmod-vboxguest-uek5 -y
 
 echo 'INSTALLER: Going to reboot to get updated system with UEK5'

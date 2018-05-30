@@ -22,6 +22,7 @@ NAME = "ol7-docker-engine"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.define NAME
   
   config.vm.box_check_update = false
   

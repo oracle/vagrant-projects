@@ -80,6 +80,10 @@ def setup_local_repo (node, vm)
   end
 end
 
+def ensure_scheme(url)
+  (url =~ /.*:\/\// ? '' : 'http://') + url
+end
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # We start from the latest OL 7 Box
@@ -90,7 +94,32 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
   # 'blacklist' *all* IPs
   if Vagrant.has_plugin?("vagrant-proxyconf")
-    config.proxy.no_proxy = "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTP proxy: " + proxy
+        config.proxy.http = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTPS proxy: " + proxy
+        config.proxy.https = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    no_proxy = ''
+    ["no_proxy", "NO_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        no_proxy = ENV[proxy_var]
+        puts "No proxy: " + no_proxy
+        no_proxy += ','
+        break
+      end
+    end
+    config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
   end
 
   # Provider-specific configuration so you can fine-tune various

@@ -103,6 +103,9 @@ __Note__: if you have a password-less registry (`KUBE_LOGIN = false`) the
 Vagrant provisioning script will also run the `kubeadm-setup-master.sh` / `kubeadm-setup-worker.sh` scripts. In other words, your Kubernetes
 cluster will be fully operational after a `vagrant up`!
 
+See also the [Container Registry Vagrantfile](../ContainerRegistry) to run a
+local registry in Vagrant.
+
 ## Optional plugins
 You might want to install the following Vagrant plugins:
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains

@@ -34,7 +34,9 @@ echo 'INSTALLER: Oracle preinstall and openssl complete'
 mkdir /u01/ogg-installer && \
 mkdir /u01/oggbd && \
 mkdir /u01/ogg && \
-mkdir /vagrant/oggbd
+mkdir /vagrant/oggbd && \
+chown -R oracle:oinstall /u01/oggbd && \
+chown -R oracle:oinstall /u01/ogg
 
 # create directories
 mkdir $ORACLE_BASE && \
@@ -112,7 +114,7 @@ sudo cp /vagrant/yum/confluent.repo /etc/yum.repos.d/ && \
 yum install -y confluent-platform-oss-$CONFLUENT_VERSION && \
 sudo cp /vagrant/scripts/confluent.service /etc/systemd/system/ && \
 sudo systemctl enable confluent && \
-sudo systemctl start confluent && \
+sudo systemctl start confluent
 
 echo 'INSTALLER: Confluent Installed and Started'
 
@@ -166,6 +168,7 @@ echo 'Installer: Install GG for Big Data'
 unzip /vagrant/*Adapters_Linux*.zip -d /vagrant/oggbd && \
 sudo tar -xvf /vagrant/oggbd/*Adapters_Linux*.tar -C /u01/oggbd/ && \
 rm -rf /vagrant/oggbd && \
+chown -R oracle:oinstall /u01/oggbd/
 echo 'INSTALLER: Oracle GG For Big Data Installed.'
 
 # Install Golden Gate For Oracle
@@ -177,8 +180,6 @@ su -l oracle -c "/u01/ogg-installer/fbo_ggs_Linux_x64_shiphome/Disk1/runInstalle
 echo "export LD_LIBRARY_PATH=\$ORACLE_HOME/lib:/lib:/usr/lib" >> /home/oracle/.bashrc && \
 rm -rf /u01/ogg-installer && \
 rm /vagrant/ora-response/oggresponse.rsp
-
-chown -R oracle:oinstall /u01/oggbd && \
 chown -R oracle:oinstall /u01/ogg
 
 echo 'INSTALLER: Oracle Golden Gate Installed'

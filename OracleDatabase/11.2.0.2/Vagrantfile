@@ -19,7 +19,22 @@ VAGRANTFILE_API_VERSION = "2"
 # define hostname
 NAME = "oracle11g-xe-vagrant"
 
+unless Vagrant.has_plugin?("vagrant-env")
+  puts 'Installing vagrant-env plugin...'
+  if system('vagrant plugin install vagrant-env')
+    exec "vagrant #{ARGV.join(' ')}"
+  else
+    abort 'Installation of vagrant-env plugin has failed. Aborting.'
+  end
+end
+
+# if .env doesn't exist, create it with default settings
+unless File.exist?('.env')
+  FileUtils.cp '.env.default', '.env'
+end
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.env.enable
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   config.vm.define NAME
@@ -39,5 +54,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network "forwarded_port", guest: 1521, host: 1521
 
   # Provision everything on the first run
-  config.vm.provision "shell", path: "scripts/install.sh"
+  config.vm.provision "shell", path: "scripts/install.sh", env:
+    {
+       "ORACLE_PWD"          => ENV['VAGRANT_ORACLE_PWD']
+    }
+
 end

@@ -19,7 +19,22 @@ VAGRANTFILE_API_VERSION = "2"
 # define hostname
 NAME = "oracle-12201-vagrant"
 
+unless Vagrant.has_plugin?("vagrant-env")
+  puts 'Installing vagrant-env plugin...'
+  if system('vagrant plugin install vagrant-env')
+    exec "vagrant #{ARGV.join(' ')}"
+  else
+    abort 'Installation of vagrant-env plugin has failed. Aborting.'
+  end
+end
+
+# if .env doesn't exist, create it with default settings
+unless File.exist?('.env')
+  FileUtils.cp '.env.default', '.env'
+end
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.env.enable
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   config.vm.define NAME
@@ -42,12 +57,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
     {
-       "ORACLE_BASE"         => "/opt/oracle",
-       "ORACLE_HOME"         => "/opt/oracle/product/12.2.0.1/dbhome_1",
-       "ORACLE_SID"          => "ORCLCDB",
-       "ORACLE_PDB"          => "ORCLPDB1",
-       "ORACLE_CHARACTERSET" => "AL32UTF8",
-       "ORACLE_EDITION"      => "EE"
+       "ORACLE_BASE"         => ENV['VAGRANT_ORACLE_BASE'],
+       "ORACLE_HOME"         => ENV['VAGRANT_ORACLE_HOME'],
+       "ORACLE_SID"          => ENV['VAGRANT_ORACLE_SID'],
+       "ORACLE_PDB"          => ENV['VAGRANT_ORACLE_PDB'],
+       "ORACLE_CHARACTERSET" => ENV['VAGRANT_ORACLE_CHARACTERSET'],
+       "ORACLE_EDITION"      => ENV['VAGRANT_ORACLE_EDITION'],
+       "ORACLE_PWD"          => ENV['VAGRANT_ORACLE_PWD']
     }
 
 end

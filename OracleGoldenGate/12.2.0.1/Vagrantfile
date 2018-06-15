@@ -18,6 +18,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 # define hostname
 NAME = "oracle-12201-vagrant"
+IP = "192.168.33.10"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ol7-latest"
@@ -35,11 +36,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = NAME
 
   # Oracle port forwarding
+  config.vm.network "private_network", ip: IP
   config.vm.network "forwarded_port", guest: 1521, host: 1521
   config.vm.network "forwarded_port", guest: 5500, host: 5500
   config.vm.network "forwarded_port", guest: 9092, host: 9092
   config.vm.network "forwarded_port", guest: 2181, host: 2181
   config.vm.network "forwarded_port", guest: 8081, host: 8081
+  config.vm.network "forwarded_port", guest: 8083, host: 8083
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
@@ -51,7 +54,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
        "ORACLE_CHARACTERSET" => "AL32UTF8",
        "ORACLE_EDITION"      => "EE",
        "JAVA_VERSION"        => "1.8.0",
-       "CONFLUENT_VERSION"   => "2.11"
+       "CONFLUENT_VERSION"   => "2.11",
+       "MACHINE_IP"          => IP
     }
 
 end

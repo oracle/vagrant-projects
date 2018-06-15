@@ -112,7 +112,8 @@ echo 'INSTALLER: Install Confluent'
 rpm --import https://packages.confluent.io/rpm/4.1/archive.key && \
 sudo cp /vagrant/yum/confluent.repo /etc/yum.repos.d/ && \
 yum install -y confluent-platform-oss-$CONFLUENT_VERSION && \
-sudo cp /vagrant/scripts/confluent.service /etc/systemd/system/ && \
+sudo cp /vagrant/scripts/confluent.service /etc/systemd/system/
+sed -i -e 's|^#advertised\.listeners=*.*$|advertised.listeners=PLAINTEXT://'$MACHINE_IP':9092|g' /etc/kafka/server.properties
 sudo systemctl enable confluent && \
 sudo systemctl start confluent
 
@@ -179,7 +180,7 @@ sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/oggresponse
 su -l oracle -c "/u01/ogg-installer/fbo_ggs_Linux_x64_shiphome/Disk1/runInstaller -silent -waitforcompletion -responseFile /vagrant/ora-response/oggresponse.rsp" && \
 echo "export LD_LIBRARY_PATH=\$ORACLE_HOME/lib:/lib:/usr/lib" >> /home/oracle/.bashrc && \
 rm -rf /u01/ogg-installer && \
-rm /vagrant/ora-response/oggresponse.rsp
+rm /vagrant/ora-response/oggresponse.rsp && \
 chown -R oracle:oinstall /u01/ogg
 
 echo 'INSTALLER: Oracle Golden Gate Installed'

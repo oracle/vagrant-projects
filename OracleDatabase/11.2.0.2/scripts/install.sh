@@ -42,8 +42,10 @@ echo 'INSTALLER: Oracle software installed'
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -hex 8`"}
 
+cp /vagrant/ora-response/xe.rsp.tmpl /vagrant/ora-response/xe.rsp
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
 sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp
+rm /vagrant/ora-response/xe.rsp
 
 echo 'INSTALLER: Database created'
 

@@ -34,4 +34,4 @@ docker run \
         --publish 5000:5000 \
         registry:2
 
-echo "Your Resgitry VM is ready to use!"
+echo "Your Registry VM is ready to use!"

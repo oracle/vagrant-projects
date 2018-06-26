@@ -31,9 +31,9 @@ yum install -y oracle-database-server-12cR2-preinstall openssl
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir $ORACLE_BASE && \
+mkdir -p $ORACLE_BASE && \
 chown oracle:oinstall -R $ORACLE_BASE && \
-mkdir /u01/app && \
+mkdir -p /u01/app && \
 ln -s $ORACLE_BASE /u01/app/oracle
 
 echo 'INSTALLER: Oracle directories created'

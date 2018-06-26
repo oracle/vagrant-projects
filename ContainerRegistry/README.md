@@ -1,4 +1,4 @@
-# Vagrantfile to run a Container Registry on Oracle Linux 7
+# Vagrantfile to run a local Container Registry on Oracle Linux 7
 This simple Vagrantfile will provision an Oracle Linux 7 box running a local
 Container Registry.
 

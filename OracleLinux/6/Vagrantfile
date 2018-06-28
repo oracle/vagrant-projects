@@ -19,6 +19,11 @@ VAGRANTFILE_API_VERSION = "2"
 # define hostname
 NAME = "ol6-vagrant"
 
+unless Vagrant.has_plugin?("vagrant-vbguest")
+  puts 'Installing vagrant-vbguest Plugin...'
+  system('vagrant plugin install vagrant-vbguest')
+end
+
 unless Vagrant.has_plugin?("vagrant-reload")
   puts 'Installing vagrant-reload Plugin...'
   system('vagrant plugin install vagrant-reload')

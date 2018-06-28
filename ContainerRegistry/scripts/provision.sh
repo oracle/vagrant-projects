@@ -25,13 +25,3 @@ usermod -a -G docker vagrant
 # Enable and start Docker
 systemctl enable docker
 systemctl start docker
-
-echo "Run docker registry"
-docker run \
-        --detach \
-        --restart unless-stopped \
-        --name registry \
-        --publish 5000:5000 \
-        registry:2
-
-echo "Your Registry VM is ready to use!"

@@ -51,6 +51,28 @@ scripts.
 The Vagrantfile can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
+### How to configure
+There are several ways to set parameters:
+1. Update the Vagrantfile. This is straightforward; the downside is that you
+will loose changes when you update this repository.
+1. Use environment variables. Might be difficult to remember the parameters
+used when the box was instantiated.
+1. Use the `.env`/`.env.local` files (requires
+[vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
+your cluster by editing the `.env` file; or better copy `.env` to `.env.local`
+and edit the latter one, it won't be overridden when you update this repository
+and it won't mark your git tree as changed (you won't accidentally commit your
+local configuration!)
+
+Parameters are considered in the following order (first one wins):
+1. Environment variables
+1. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+is installed)
+1. `.env` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+is installed)
+1. Vagrantfile definitions
+
+### Cluster parameters
 - `NB_WORKERS` (default: 2): the number of worker nodes to provision.
 - `USE_PREVIEW` (default: `true`): when `true`, Vagrant provisioning script
 will use the _Oracle Linux 7 Preview_ and _Add-ons_ channels for both Docker
@@ -108,6 +130,8 @@ local registry in Vagrant.
 
 ## Optional plugins
 You might want to install the following Vagrant plugins:
+- [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
+variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
 /etc/hosts for the guest VMs;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set

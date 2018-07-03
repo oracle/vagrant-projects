@@ -34,6 +34,7 @@ echo 'INSTALLER: Oracle directories created'
 # install Oracle
 unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /vagrant && \
 sudo rpm -i /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
+chmod -R u+w /vagrant/Disk1 && \
 rm -rf /vagrant/Disk1 && \
 sudo ln -s /u01/app/oracle /opt/oracle
 

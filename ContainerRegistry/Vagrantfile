@@ -23,12 +23,30 @@ VAGRANTFILE_API_VERSION = "2"
 # Hostname
 NAME = "registry"
 
-# Registry IP on the private VirtualBox lan
-REGISTRY_IP = "192.168.99.253"
-# Bind registry port to host port
-# REGISTRY_BIND = 5000
-# Memory for the VMs (Registry doesn't require much)
-MEMORY = 1024
+# Define constants
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Use vagrant-env plugin if available
+  if Vagrant.has_plugin?("vagrant-env")
+    config.env.load('.env.local', '.env') # enable the plugin
+  end
+
+  # Registry IP on the private VirtualBox lan
+  REGISTRY_IP = default_s('REGISTRY_IP', '192.168.99.253')
+  # Bind registry port to host port
+  # REGISTRY_BIND = 5000
+  REGISTRY_BIND = default_s('REGISTRY_BIND', '')
+  # Memory for the VMs (Registry doesn't require much)
+  MEMORY = default_i('MEMORY', 1024)
+end
+
+# Convenience methods
+def default_s(key, default)
+  ENV[key] && ! ENV[key].empty? ? ENV[key] : default
+end
+
+def default_i(key, default)
+  default_s(key, default).to_i
+end
 
 def ensure_scheme(url)
   (url =~ /.*:\/\// ? '' : 'http://') + url
@@ -84,9 +102,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.provision :hosts, :sync_hosts => true
   end
 
-  if defined? REGISTRY_BIND
+  unless REGISTRY_BIND.empty?
     # Bind registry port to host port
-    config.vm.network "forwarded_port", guest: 5000, host: REGISTRY_BIND
+    config.vm.network "forwarded_port", guest: 5000, host: REGISTRY_BIND.to_i
   end
 
   # Provisioning: install Docker

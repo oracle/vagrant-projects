@@ -31,8 +31,7 @@ yum install -y oracle-database-preinstall-18c openssl
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir -p $ORACLE_BASE && \
-chown oracle:oinstall -R $ORACLE_BASE && \
+mkdir -p $ORACLE_HOME && \
 mkdir -p /u01/app && \
 ln -s $ORACLE_BASE /u01/app/oracle
 
@@ -52,8 +51,10 @@ unzip /vagrant/LINUX.X64_180000_db_home.zip -d $ORACLE_HOME/
 cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
 sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp && \
 sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp
-su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -showProgress -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
+sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp && \
+chown oracle:oinstall -R $ORACLE_BASE
+
+su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
 $ORACLE_BASE/oraInventory/orainstRoot.sh
 $ORACLE_HOME/root.sh
 rm /vagrant/ora-response/db_install.rsp

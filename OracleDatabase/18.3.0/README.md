@@ -1,5 +1,5 @@
 # oracle-18c-vagrant
-A vagrant box that provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7.3 box and a shell script.
+A vagrant box that provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)

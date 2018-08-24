@@ -50,7 +50,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Number of worker nodes to provision
   NB_WORKERS = default_i('NB_WORKERS', 2)
   # Use the "Preview" channel for both Docker Engine and Kubernetes
-  USE_PREVIEW = default_b('USE_PREVIEW', true)
+  USE_PREVIEW = default_b('USE_PREVIEW', false)
   # To manage your cluster from the vagrant host, set the following variable
   # to true
   MANAGE_FROM_HOST = default_b('MANAGE_FROM_HOST', false)

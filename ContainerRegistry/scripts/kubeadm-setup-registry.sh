@@ -12,6 +12,8 @@
 #
 
 Registry="container-registry.oracle.com"
+Repo="kubernetes"
+YumOpts="--disablerepo ol7_developer"
 
 # Parse arguments
 while [ $# -gt 0 ]
@@ -25,6 +27,12 @@ do
       fi
       Registry="$2"
       shift; shift
+      ;;
+    "--dev")
+      # Developper release
+      Repo="kubernetes_developer"
+      YumOpts=""
+      shift
       ;;
     *)
       echo "$0: Invalid parameter"
@@ -42,9 +50,9 @@ then
 fi
 
 echo "$0: Installing kubeadm"
-sudo yum install -y kubeadm
+sudo yum install -y ${YumOpts} kubeadm
 
 echo "$0: Cloning Kubernetes containers"
-/bin/kubeadm-registry.sh --to localhost:5000/kubernetes --from ${Registry}/kubernetes
+/bin/kubeadm-registry.sh --to localhost:5000/kubernetes --from ${Registry}/${Repo}
 
 echo "$0: Clone complete!"

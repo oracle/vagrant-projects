@@ -44,4 +44,4 @@ The following can be customized:
 * `ORACLE_CHARACTERSET`: `AL32UTF8`
 * `ORACLE_EDITION`: `EE` | `SE2`
 * `ORACLE_PWD`: `auto generated`
-* `SYSTEM_TIMEZONE`: `default is host time zone; can override with a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2")`
+* `SYSTEM_TIMEZONE`: `Defaults to host time zone, when host time zone is an integer hour offset from GMT. When host time zone isn't an integer hour offset from GMT (e.g., in India), defaults to UTC. In either case, can override with a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2").`

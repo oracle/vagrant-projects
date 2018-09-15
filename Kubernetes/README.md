@@ -74,10 +74,14 @@ is installed)
 
 ### Cluster parameters
 - `NB_WORKERS` (default: 2): the number of worker nodes to provision.
-- `USE_PREVIEW` (default: `true`): when `true`, Vagrant provisioning script
-will use the _Oracle Linux 7 Preview_ and _Add-ons_ channels for both Docker
-Engine and Kubernetes (latest version is select by `yum`).  
-Otherwhise it will only use the _Add-ons_ channel.
+- Yum channel parameters. The following 2 parameters can be used to enable the
+_Preview_ and/or _Developer_ channels. These channels are disabled by default
+to install the latest supported version of the Docker Engine and Kubernetes.
+  - `USE_PREVIEW` (default: `false`): when `true`, Vagrant provisioning script
+will enable the _Oracle Linux 7 Preview_ channel.  
+  - `USE_DEV` (default: `false`): when `true`, Vagrant provisioning script
+will enable the _Oracle Linux 7 Developper_ channel.  
+See also [Installing the Developer release of Kubernetes](#installing-the-developer-release-of-kubernetes).
 - `MANAGE_FROM_HOST` (default: `false`): when `true`, Vagrant will bind port
 `6443` from the master node to the host.
 This allows you to manage the cluster from the host itself using the generated
@@ -127,6 +131,14 @@ cluster will be fully operational after a `vagrant up`!
 
 See also the [Container Registry Vagrantfile](../ContainerRegistry) to run a
 local registry in Vagrant.
+
+### Installing the Developer release of Kubernetes
+To install the latest Developer release of Kubernetes you need to enable
+the _Developer_ channel __and__ amend the `KUBE_PREFIX`:
+```ruby
+USE_DEV = true
+KUBE_PREFIX = "/kubernetes_developer"
+```
 
 ## Optional plugins
 You might want to install the following Vagrant plugins:

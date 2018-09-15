@@ -50,7 +50,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Number of worker nodes to provision
   NB_WORKERS = default_i('NB_WORKERS', 2)
   # Use the "Preview" channel for both Docker Engine and Kubernetes
-  USE_PREVIEW = default_b('USE_PREVIEW', true)
+  USE_PREVIEW = default_b('USE_PREVIEW', false)
+  # Use the "Developer" channel for both Docker Engine and Kubernetes
+  USE_DEV = default_b('USE_DEV', false)
   # To manage your cluster from the vagrant host, set the following variable
   # to true
   MANAGE_FROM_HOST = default_b('MANAGE_FROM_HOST', false)
@@ -89,8 +91,9 @@ def default_b(key, default)
 end
 
 def setup_local_repo (node, vm)
-  unless KUBE_REPO.empty?
-    registry = KUBE_REPO + KUBE_PREFIX
+  unless KUBE_REPO.empty? && KUBE_PREFIX.empty?
+    registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) + 
+               (KUBE_PREFIX.empty? ? '/kubernetes' : KUBE_PREFIX)
     vm.provision :shell, inline: <<-SHELL
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~vagrant/.bashrc
@@ -206,6 +209,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provisioning: install Docker and Kubernetes
   args = []
   args.push("--preview") if USE_PREVIEW
+  args.push("--dev") if USE_DEV
   args.push("--insecure", KUBE_REPO) unless KUBE_SSL
   config.vm.provision "shell",
     path: "scripts/provision.sh",

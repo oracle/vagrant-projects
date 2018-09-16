@@ -44,4 +44,8 @@ The following can be customized:
 * `ORACLE_CHARACTERSET`: `AL32UTF8`
 * `ORACLE_EDITION`: `EE` | `SE2`
 * `ORACLE_PWD`: `auto generated`
-* `SYSTEM_TIMEZONE`: `Defaults to host time zone, when host time zone is an integer hour offset from GMT. When host time zone isn't an integer hour offset from GMT (e.g., in India), defaults to UTC. In either case, can override with a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2").`
+* `SYSTEM_TIMEZONE`: `automatically set (see below)`
+  * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
+  * The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
+  * When the host time zone isn't a full hour offset from GMT (e.g., in India and parts of Australia), the guest time zone will be set to UTC.
+  * You can specify a different time zone using a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2"). For more information on specifying time zones, see [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).

@@ -25,6 +25,10 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
+# set system time zone
+sudo timedatectl set-timezone $SYSTEM_TIMEZONE
+echo "INSTALLER: System time zone set to $SYSTEM_TIMEZONE"
+
 # Install Oracle Database prereq and openssl packages
 yum install -y oracle-database-server-12cR2-preinstall openssl
 

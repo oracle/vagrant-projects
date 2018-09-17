@@ -29,6 +29,10 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
+# set system time zone
+sudo timedatectl set-timezone $SYSTEM_TIMEZONE
+echo "INSTALLER: System time zone set to $SYSTEM_TIMEZONE"
+
 echo 'INSTALLER: Oracle directories created'
 
 # install Oracle

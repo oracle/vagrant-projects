@@ -4,7 +4,7 @@
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
 # 
-# Since: January, 2018
+# Since: July, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Installs Oracle database software
 # 
@@ -30,13 +30,12 @@ sudo timedatectl set-timezone $SYSTEM_TIMEZONE
 echo "INSTALLER: System time zone set to $SYSTEM_TIMEZONE"
 
 # Install Oracle Database prereq and openssl packages
-yum install -y oracle-database-server-12cR2-preinstall openssl
+yum install -y oracle-database-preinstall-18c openssl
 
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir -p $ORACLE_BASE && \
-chown oracle:oinstall -R $ORACLE_BASE && \
+mkdir -p $ORACLE_HOME && \
 mkdir -p /u01/app && \
 ln -s $ORACLE_BASE /u01/app/oracle
 
@@ -52,15 +51,16 @@ echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
 
-unzip /vagrant/linux*122*.zip -d /vagrant
+unzip /vagrant/LINUX.X64_180000_db_home.zip -d $ORACLE_HOME/
 cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
 sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp && \
 sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp
-su -l oracle -c "yes | /vagrant/database/runInstaller -silent -showProgress -ignorePrereq -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
+sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp && \
+chown oracle:oinstall -R $ORACLE_BASE
+
+su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
 $ORACLE_BASE/oraInventory/orainstRoot.sh
 $ORACLE_HOME/root.sh
-rm -rf /vagrant/database
 rm /vagrant/ora-response/db_install.rsp
 
 echo 'INSTALLER: Oracle software installed'

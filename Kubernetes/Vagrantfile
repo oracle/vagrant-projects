@@ -32,6 +32,7 @@
 #
 # Optional plugins:
 #     vagrant-hosts (maintains /etc/hosts for the VMs)
+#     vagrant-env (use .env files for configuration)
 #     vagrant-proxyconf (if you don't have direct access to the Internet)
 #         see https://github.com/tmatilai/vagrant-proxyconf for configuration
 #
@@ -39,38 +40,65 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-# Number of worker nodes to provision
-NB_WORKERS = 2
-# Use the "Preview" channel for both Docker Engine and Kubernetes
-USE_PREVIEW = true
-# To manage your cluster from the vagrant host, set the following variable
-# to true
-MANAGE_FROM_HOST = false
-# The following will bind the manager default kubernetes proxy port (8001) to
-# the vagrant host
-BIND_PROXY = true
-# Memory for the VMs (2GB)
-MEMORY = 2048
+# Define constants
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Use vagrant-env plugin if available
+  if Vagrant.has_plugin?("vagrant-env")
+    config.env.load('.env.local', '.env') # enable the plugin
+  end
 
-# Local Registry configuration -- Use the following parameters if you have
-# configured a Local Registry
-# Repository and prefix - e.g. for local-registry.example.com:5000/kubernetes:
-# KUBE_REPO = "local-registry.example.com:5000"
-# KUBE_PREFIX = "/kubernetes"
-# Does the registry requires login? If no login is required, the provisioning
-# script will be able to run kubadm-setup on all nodes!
-# KUBE_LOGIN = false
-# Does the registry use SSL?
-# KUBE_SSL = false
+  # Number of worker nodes to provision
+  NB_WORKERS = default_i('NB_WORKERS', 2)
+  # Use the "Preview" channel for both Docker Engine and Kubernetes
+  USE_PREVIEW = default_b('USE_PREVIEW', false)
+  # Use the "Developer" channel for both Docker Engine and Kubernetes
+  USE_DEV = default_b('USE_DEV', false)
+  # To manage your cluster from the vagrant host, set the following variable
+  # to true
+  MANAGE_FROM_HOST = default_b('MANAGE_FROM_HOST', false)
+  # The following will bind the manager default kubernetes proxy port (8001) to
+  # the vagrant host
+  BIND_PROXY = default_b('BIND_PROXY', true)
+  # Memory for the VMs (2GB)
+  MEMORY = default_i('MEMORY', 2048)
+
+  # Local Registry configuration -- Use the following parameters if you have
+  # configured a Local Registry
+  # Repository and prefix - e.g. for local-registry.example.com:5000/kubernetes:
+  # KUBE_REPO = "local-registry.example.com:5000"
+  # KUBE_PREFIX = "/kubernetes"
+  KUBE_REPO = default_s('KUBE_REPO', '')
+  KUBE_PREFIX = default_s('KUBE_PREFIX', '')
+  # Does the registry requires login? If no login is required, the provisioning
+  # script will be able to run kubadm-setup on all nodes!
+  KUBE_LOGIN = default_b('KUBE_LOGIN', true)
+  # Does the registry use SSL?
+  KUBE_SSL = default_b('KUBE_SSL', true)
+
+end
+
+# Convenience methods
+def default_s(key, default)
+  ENV[key] && ! ENV[key].empty? ? ENV[key] : default
+end
+
+def default_i(key, default)
+  default_s(key, default).to_i
+end
+
+def default_b(key, default)
+  default_s(key, default).to_s.downcase == 'true'
+end
 
 def setup_local_repo (node, vm)
-  if defined? KUBE_REPO
-    registry = KUBE_REPO + ((defined? KUBE_PREFIX) ? KUBE_PREFIX : "")
+  unless KUBE_REPO.empty? && KUBE_PREFIX.empty?
+    registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) + 
+               (KUBE_PREFIX.empty? ? '/kubernetes' : KUBE_PREFIX)
     vm.provision :shell, inline: <<-SHELL
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~vagrant/.bashrc
     SHELL
-    if (defined? KUBE_LOGIN) && ! KUBE_LOGIN
+    unless KUBE_LOGIN
       # If registry login is not required, we can run kubeadm
       vm.provision "shell",
         path: "scripts/kubeadm-setup-#{node}.sh",
@@ -181,7 +209,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provisioning: install Docker and Kubernetes
   args = []
   args.push("--preview") if USE_PREVIEW
-  args.push("--insecure", KUBE_REPO) if (defined? KUBE_SSL) && ! KUBE_SSL
+  args.push("--dev") if USE_DEV
+  args.push("--insecure", KUBE_REPO) unless KUBE_SSL
   config.vm.provision "shell",
     path: "scripts/provision.sh",
     args: args

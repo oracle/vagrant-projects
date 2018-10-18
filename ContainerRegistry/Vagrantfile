@@ -1,0 +1,118 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+# Since: June, 2018
+# Author: philippe.vanhaesendonck@oracle.com
+# Description: Installs Docker Engine and setup Kubernetes cluster
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# This simple Vagrantfile runs a Docker Registry in an OL7 guest
+# No SSL setup is done, this host needs to be added as "insecure-registries"
+# on the client systems
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# Hostname
+NAME = "registry"
+
+# Define constants
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Use vagrant-env plugin if available
+  if Vagrant.has_plugin?("vagrant-env")
+    config.env.load('.env.local', '.env') # enable the plugin
+  end
+
+  # Registry IP on the private VirtualBox lan
+  REGISTRY_IP = default_s('REGISTRY_IP', '192.168.99.253')
+  # Bind registry port to host port
+  # REGISTRY_BIND = 5000
+  REGISTRY_BIND = default_s('REGISTRY_BIND', '')
+  # Memory for the VMs (Registry doesn't require much)
+  MEMORY = default_i('MEMORY', 1024)
+end
+
+# Convenience methods
+def default_s(key, default)
+  ENV[key] && ! ENV[key].empty? ? ENV[key] : default
+end
+
+def default_i(key, default)
+  default_s(key, default).to_i
+end
+
+def ensure_scheme(url)
+  (url =~ /.*:\/\// ? '' : 'http://') + url
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # We start from the latest OL 7 Box
+  config.vm.box = "ol7-latest"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.define NAME
+
+  # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs
+  # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
+  # 'blacklist' *all* IPs
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTP proxy: " + proxy
+        config.proxy.http = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTPS proxy: " + proxy
+        config.proxy.https = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    no_proxy = ''
+    ["no_proxy", "NO_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        no_proxy = ENV[proxy_var]
+        puts "No proxy: " + no_proxy
+        no_proxy += ','
+        break
+      end
+    end
+    config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
+  end
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = MEMORY
+  end
+
+  config.vm.hostname = NAME + ".vagrant.vm"
+  config.vm.network "private_network", ip: REGISTRY_IP
+  if Vagrant.has_plugin?("vagrant-hosts")
+    config.vm.provision :hosts, :sync_hosts => true
+  end
+
+  unless REGISTRY_BIND.empty?
+    # Bind registry port to host port
+    config.vm.network "forwarded_port", guest: 5000, host: REGISTRY_BIND.to_i
+  end
+
+  # Provisioning: install Docker
+  config.vm.provision "shell",
+    path: "scripts/provision.sh"
+
+  # Provisioning: run registry
+  # We need a separate step to get proxies activated if needed
+  config.vm.provision "shell",
+    path: "scripts/provision-cr.sh"
+end

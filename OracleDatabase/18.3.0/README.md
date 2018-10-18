@@ -1,5 +1,5 @@
-# oracle12c-vagrant
-A vagrant box that provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7.3 box and a shell script.
+# oracle-18c-vagrant
+A vagrant box that provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
@@ -38,7 +38,7 @@ You can reset the password of the Oracle database accounts by executing `/home/o
 You can customize your Oracle environment by amending the environment variables in the `Vagrantfile` file.
 The following can be customized:
 * `ORACLE_BASE`: `/opt/oracle/`
-* `ORACLE_HOME`: `/opt/oracle/product/12.2.0.1/dbhome_1`
+* `ORACLE_HOME`: `/opt/oracle/product/18c/dbhome_1`
 * `ORACLE_SID`: `ORCLCDB`
 * `ORACLE_PDB`: `ORCLPDB1`
 * `ORACLE_CHARACTERSET`: `AL32UTF8`

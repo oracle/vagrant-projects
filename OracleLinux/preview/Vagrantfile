@@ -66,6 +66,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh"
+  config.vm.provision "shell", path: "scripts/update-motd.sh"
   config.vm.provision :reload
   config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 7 Update 6 - PREVIEW - ready to use!'"
 

@@ -80,7 +80,7 @@ to install the latest supported version of the Docker Engine and Kubernetes.
   - `USE_PREVIEW` (default: `false`): when `true`, Vagrant provisioning script
 will enable the _Oracle Linux 7 Preview_ channel.  
   - `USE_DEV` (default: `false`): when `true`, Vagrant provisioning script
-will enable the _Oracle Linux 7 Developper_ channel.  
+will enable the _Oracle Linux 7 Developer_ channel.  
 See also [Installing the Developer release of Kubernetes](#installing-the-developer-release-of-kubernetes).
 - `MANAGE_FROM_HOST` (default: `false`): when `true`, Vagrant will bind port
 `6443` from the master node to the host.

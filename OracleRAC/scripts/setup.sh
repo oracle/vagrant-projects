@@ -2,7 +2,7 @@
 #
 # $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/setup.sh,v 2.0.1.2 2018/11/15 11:18:06 rcitton Exp $
 #
-# setup.sh
+# LICENSE UPL 1.0
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
 #

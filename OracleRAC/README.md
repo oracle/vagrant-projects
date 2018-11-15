@@ -1,6 +1,6 @@
 # Oracle Real Application Cluster (RAC) Vagrant boxes
 
-### Author: Ruggero.Citton@oracle.com
+#### Author: Ruggero.Citton@oracle.com
 
 This directory contains Vagrant build files to provision automatically
 two Oracle RAC (18.3) nodes, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
@@ -50,45 +50,45 @@ You can customize your Oracle environment by amending the parameters in the conf
 The following can be customized:
 
 #### node1/node2
-- vm_name:    VM Guest partial name. The full name will be <prefix_name>-<vm_name>
-- mem_size:   VM Guest memory size Mb (minimum 6Gb --> 6144)
-- cpus:       VM Guest virtual cores
-- public_ip:  VM public ip. VirtualBox `vboxnet0` hostonly is in use
-- vip_ip:     Oracle RAC VirtualIP (VIP). VirtualBox 'vboxnet0' hostonly is in use
-- private_ip: VM private ip.
-- u01_disk:   Oracle binary virtual disk (u01) file path
+- `vm_name`:    VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `mem_size`:   VM Guest memory size Mb (minimum 6Gb --> 6144)
+- `cpus`:       VM Guest virtual cores
+- `public_ip`:  VM public ip. VirtualBox `vboxnet0` hostonly is in use
+- `vip_ip`:     Oracle RAC VirtualIP (VIP). VirtualBox 'vboxnet0' hostonly is in use
+- `private_ip`: VM private ip.
+- `u01_disk`:   Oracle binary virtual disk (u01) file path
 
 #### shared network
-- prefix_name:    VM Guest prefix name
-- dns_public_ip:  DNS IP
-- scan_ip1:       Oracle RAC SCAN IP1
-- scan_ip2:       Oracle RAC SCAN IP2
-- scan_ip3:       Oracle RAC SCAN IP3
+- `prefix_name`:    VM Guest prefix name
+- `dns_public_ip`:  DNS IP
+- `scan_ip1`:       Oracle RAC SCAN IP1
+- `scan_ip2`:       Oracle RAC SCAN IP2
+- `scan_ip3`:       Oracle RAC SCAN IP3
 
 #### shared storage
-- asm_disk_1:     Oracle RAC Automatic Storage Manager virtual disk1 file path
-- asm_disk_2:     Oracle RAC Automatic Storage Manager virtual disk2 file path
-- asm_disk_3:     Oracle RAC Automatic Storage Manager virtual disk3 file path
-- asm_disk_4:     Oracle RAC Automatic Storage Manager virtual disk4 file path
-- asm_disk_size:  Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
+- `asm_disk_1`:     Oracle RAC Automatic Storage Manager virtual disk1 file path
+- `asm_disk_2`:     Oracle RAC Automatic Storage Manager virtual disk2 file path
+- `asm_disk_3`:     Oracle RAC Automatic Storage Manager virtual disk3 file path
+- `asm_disk_4`:     Oracle RAC Automatic Storage Manager virtual disk4 file path
+- `asm_disk_size`:  Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
 
 #### environment
-- grid_software:    Oracle Database 18c Grid Infrastructure (18.3) for Linux x86-64 zip file
-- db_software:      Oracle Database 18c (18.3) for Linux x86-64 zip file
-- root_password:    VM Guest root password
-- grid_password:    VM Guest grid password
-- oracle_password:  VM Guest oracle password
-- sys_password:     Oracled RDBMS SYS password
-- pdb_password:     Oracled PDB SYS password
-- ora_languages:    Oracle products languages
-- p1_ratio:         ASM disks partiton ration (%). Min 10%, Max 80%
-- asm_lib_type:     ASM library in use (must be ASMLIB)
-- nomgmtdb:         Oracle GI Management database creation (true/false)
-- orestart:         Oracle GI configured as Oracle Restart (true/false)
-- db_name:          Oracle RDBMS database name
-- pdb_name:         Oracle RDBMS pluggable database name
-- db_type:          Oracle RDBMS type: RAC, RACONE, SI (single Instance)
-- cdb:              Oracle RDBMS database created as container (true/false)
+- `grid_software`:    Oracle Database 18c Grid Infrastructure (18.3) for Linux x86-64 zip file
+- `db_software`:      Oracle Database 18c (18.3) for Linux x86-64 zip file
+- `root_password`:    VM Guest root password
+- `grid_password`:    VM Guest grid password
+- `oracle_password`:  VM Guest oracle password
+- `sys_password`:     Oracled RDBMS SYS password
+- `pdb_password`:     Oracled PDB SYS password
+- `ora_languages`:    Oracle products languages
+- `p1_ratio`:         ASM disks partiton ration (%). Min 10%, Max 80%
+- `asm_lib_type`:     ASM library in use (must be ASMLIB)
+- `nomgmtdb`:         Oracle GI Management database creation (true/false)
+- `orestart`:         Oracle GI configured as Oracle Restart (true/false)
+- `db_name`:          Oracle RDBMS database name
+- `pdb_name`:         Oracle RDBMS pluggable database name
+- `db_type`:          Oracle RDBMS type: RAC, RACONE, SI (single Instance)
+- `cdb`:              Oracle RDBMS database created as container (true/false)
 
 Example:
     # ----------------------------------------------------------------

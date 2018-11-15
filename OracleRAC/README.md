@@ -1,5 +1,6 @@
 # Oracle Real Application Cluster (RAC) Vagrant boxes
-## Author: Ruggero.Citton@oracle.com
+
+### Author: Ruggero.Citton@oracle.com
 
 This directory contains Vagrant build files to provision automatically
 two Oracle RAC (18.3) nodes, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.

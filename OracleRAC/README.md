@@ -50,22 +50,22 @@ You can customize your Oracle environment by amending the parameters in the conf
 The following can be customized:
 
   `node1/node2`
-    vm_name:         ---> VM Guest partial name. The full name will be <prefix_name>-<vm_name>
-    mem_size:        ---> VM Guest memory size Mb (minimum 6Gb --> 6144)
-    cpus:            ---> VM Guest virtual cores
-    public_ip:       ---> VM public ip. VirtualBox 'vboxnet0' hostonly is in use
-    vip_ip:          ---> Oracle RAC VirtualIP (VIP). VirtualBox 'vboxnet0' hostonly is in use
-    private_ip:      ---> VM private ip.
-    u01_disk:        ---> Oracle binary virtual disk (u01) file path
+    `vm_name:         ---> VM Guest partial name. The full name will be <prefix_name>-<vm_name>`
+    `mem_size:        ---> VM Guest memory size Mb (minimum 6Gb --> 6144)`
+    `cpus:            ---> VM Guest virtual cores`
+    `public_ip:       ---> VM public ip. VirtualBox 'vboxnet0' hostonly is in use`
+    `vip_ip:          ---> Oracle RAC VirtualIP (VIP). VirtualBox 'vboxnet0' hostonly is in use`
+    `private_ip:      ---> VM private ip.`
+    `u01_disk:        ---> Oracle binary virtual disk (u01) file path`
 
-  shared
-    prefix_name:     ---> VM Guest prefix name
-    dns_public_ip:   ---> DNS IP
-    scan_ip1:        ---> Oracle RAC SCAN IP1
-    scan_ip2:        ---> Oracle RAC SCAN IP2
-    scan_ip3:        ---> Oracle RAC SCAN IP3
+  `shared`
+    `prefix_name:     ---> VM Guest prefix name`
+    `dns_public_ip:   ---> DNS IP`
+    `scan_ip1:        ---> Oracle RAC SCAN IP1`
+    `scan_ip2:        ---> Oracle RAC SCAN IP2`
+    `scan_ip3:        ---> Oracle RAC SCAN IP3`
                      
-    asm_disk_1:      ---> Oracle RAC Automatic Storage Manager virtual disk1 file path
+    `asm_disk_1:      ---> Oracle RAC Automatic Storage Manager virtual disk1 file path`
     asm_disk_2:      ---> Oracle RAC Automatic Storage Manager virtual disk2 file path
     asm_disk_3:      ---> Oracle RAC Automatic Storage Manager virtual disk3 file path
     asm_disk_4:      ---> Oracle RAC Automatic Storage Manager virtual disk4 file path

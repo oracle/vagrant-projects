@@ -152,6 +152,18 @@ The following can be customized:
     # ----------------------------------------------------------------`
 
 ## Note
+
+- `SYSTEM_TIMEZONE`: `automatically set (see below)`
+  The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
+  The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
+  When the host time zone isn't a full hour offset from GMT (e.g., in India and parts of Australia), the guest time zone will be set to UTC.
+  You can specify a different time zone using a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2"). For more information on specifying time zones, see [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+
+- Using Oracle Restart (`orestart=true`) only one node (node1) is created and the Grid Infrastructure will be configured as Oracle Restart. Oracle Restart supports single instance (SI) database only.
+  
+- purgelog (purgeLogs: Cleanup traces, logs in one command (Doc ID 2081655.1))
+  it's configured to run everyday at 2.00am purging GI/RDBMS, Audit logs, listeners log and TFA traces older then 5 days
+
 - If you are behing a proxy, set the following env variables
 
 #### (Linux/MacOSX)
@@ -161,15 +173,3 @@ The following can be customized:
 #### (Windows)
   - set http_proxy=http://proxy:port
   - set https_proxy=https://proxy:port
-
-- `SYSTEM_TIMEZONE`: `automatically set (see below)`
-  The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
-  The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
-  When the host time zone isn't a full hour offset from GMT (e.g., in India and parts of Australia), the guest time zone will be set to UTC.
-  You can specify a different time zone using a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2"). For more information on specifying time zones, see [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
-
-- Using Oracle Restart (orestart=true) only one node (node1) is created and the Grid Infrastructure will be configured as Oracle Restart.
-  Oracle Restart supports single instance (SI) database only 
-  
-- purgelog (purgeLogs: Cleanup traces, logs in one command (Doc ID 2081655.1))
-  it's configured to run everyday at 2.00am purging GI/RDBMS, Audit logs, listeners log and TFA traces older then 5 days

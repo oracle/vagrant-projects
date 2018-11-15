@@ -153,12 +153,14 @@ The following can be customized:
 
 ## Note
 * If you are behing a proxy, set the following env variables
-  (Linux/MacOSX)
-  $ export http_proxy=http://proxy:port
-  $ export https_proxy=https://proxy:port
-  (Windows)
-  $ set http_proxy=http://proxy:port
-  $ set https_proxy=https://proxy:port
+
+#### (Linux/MacOSX)
+- export http_proxy=http://proxy:port
+- export https_proxy=https://proxy:port
+
+#### (Windows)
+- set http_proxy=http://proxy:port
+- set https_proxy=https://proxy:port
 
 * The two guest VMs are expected under VirtualBox "Default machine folder" (VBoxManage list systemproperties | grep "Default machine folder:"), 
   example: '/RC-SHARED/Virtualizations/VirtualBox/<prefix_name>/'

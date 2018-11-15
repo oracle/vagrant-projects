@@ -49,7 +49,7 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
 The following can be customized:
 
-`  node1/node2
+  `node1/node2`
     vm_name:         ---> VM Guest partial name. The full name will be <prefix_name>-<vm_name>
     mem_size:        ---> VM Guest memory size Mb (minimum 6Gb --> 6144)
     cpus:            ---> VM Guest virtual cores

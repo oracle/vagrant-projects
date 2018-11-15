@@ -90,8 +90,7 @@ The following can be customized:
 - `db_type`:          Oracle RDBMS type: RAC, RACONE, SI (single Instance)
 - `cdb`:              Oracle RDBMS database created as container (true/false)
 
-Example:
-    # ----------------------------------------------------------------
+#### Example:
     node1:
       vm_name: node1
       mem_size: 8192

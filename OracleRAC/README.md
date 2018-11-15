@@ -155,12 +155,12 @@ The following can be customized:
 - If you are behing a proxy, set the following env variables
 
 #### (Linux/MacOSX)
--- export http_proxy=http://proxy:port
--- export https_proxy=https://proxy:port
+  - export http_proxy=http://proxy:port
+  - export https_proxy=https://proxy:port
 
 #### (Windows)
--- set http_proxy=http://proxy:port
--- set https_proxy=https://proxy:port
+  - set http_proxy=http://proxy:port
+  - set https_proxy=https://proxy:port
 
 - `SYSTEM_TIMEZONE`: `automatically set (see below)`
   The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.

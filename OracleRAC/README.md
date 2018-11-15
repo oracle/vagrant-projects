@@ -49,7 +49,7 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
 The following can be customized:
 
-  node1/node2
+`  node1/node2
     vm_name:         ---> VM Guest partial name. The full name will be <prefix_name>-<vm_name>
     mem_size:        ---> VM Guest memory size Mb (minimum 6Gb --> 6144)
     cpus:            ---> VM Guest virtual cores
@@ -154,7 +154,7 @@ Example:
       pdb_name:        PDB1
       db_type:         RAC
       cdb:             false
-    # ----------------------------------------------------------------
+    # ----------------------------------------------------------------`
 
 ## Note
 * If you are behing a proxy, set the following env variables
@@ -179,7 +179,3 @@ Example:
   
 * purgelog (purgeLogs: Cleanup traces, logs in one command (Doc ID 2081655.1))
   it's configured to run everyday at 2.00am purging GI/RDBMS, Audit logs, listeners log and TFA traces older then 5 days
-
-
-
-

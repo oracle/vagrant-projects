@@ -1,43 +1,28 @@
-#----------------------------------------------------------------------
-# Oracle Real Application Cluster (RAC) on Vagrant boxes
-#
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-#
-# Author: Ruggero.Citton@oracle.com
-#----------------------------------------------------------------------
+# Oracle Real Application Cluster (RAC) Vagrant boxes
+## Author: Ruggero.Citton@oracle.com
+
 This directory contains Vagrant build files to provision automatically
 two Oracle RAC (18.3) nodes, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
 
-#----------------------------------------------------------------------
 ## Prerequisites
-#----------------------------------------------------------------------
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads), recommended version 5.2
 2. Install [Vagrant](https://vagrantup.com/), recommended version 2.2.
 3. You need to download Grid Infrastructure and Database binary separately.
 
-#----------------------------------------------------------------------
 ## Free disk space requirement
-#----------------------------------------------------------------------
   - Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
   - Grid Infrastructure and Database binary on u01 vdisk (node1/node2): ~20 Gb 
   - OS guest vdisk (node1/node2): ~2 Gb
   - ASM shared virtual disks (fixed size): ~80 Gb
 
-#----------------------------------------------------------------------
 ## Memory requirement
-#----------------------------------------------------------------------
 Running two nodes RAC at least 6Gb per node are required
 Using Oracle Restart, only one node it's active
 
-#----------------------------------------------------------------------
 ## VirtualBox host-Only
-#----------------------------------------------------------------------
 The guest VMs are using an "host-Only" network defined as 'vboxnet0' 
 
-
-#----------------------------------------------------------------------
 ## Getting started
-#----------------------------------------------------------------------
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
 2. Change into OracleRAC folder
 3. Download Grid Infrastructure and Database binary from OTN into "./ORCL_software" folder (*)
@@ -59,9 +44,7 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
        LINUX.X64_180000_db_home.zip (4,564,649,047 bytes)
        (sha256sum - c96a4fd768787af98272008833fe10b172691cf84e42816b138c12d4de63ab96)
 
-#----------------------------------------------------------------------
 ## Customization
-#----------------------------------------------------------------------
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
 The following can be customized:
 
@@ -172,9 +155,7 @@ Example:
       cdb:             false
     # ----------------------------------------------------------------
 
-#----------------------------------------------------------------------
 ## Note
-#----------------------------------------------------------------------
 * If you are behing a proxy, set the following env variables
   (Linux/MacOSX)
   $ export http_proxy=http://proxy:port

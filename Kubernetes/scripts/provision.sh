@@ -77,7 +77,7 @@ systemctl start docker
 echo "Installing and configuring Kubernetes packages"
 
 # Install Kubernetes packages from the "preview" channel fulfil pre-requisites
-yum install -y  kubeadm
+yum install -y  kubeadm kubelet kubectl
 # Set SeLinux to Permissive
 /usr/sbin/setenforce 0
 sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config
@@ -88,13 +88,14 @@ sysctl -p /etc/sysctl.d/k8s.conf
 # Ensure kubelet uses the right IP address
 IP=$(ip addr | awk -F'[ /]+' '/192.168.99.255/ {print $3}')
 KubeletNode="/etc/systemd/system/kubelet.service.d/90-node-ip.conf"
+ExecStart=$(grep ExecStart=/ /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed -e 's/\$KUBELET_EXTRA_ARGS/\$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ARGS/')
 cat <<-EOF >${KubeletNode}
 	[Service]
 	Environment="KUBELET_NODE_IP_ARGS=--node-ip=${IP}"
 	ExecStart=
-	ExecStart=/usr/bin/kubelet \$KUBELET_KUBECONFIG_ARGS \$KUBELET_SYSTEM_PODS_ARGS \$KUBELET_NETWORK_ARGS \$KUBELET_DNS_ARGS \$KUBELET_AUTHZ_ARGS \$KUBELET_CGROUP_ARGS \$KUBELET_CADVISOR_ARGS \$KUBELET_CERTIFICATE_ARGS \$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ARGS \$KUBELET_FLAGS
+	${ExecStart}
 EOF
-chmod 755 ${KubeletNode}
+chmod 644 ${KubeletNode}
 systemctl daemon-reload
 
 echo "Your Kubernetes VM is ready to use!"

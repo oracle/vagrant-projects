@@ -1,0 +1,66 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# 
+# Since: January, 2018
+# Author: gerald.venzl@oracle.com
+# Description: Creates an Oracle database Vagrant virtual machine.
+# 
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+# 
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# define hostname
+NAME = "oracle-12102-vagrant"
+
+# get host time zone for setting VM time zone, if possible
+# can override in env section below
+offset_sec = Time.now.gmt_offset
+if (offset_sec % (60 * 60)) == 0
+  offset_hr = ((offset_sec / 60) / 60)
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+  SYSTEM_TIMEZONE = 'Etc/GMT' + timezone_suffix
+else
+  # if host time zone isn't an integer hour offset, fall back to UTC
+  SYSTEM_TIMEZONE = 'UTC'
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ol7-latest"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.define NAME
+  
+  config.vm.box_check_update = false
+  
+  # change memory size
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.name = NAME
+  end
+
+  # VM hostname
+  config.vm.hostname = NAME
+
+  # Oracle port forwarding
+  config.vm.network "forwarded_port", guest: 1521, host: 1521
+  config.vm.network "forwarded_port", guest: 5500, host: 5500
+
+  # Provision everything on the first run
+  config.vm.provision "shell", path: "scripts/install.sh", env:
+    {
+       "ORACLE_BASE"         => "/opt/oracle",
+       "ORACLE_HOME"         => "/opt/oracle/product/12.1.0.2/dbhome_1",
+       "ORACLE_SID"          => "ORCLCDB",
+       "ORACLE_PDB"          => "ORCLPDB1",
+       "ORACLE_CHARACTERSET" => "AL32UTF8",
+       "ORACLE_EDITION"      => "EE",
+       "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
+    }
+
+end

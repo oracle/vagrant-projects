@@ -1,5 +1,5 @@
 # Oracle Database Vagrant boxes
-This directory contains Vagrant build files to provision an Oracle Database automatically, using Vagrant, an Oracle Linux 7.3 box and a shell script.
+This directory contains Vagrant build files to provision an Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)

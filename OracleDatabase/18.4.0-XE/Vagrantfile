@@ -44,9 +44,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.name = NAME
   end
 
-  # VM hostname - can't set here, or listener configuration will fail
-  # hostname will default to localhost.localdomain
-  # config.vm.hostname = NAME
+  # VM hostname
+  # must be "localhost", or listener configuration will fail
+  config.vm.hostname = "localhost"
 
   # Oracle port forwarding
   config.vm.network "forwarded_port", guest: 1521, host: 1521

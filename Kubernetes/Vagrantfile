@@ -187,7 +187,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     if MANAGE_FROM_HOST
       # Add localhost to the list of allowed clients
       master.vm.provision :shell, inline: <<-SHELL
+        # Pre 1.12 release
         sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-cert-extra-sans=localhost,localhost.localdomain,127.0.0.1 \\1/' /usr/bin/kubeadm-setup.sh
+        # 1.12 release
+        sed -i 's/\\(serviceSubnet: .*\\)/\\1\\napiServerCertSANs:\\n- "localhost"\\n- "localhost.localdomain"\\n- "127.0.0.1"/' /usr/bin/kubeadm-setup.sh
       SHELL
     end
     if BIND_PROXY

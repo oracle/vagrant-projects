@@ -1,0 +1,1496 @@
+#!/usr/bin/perl 
+#
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/utilities/purgeLogs,v 2.0.1.1 2018/12/10 11:18:39 rcitton Exp $
+#
+# purgeLogs
+#
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
+#      purgeLogs
+#
+#    DESCRIPTION
+#      purgeLogs RDBMS/GI traces & logs
+#      If running on ODA, will cleanup also relevant OAK/DCS traces & logs
+#      It's possible purge files in user specified folders too
+#
+#    NOTES
+#      Use DBMS_AUDIT_MGMT for purging audit files at OS level
+#
+#    AUTHOR
+#       Ruggero Citton (Ruggero.Citton@oracle.com)
+#
+#    MODIFIED   (MM/DD/YY)
+#    RCITTON     10/29/18 - adrci Bug 23342353
+#    RCITTON     10/24/18 - removing MGMTDB audit
+#    RCITTON     08/31/18 - adrci command in case of error 
+#    RCITTON     08/27/18 - adrci check DIA error
+#    RCITTON     08/27/18 - adrci home
+#    RCITTON     08/13/18 - cleanup scan3
+#    RCITTON     07/16/18 - hostname FQDN, dryrun #896, oracle_base fix
+#    KFEKETE     07/05/18 - ODA DCS support
+#    RCITTON     05/09/18 - tfactl purge with -force
+#    RCITTON     12/11/17 - not defined file stat
+#    RCITTON     09/18/17 - regex fixed
+#    RCITTON     08/08/17 - Purge type HTSCDMP, aud on OB/admin
+#    RCITTON     03/27/17 - Purge Audit logs support
+#    RCITTON     11/02/16 - '-days' option
+#    RCITTON     08/19/16 - Listener log clean option
+#    RCITTON     08/16/16 - Success green 
+#    RCITTON     08/16/16 - Warning if no DB
+#    RCITTON     03/31/16 - adrci home as oracle user
+#    RCITTON     03/31/16 - adrci home as oracle user
+#    RCITTON     03/29/16 - dryrun feature added
+#    RCITTON     10/02/15 - TFA feature added
+#    RCITTON     10/02/15 - extra folder feature added
+#    RCITTON     10/01/15 - Creation
+#
+
+### ------------------------------------------------------------------------
+### DISCLAIMER: 
+###    It is NOT supported by Oracle World Wide Technical Support. 
+###    The script has been tested and appears to work as intended. 
+###    You should always run new scripts on a test instance initially. 
+### ------------------------------------------------------------------------
+ 
+ 
+
+################ Documentation ################
+=head1 NAME
+
+ purgeLogs - purgeLogs RDBMS/GI traces & logs
+ 
+=head1 SYNOPSIS
+
+ purgeLogs [ -days <days> [ -aud ] [ -lsnr ] ]
+           [ -orcl <days> [ -aud ] [ -lsnr ] ] | 
+           [ -tfa <days> ] | 
+           [ -osw <days> ] | 
+           [ -oda <days> ] | 
+           [ -extra '<folder>':<days> | [, '<folder>':<days>] ]
+           [ -dryrun ]
+       
+ purgeLogs OPTIONS
+  -days  <days>             Purge orcl,tfa,osw,oda components logs & traces older then # days
+  -orcl  <days>             Purge only GI/RDBMS logs & traces (Default 30 days)
+  -tfa   <days>             Purge only TFA repository older then # days (Default 30 days)
+  -osw   <days>             Purge only OSW archives older then # days (Default 30 days)
+  -oda   <days>             Purge only ODA logs and trace older then # days (Default 30 days)
+  -extra '<folder>':<days>  Purge only files in user specified folders (Default 30 days)
+  -aud                      Purge Audit logs based on '-orcl <days>' option
+  -lsnr                     It will force the cleanup of listeners log independently by the age
+  -dryrun                   It will show the purge commands w/o execute them
+  -h                        Display this help and exit
+
+ Example:
+   purgeLogs
+   purgeLogs -days 20
+   purgeLogs -orcl 50
+   purgeLogs -orcl 50 -aud -lsnr
+   purgeLogs -tfa  50
+   purgeLogs -osw  20 -oda 10
+   purgeLogs -orcl 20 -osw 20 -oda 10
+   purgeLogs -orcl 20 -osw 20 -oda 10 -extra /tmp:10,/var/log:20
+
+=head1 LIMITATIONS
+
+  purgeLogs needs to be executed as root user
+
+=head1 BUGS
+
+ No known bugs. 
+  
+=head1 AUTHOR
+ 
+ Written by Ruggero Citton(Ruggero.Citton@oracle.com)  
+
+=head1 COPYRIGHT
+
+ Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.  
+
+=head1 DISCLAIMER
+
+ It is NOT supported by Oracle World Wide Technical Support. 
+ The script has been tested and appears to work as intended. 
+ You should always run new scripts on a test instance initially. 
+
+=head1 VERSION
+
+ 20181107 - $Revision: 2.0.1.1 $
+
+=cut
+################ End Documentation ################
+package purgeLogs;
+
+# ----------------------------------------------------------------------
+# 
+# ----------------------------------------------------------------------
+use strict;
+use English;
+use warnings;
+
+use Term::ANSIColor;
+use File::Find;
+use File::Path;
+use File::Spec::Functions;
+use File::Basename;
+use Getopt::Long;
+use Pod::Usage;
+
+# ----------------------------------------------------------------------
+# Variables
+# ----------------------------------------------------------------------
+my ($days, $orcl, $tfa, $osw, $oda, $extra, $help, $version, $dryrun, $aud, $lsnr);
+my $crshome;
+my @aopath;
+
+my $module  = eval('__PACKAGE__');
+my $VERSION = sprintf "%d.%02d", q$Revision: 2.0.1.1 $ =~ /(\d+)/g;
+
+# ----------------------------------------------------------------------
+# Constants
+# ----------------------------------------------------------------------
+my $ora_inv_loc = "/etc/init.d/init.ohasd";
+my $tracefile = "/tmp/purgeLogs.trc";
+my $def_orcl = 30;
+my $def_tfa  = 30;
+my $def_osw  = 30;
+my $def_oda  = 30;
+my $def_ext  = 30;
+
+# ----------------------------------------------------------------------
+# Command line options
+# ----------------------------------------------------------------------
+
+my $usage_rc = 1;
+my $result = GetOptions(
+                        "days=i"  => \$days,
+                        "orcl=i"  => \$orcl,
+                        "tfa=i"   => \$tfa,
+                        "osw=i"   => \$osw,
+                        "oda=i"   => \$oda,
+                        "extra=s" => \$extra,
+                        "dryrun"  => \$dryrun,
+                        "aud"     => \$aud,
+                        "lsnr"    => \$lsnr,
+                        "help!"   => \$help,
+                        "version" => \$version
+                        ) or pod2usage($usage_rc);
+
+pod2usage(-msg => "Invalid extra options passed: @ARGV", -exitval => $usage_rc) if (@ARGV);
+(pod2usage() && exit) if ( $help );
+
+# ----------------------------------------------------------------------
+# MAIN
+# ----------------------------------------------------------------------
+if ( defined($version) ) {
+  printversion();
+  exit;
+}
+
+printversion();
+checkroot();
+
+if ( defined($days) ) {
+  $def_orcl = $days;
+  $def_tfa  = $days;
+  $def_osw  = $days;
+  $def_oda  = $days;
+  $def_ext  = $days;
+}
+if ( defined($days) and (defined($orcl) or defined($osw) or defined($oda) or defined($extra) or defined($tfa)) ) {
+  print("purgeLogs '-days' option can not be used with '-orcl', '-osw', '-oda', '-extra' or '-tfa'\n");
+  exit(0);
+}
+
+if (!defined($orcl) and !defined($osw) and !defined($oda) and !defined($extra) and !defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($def_orcl);
+  cleanOH($def_orcl);
+  cleanTFA($def_tfa);
+  cleanOSW($def_osw);
+  cleanODALogs($def_oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and !defined($oda) and !defined($extra) and !defined($tfa)) {
+  $crshome = my_get_gi_home();    
+  cleanGI($orcl);
+  cleanOH($orcl);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and !defined($oda) and !defined($extra) and !defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanOSW($osw);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and defined($oda) and !defined($extra) and !defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and defined($oda) and !defined($extra) and !defined($tfa)) {
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and defined($oda) and !defined($extra) and !defined($tfa)) {
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);  
+}
+elsif (defined($orcl) and !defined($osw) and defined($oda) and !defined($extra) and !defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and !defined($oda) and !defined($extra) and !defined($tfa)) {
+  cleanOSW($osw);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and !defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and !defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and !defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanOSW($osw);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();    
+  cleanODALogs($oda);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanODALogs($oda);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and !defined($oda) and defined($extra) and !defined($tfa)) {
+  checkExtra();
+  cleanOSW($osw);
+  cleanExtra();
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); } 
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and !defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and !defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and !defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanODALogs($oda);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and !defined($oda) and !defined($extra) and defined($tfa)) {
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and !defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and !defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and !defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and defined($osw) and !defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and !defined($osw) and defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanODALogs($oda);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanOSW($osw);
+  cleanODALogs($oda);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (defined($orcl) and !defined($osw) and defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanGI($orcl);
+  cleanOH($orcl);
+  cleanTFA($tfa);
+  cleanODALogs($oda);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+elsif (!defined($orcl) and defined($osw) and !defined($oda) and defined($extra) and defined($tfa)) {
+  checkExtra();
+  $crshome = my_get_gi_home();
+  cleanTFA($tfa);
+  cleanExtra();  
+  if (!defined($dryrun)) { trace("S", "Purging completed succesfully!"); }  
+  exit(0);
+}
+else {
+  trace("I", "Purging not completed... exiting");   
+  exit(1);
+}
+
+
+# ----------------------------------------------------------------------
+# Sub common functions
+# ----------------------------------------------------------------------
+sub trace
+{
+  my @msg = @_;
+  my ($sec, $min, $hour, $day, $month, $year) = (localtime) [0, 1, 2, 3, 4, 5];
+  $month = $month + 1;
+  $year  = $year + 1900;
+  open (TRCFILE, ">>$tracefile")
+    or die "Cant open trace file: '$tracefile'";
+  printf TRCFILE  "%04d-%02d-%02d %02d:%02d:%02d: @msg\n", $year, $month, $day, $hour, $min, $sec;
+  close (TRCFILE);
+
+  if ( 'root' eq getpwuid( $< )) {
+    chmod(0666,$tracefile);
+  }
+  
+  if ($msg[0] eq 'I') 
+  {
+    printf "%04d-%02d-%02d %02d:%02d:%02d: ", $year, $month, $day, $hour, $min, $sec;
+    print color 'bold blue';
+    printf "$msg[0] ";
+    print color 'reset';
+    printf "$msg[1]\n";
+  }
+  elsif ($msg[0] eq 'S') {
+    printf "%04d-%02d-%02d %02d:%02d:%02d: ", $year, $month, $day, $hour, $min, $sec;
+    print color 'bold green';
+    printf "$msg[0] ";
+    print color 'reset';
+    printf "$msg[1]\n";
+  }  
+  elsif ($msg[0] eq 'W') {
+    printf "%04d-%02d-%02d %02d:%02d:%02d: ", $year, $month, $day, $hour, $min, $sec;
+    print color 'bold yellow';
+    printf "$msg[0] ";
+    print color 'reset';
+    printf "$msg[1]\n";
+  }  
+  elsif ($msg[0] eq 'E') {
+    printf "%04d-%02d-%02d %02d:%02d:%02d: ", $year, $month, $day, $hour, $min, $sec;
+    print color 'bold red';
+    printf "$msg[0] ";
+    print color 'reset';
+    printf "$msg[1]\n";
+  }
+  elsif ($msg[0] eq 'D') {
+    printf "%04d-%02d-%02d %02d:%02d:%02d: ", $year, $month, $day, $hour, $min, $sec;
+    print color 'bold magenta';
+    printf "$msg[0] ";
+    print color 'reset';
+    printf "$msg[1]\n";
+  }
+}
+
+sub trim_data {
+  my ($data) = @_;
+  chomp($data);
+  $data =~ s/(\s*)$//;
+  $data =~ s/^(\s*)//;
+  return $data;
+}
+
+sub system_cmd_capture {
+  my ($cmd) = @_;
+  my @out = `$cmd`;
+  my $rc = $? >> 8;
+  return ($rc,@out);
+}
+
+sub system_cmd {
+  my ($rc, @output) = system_cmd_capture(@_);
+  return @output;
+}
+
+sub readfile
+{
+  my ($in_file, $line, @a);
+  $in_file = shift; 
+  open(ARRAYFILE, "< $in_file") or die("Cannot open $in_file! \n");
+  while ( defined ($line = <ARRAYFILE>)) {
+      chomp ($line);
+      push @a, $line; 
+  };
+  close(ARRAYFILE);
+  return @a;
+}
+
+sub delOlderThen {
+  my $folder = $_[0];
+  my $days = $_[1];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  my $now             = time();
+  my $seconds_per_day = 60*60*24;
+  my $AGE             = $days*$seconds_per_day;
+  find ( sub {
+    my $file = $File::Find::name;
+    if ( -f $file ) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    my @stats = stat($file);
+    if ( defined($stats[9]) ) {
+      if ($now-$stats[9] > $AGE) {
+        unlink $file;
+      }
+    }
+    else {
+      trace("W", "Undefined file stats for '$file', delete skipped");
+    }
+  }
+}
+
+sub dryrun_delOlderThen {
+  my $folder = $_[0];
+  my $days = $_[1];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  my $now             = time();
+  my $seconds_per_day = 60*60*24;
+  my $AGE             = $days*$seconds_per_day;
+  find ( sub {
+    my $file = $File::Find::name;
+    if ( -f $file ) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    my @stats = stat($file);
+    if (defined($stats[9])) {
+      if ($now-$stats[9] > $AGE) {
+        print ("\trm $file\n");
+      }
+    }
+  }
+}
+
+sub cleanLogsOlderThen {
+  my $folder = $_[0];
+  my $days = $_[1];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  my $now             = time();
+  my $seconds_per_day = 60*60*24;
+  my $AGE             = $days*$seconds_per_day;
+  find ( sub {
+    my $file = $File::Find::name;
+    if (( -f $file ) and ($file =~ /\.log$/i)) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    my @stats = stat($file);
+    if ( defined($stats[9]) ) {
+      if ($now-$stats[9] > $AGE) {
+        system_cmd("echo \"\" >| $file");
+      }
+    }
+  }
+}
+
+sub dryrun_cleanLogsOlderThen {
+  my $folder = $_[0];
+  my $days = $_[1];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  my $now             = time();
+  my $seconds_per_day = 60*60*24;
+  my $AGE             = $days*$seconds_per_day;
+  find ( sub {
+    my $file = $File::Find::name;
+    if (( -f $file ) and ($file =~ /\.log$/i)) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    my @stats = stat($file);
+    if ( defined($stats[9]) ) {
+      if ($now-$stats[9] > $AGE) {
+        print ("\techo \"\" >| $file\n");
+      }
+    }
+  }
+}
+
+sub cleanLogs {
+  my $folder = $_[0];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  find ( sub {
+    my $file = $File::Find::name;
+    if (( -f $file ) and ($file =~ /\.log$/i)) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    system_cmd("echo \"\" >| $file");
+  }
+}
+
+sub dryrun_cleanLogs {
+  my $folder = $_[0];
+
+  my @file_list;
+  my @find_dirs       = ($folder);
+  find ( sub {
+    my $file = $File::Find::name;
+    if (( -f $file ) and ($file =~ /\.log$/i)) {
+      push (@file_list, $file);
+    }
+  }, @find_dirs);
+
+  for my $file (@file_list) {
+    print ("\techo \"\" >| $file\n");
+  }
+}
+
+# ----------------------------------------------------------------------
+# Inventory Sub functions
+# ----------------------------------------------------------------------
+sub getOracleBase {
+  my ($db_home) = @_;
+  my $oracle_base;
+  my $orabase = catfile($db_home, "bin", "orabase");
+  my $sethome = setenv($db_home);
+  my ($rc, @out) = system_cmd_capture("$sethome ; $orabase");
+  if ($rc) {
+    trace("W","Unable to get ORACLE_BASE from orabase");
+    trace("I", "Getting ORACLE_BASE from env");
+    $oracle_base = $ENV{'ORACLE_BASE'};
+    if ( defined($oracle_base) and (-d $oracle_base ) ){
+      trace("Got ORACLE_BASE from env as '$oracle_base'");
+      return $oracle_base;
+    }
+    else {
+      trace("E","Unable to get ORACLE_BASE from env");
+      exit 1;
+    }
+  }
+  else {
+    $oracle_base = trim_data(@out);
+    if ( defined($oracle_base) and (-d $oracle_base ) ){
+      trace("Got Oracle Base from orabase");
+      return $oracle_base;
+    }
+    else {
+      trace("E","Unable to get ORACLE_BASE from orabase");
+      exit 1;
+    }
+  }
+}
+
+sub my_get_gi_home {
+  if ( ! -e $ora_inv_loc ){
+    print("Missing /etc/init.d/init.ohasd, is Oracle CRS installed?\n");     
+    exit (1);    
+  }  
+  my $inv_loc_string = "ORA_CRS_HOME=";
+  open(my $INV_FILE, $ora_inv_loc);
+  my @inv_locs = grep /\Q$inv_loc_string/, <$INV_FILE>;
+  close $INV_FILE;
+  my @gi_home_string = split("=" , $inv_locs[0]);
+  my $gi_home = trim_data($gi_home_string[1]);
+  return $gi_home;
+}
+
+sub get_dbhome_list {
+  my $db_names = get_db_names();
+  if (!defined($db_names)) {
+    return;
+  }
+  my @dbs = split(',', $db_names);
+  my $oracle_home;
+  my @db_home_list;
+
+  foreach my $dbname (@dbs) {
+    $oracle_home = get_db_home($dbname);
+    push @db_home_list, $oracle_home;
+  }
+  my %seen = ();
+  my @unique = grep { ! $seen{ $_ }++ } @db_home_list;
+  return @unique;
+}
+
+sub get_db_home {
+  my ($db_name) = @_;
+  $db_name = lc($db_name);
+  $db_name="ora.".$db_name.".db";
+  my $crsctl_cmd = catfile($crshome,"bin", "crsctl");
+  my $crsctl_get_res_attr = $crsctl_cmd." "."stat resource $db_name -p";
+  open (my $RES, "$crsctl_get_res_attr |");
+  my $sstring = "ORACLE_HOME=";
+  my @db_homes = grep /^$sstring/, <$RES>;
+  close $RES;
+  my @db_home_string = split("=",$db_homes[0]);
+  return $db_home_string[1];
+}
+
+sub get_db_names {
+  my $db_names;
+  my $srvctl_cmd = catfile($crshome,"bin", "srvctl");
+  my $srvctl_list_dbs = $srvctl_cmd." "."config database";
+  open (my $RES, "$srvctl_list_dbs |");
+  my @db_ress = <$RES>;
+  close $RES;
+  foreach my $resname (@db_ress)
+  {
+    chomp($resname);
+    if ($db_names) {
+      $db_names = $db_names.",".$resname;
+    }
+    else
+    {
+      $db_names = $resname;
+    }
+  }
+  return $db_names;
+}
+
+sub get_crs_version { 
+  my @ver  = (0, 0, 0, 0, 0);
+  my $verstring;
+  
+  # run "crsctl query crs activeversion" -- stack must be up
+  # Example output:
+  # Oracle Grid Infrastructure active version on the cluster is [12.1.0.2.0]
+  my ($rc, @out) = system_cmd_capture("$crshome/bin/crsctl query crs activeversion");
+  if ( $rc ) {
+    trace ("W", "Cannot get CRS activeversion, Grid Infrastructure down?");
+    $out[0] = get_home_version($crshome);
+    if ($out[0] eq "-1") {
+      return -1;
+    }
+  }
+
+  # if succeeded, parse to ver numbers, output must be a single line,
+  # version is 5 numbers, major to minor (see above)
+  $verstring = $out[0];
+  $verstring =~ m/\[?(\d*)\.(\d*)\.(\d*)\.(\d*)\.(\d*)\]?.*$/;
+  @ver = ($1, $2, $3, $4, $5);
+  $verstring = join('.',@ver);
+  @ver = split(/\./, $verstring);
+   
+  #check version validity
+  if (scalar(@ver) != 5) {
+    die("Not a valid Grid Infrastructure version. The version obtained is @ver");
+  }
+  return $verstring ;
+}
+
+sub get_home_version {
+  my ($home) = @_;
+  my @ver  = (0, 0, 0, 0, 0);
+  my $verstring;
+  
+  my $oracle = catfile($home, "bin", "oracle");
+  if ( ! -e $oracle ) {
+    trace ("W", "Cannot find oracle binary");
+    return -1;
+  }
+
+  my ($rc, @out) = system_cmd_capture("/usr/bin/strings $oracle | grep NLSRTL | cut -d\" \" -f3");
+  if ( $rc ) {
+    trace ("W", "Cannot get oracle home version");
+    return -1;
+  }
+
+  # if succeeded, parse to ver numbers, output must be a single line,
+  # version is 5 numbers, major to minor (see above)
+  $verstring = $out[0];
+  $verstring =~ m/\[?(\d*)\.(\d*)\.(\d*)\.(\d*)\.(\d*)\]?.*$/;
+  @ver = ($1, $2, $3, $4, $5);
+  $verstring = join('.',@ver);
+  @ver = split(/\./, $verstring);
+   
+  #check version validity
+  if (scalar(@ver) != 5) {
+    die("Not a valid oracle home version. The version obtained is @ver");
+  }
+  return $verstring ;
+}
+
+# ----------------------------------------------------------------------
+# Sub functions
+# ----------------------------------------------------------------------
+sub printversion {
+  print ("\n--------------------------------------------------------\n");
+  print ("$module version: $VERSION\n");
+  print ("Author: Ruggero Citton <ruggero.citton\@oracle.com>\n");
+  print ("RAC Pack, Cloud Innovation and Solution Engineering Team\n");
+  print ("Copyright Oracle, Inc.\n");
+  print ("--------------------------------------------------------\n\n");
+}
+
+sub checkroot {
+  if ( 'root' ne getpwuid( $< )) {
+    print("This should be run as root user. Exiting...\n");
+    exit(1);
+  }
+}
+
+sub setenv {
+  my $orahome = $_[0];
+  if ($ENV{"SHELL"} eq "csh") {
+    return "setenv ORACLE_HOME $orahome";
+  } else {
+    return "export ORACLE_HOME=$orahome";
+  }
+}
+
+sub cleanACFS {
+  my $days = $_[0];
+  my $hostname = `hostname | cut -f 1 -d.`;
+  $hostname = trim_data($hostname);
+  my $acfsArchive = "/u01/app/grid/crsdata/$hostname/acfs";
+  if (!defined($dryrun)) {
+    trace("I", "Purging ACFS logs older then $days days");  
+    if (! -d $acfsArchive) {
+      trace("W", "Path $acfsArchive does not exist, ACFS archive logs cleanup skipped...");
+    }
+    else {
+      cleanLogsOlderThen($acfsArchive,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging ACFS archives logs older then $days days");  
+    if (! -d $acfsArchive) {
+      trace("W", "Path $acfsArchive does not exist, ACFS archive logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogsOlderThen($acfsArchive,$days);
+    }
+  }
+}
+
+sub cleanListeners {
+  my $hostname = `hostname | cut -f 1 -d.`;;
+  $hostname = trim_data($hostname);
+  
+  my $crshome = my_get_gi_home();
+  my $base_path = getOracleBase($crshome);
+
+  my $listenerLog = "$base_path/diag/tnslsnr/$hostname/listener/trace";
+  if (!defined($dryrun)) {
+    trace("I", "Cleaning up Listener logs");  
+    trace("I", "... purging Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $listenerLog) {
+      trace("W", "Path $listenerLog does not exist, Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($listenerLog);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $listenerLog) {
+      trace("W", "Path $listenerLog does not exist, Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($listenerLog);
+    }
+  }
+
+  my $scan1Log = "$base_path/diag/tnslsnr/$hostname/listener_scan1/trace";
+  if (!defined($dryrun)) {
+    trace("I", "... purging SCAN1 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan1Log) {
+      trace("W", "Path $scan1Log does not exist, SCAN1 Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($scan1Log);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up SCAN1 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan1Log) {
+      trace("W", "Path $scan1Log does not exist, SCAN1 Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($scan1Log);
+    }
+  }
+
+  my $scan2Log = "$base_path/diag/tnslsnr/$hostname/listener_scan2/trace";
+  if (!defined($dryrun)) {
+    trace("I", "... purging SCAN2 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan2Log) {
+      trace("W", "Path $scan2Log does not exist, SCAN2 Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($scan2Log);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up SCAN2 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan2Log) {
+      trace("W", "Path $scan2Log does not exist, SCAN2 Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($scan2Log);
+    }
+  }
+
+  my $scan3Log = "$base_path/diag/tnslsnr/$hostname/listener_scan3/trace";
+  if (!defined($dryrun)) {
+    trace("I", "... purging SCAN3 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan3Log) {
+      trace("W", "Path $scan3Log does not exist, SCAN3 Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($scan3Log);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up SCAN3 Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $scan3Log) {
+      trace("W", "Path $scan3Log does not exist, SCAN3 Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($scan3Log);
+    }
+  }
+
+  my $mgmntlsnrLog = "$base_path/diag/tnslsnr/$hostname/mgmtlsnr/trace";
+  if (!defined($dryrun)) {
+    trace("I", "... purging Management Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $mgmntlsnrLog) {
+      trace("W", "Path $mgmntlsnrLog does not exist, Management Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($mgmntlsnrLog);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up Management Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $mgmntlsnrLog) {
+      trace("W", "Path $mgmntlsnrLog does not exist, Management Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($mgmntlsnrLog);
+    }
+  }
+
+  my $asmlsnrLog = "$base_path/diag/tnslsnr/$hostname/asmnet1lsnr_asm/trace";
+  if (!defined($dryrun)) {
+    trace("I", "... purging ASM Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $asmlsnrLog) {
+      trace("W", "Path $asmlsnrLog does not exist, ASM Listener logs cleanup skipped...");
+    }
+    else {
+      cleanLogs($asmlsnrLog);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Cleaning up ASM Listener logs, ORACLE_BASE is '$base_path'");  
+    if (! -d $asmlsnrLog) {
+      trace("W", "Path $asmlsnrLog does not exist, ASM Listener logs cleanup skipped...");
+    }
+    else {
+      dryrun_cleanLogs($asmlsnrLog);
+    }
+  }
+}
+
+sub cleanGIAudit {
+  my $days = $_[0];
+
+  trace("I", "GI Audit logs purge started");
+  my $auditArchive = $crshome . "/rdbms" . "/audit";
+  if (!defined($dryrun)) {
+    trace("I", "... purging GI Audit logs under '$auditArchive' older then $days days");  
+    if (! -d $auditArchive) {
+      trace("W", "Path $auditArchive does not exist, GI Audit archive logs cleanup skipped...");
+    }
+    else {
+      delOlderThen($auditArchive,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging GI Audit logs under '$auditArchive' older then $days days");  
+    if (! -d $auditArchive) {
+      trace("W", "Path $auditArchive does not exist, GI Audit archive logs cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($auditArchive,$days);
+    }
+  }
+
+  my $gibase = catfile($crshome, "bin", "orabase");
+  my $sethome = setenv($crshome);
+  my ($rc, @gb_path) = system_cmd_capture("$sethome; $gibase");
+  my $gi_base;
+  if ( @gb_path ) {
+    $gi_base = trim_data($gb_path[0]);
+  }
+  $auditArchive = $gi_base . "/admin/_mgmtdb/adump";
+
+  if (!defined($dryrun)) {
+    trace("I", "... purging GI Audit logs under '$auditArchive' older then $days days");  
+    if (! -d $auditArchive) {
+      trace("W", "Path $auditArchive does not exist, GI Audit archive logs cleanup skipped...");
+    }
+    else {
+      delOlderThen($auditArchive,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging GI Audit logs under '$auditArchive' older then $days days");  
+    if (! -d $auditArchive) {
+      trace("W", "Path $auditArchive does not exist, GI Audit archive logs cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($auditArchive,$days);
+    }
+  }
+}
+
+sub cleanRDBMSAudit {
+  my $days = $_[0];
+  
+  my $db_names = get_db_names();
+  if (!defined($db_names)) {
+    trace("W", "No DB found, skipping RDBMS Audit logs purge");
+    return;
+  }
+  my @dbs = split(',', $db_names);
+
+  trace("I", "RDBMS Audit logs purge started");
+  my $oracle_home;
+  my @db_home_list = get_dbhome_list();
+
+  my $orabase = catfile(trim_data($db_home_list[0]), "bin", "orabase");
+  my $sethome = setenv(trim_data($db_home_list[0]));
+  my ($rc, @ob_path) = system_cmd_capture("$sethome; $orabase");
+  my $oracle_base;
+  if ( @ob_path ) {
+    $oracle_base = trim_data($ob_path[0]);
+  }
+
+
+  foreach my $dbhome (@db_home_list) {
+    $oracle_home = trim_data($dbhome);
+    $oracle_home = catfile($oracle_home, "rdbms", "audit");
+    if (!defined($dryrun)) {
+      trace("I", "Purging RDBMS Audit logs on '$oracle_home' older then $days days");
+      if (! -d $oracle_home) {
+        trace("W", "Path $oracle_home does not exist, RDBMS Audit archive logs cleanup skipped...");
+      }
+      else {
+        delOlderThen($oracle_home, $days);
+      }
+    }
+    else {
+      trace("I", "DRYRUN - Purging RDBMS Audit logs on '$oracle_home' older than $days days");
+      if (! -d $oracle_home) {
+        trace("W", "Path $oracle_home does not exist, RDBMS Audit archive logs cleanup skipped...");
+      }
+      else {
+        dryrun_delOlderThen($oracle_home, $days);
+      }
+    }
+  }
+
+  if ( -d $oracle_base  ){
+    my $base_dir = catfile($oracle_base, "admin");
+    opendir(my $dh, $base_dir);
+    my @subdir = grep { /^[^.]/ && -d "$base_dir/$_" } readdir($dh);
+    closedir $dh;
+    foreach my $dbhome (@subdir) {
+      my $target = catfile($base_dir, $dbhome, "adump");
+      if (!defined($dryrun)) {
+        trace("I", "Purging RDBMS Audit logs on '$target' older then $days days");
+        if (! -d $target) {
+          trace("W", "Path $target does not exist, RDBMS Audit archive logs cleanup skipped...");
+        }
+        else {
+          delOlderThen($target, $days);
+        }
+      }
+      else {
+        trace("I", "DRYRUN - Purging RDBMS Audit logs on '$target' older than $days days");
+        if (! -d $target) {
+          trace("W", "Path $target does not exist, RDBMS Audit archive logs cleanup skipped...");
+        }
+        else {
+          dryrun_delOlderThen($target, $days);
+        }
+      }
+    }
+  }
+}
+
+sub cleanGI {
+  my $days = $_[0];
+  my $minuts_per_day = 60*24;
+  my $AGE            = $days*$minuts_per_day;
+  my ($rc, @home, @out);
+
+  if ( defined($lsnr) ) { cleanListeners($days); }
+  if ( defined($aud) )  { cleanGIAudit($days); }
+
+  trace("I", "adrci GI purge started");
+  my $gridsetenv = setenv($crshome);
+  ($rc, @home) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec='show homes' |grep -v 'ADR Homes'");
+  if ($rc) {
+    trace("W", "Not able to get the RDBMS ADRCI homes");
+    return;
+  }
+  if (grep(/No ADR homes are set/,@home)) {
+    trace("W", "No ADR homes are set");
+    return;
+  }
+
+   my $sstr1 = "12\.1";
+   my $sstr2 = "11\.";
+   my $crsver = get_crs_version();
+   my $nolog = "";  
+   if ( !($crsver =~ m/$sstr1/) and !($crsver =~ m/$sstr2/) and ($crsver ne '-1') ){
+     #12.2 or above and CRS not down
+     $nolog = "-nolog";
+   }
+
+  while (@home) {
+    my $home_line = trim_data(shift(@home));
+    if (!defined($dryrun)) {
+      trace("I", "adrci GI purging diagnostic destination $home_line");  
+      trace("I", "... purging ALERT older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type ALERT $nolog\"");
+      trace("W", "Not able to purge ALERT, due to error: @out") if (grep(/DIA-/, @out));
+      
+      trace("I", "... purging INCIDENT older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"");
+      trace("W", "Not able to purge INCIDENT, due to error: @out") if (grep(/DIA-/, @out));
+      
+      trace("I", "... purging TRACE older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"");
+      trace("W", "Not able to purge TRACE, due to error: @out") if (grep(/DIA-/, @out)); 
+      
+      trace("I", "... purging CDUMP older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\""); 
+      trace("W", "Not able to purge CDUMP, due to error: @out") if (grep(/DIA-/, @out));
+      
+      trace("I", "... purging HM older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\""); 
+      trace("W", "Not able to purge HM, due to error: @out") if (grep(/DIA-/, @out));
+
+      trace("I", "... purging UTSCDMP older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\""); 
+      trace("W", "Not able to purge UTSCDMP, due to error: @out") if (grep(/DIA-/, @out));
+    }
+    else {
+      trace("I", "DRYRUN - adrci GI purging diagnostic destination $home_line older than $days days");  
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type ALERT $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"\n"); 
+    }
+  }
+
+  # Note: not reccomended at this time the ACFS logs cleanup (see Bug:24489268)
+  #if ( defined($acfs) ) { cleanACFS($days); }
+}
+
+sub cleanOH {
+  my $days = $_[0];
+  my $minuts_per_day = 60*24;
+  my $AGE            = $days*$minuts_per_day;
+  my ($rc, @home, @out, $cmd);
+
+  my $db_names = get_db_names();
+  if (!defined($db_names)) {
+    trace("W", "No DB found, skipping RDBMS logs purge");
+    return;
+  }
+  my @dbs = split(',', $db_names);
+  my $oraclehome = get_db_home($dbs[0]);
+  $oraclehome = trim_data($oraclehome);
+
+  trace("I", "adrci RDBMS purge started");
+
+
+  for my $db_name (@dbs){
+    $oraclehome = get_db_home($db_name);
+    if($oraclehome eq ""){
+      trace("W", "Database : $db_name not found");
+      next;
+    }
+    $oraclehome = trim_data($oraclehome);
+    $db_name = lc($db_name);
+
+    my $ohsetenv = setenv($oraclehome);
+    ($rc, @home) = system_cmd_capture("$ohsetenv;$oraclehome/bin/adrci exec='show homes' |grep -v 'ADR Homes'");
+    if ($rc) {
+      trace("W", "Not able to get the RDBMS ADRCI homes");
+      return;
+    }
+    if (grep(/No ADR homes are set/,@home)) {
+      trace("W", "No ADR homes are set");
+      return;
+    }
+    @home = grep { /$db_name/ } @home;
+
+    my $nolog = "";
+    my $sstr1 = "12\.1";
+    my $sstr2 = "11\.";
+    my $home_versions = get_home_version($oraclehome);
+    if ( !($home_versions =~ m/$sstr1/) and !($home_versions =~ m/$sstr2/) and ($home_versions ne '-1') ){
+      # home 12.2 and above
+      $nolog = "-nolog";
+    }
+
+    while (@home) {
+      my $home_line = trim_data(shift(@home));
+      if (!defined($dryrun)) {
+        trace("I", "adrci RDBMS purging diagnostic destination $home_line");  
+        trace("I", "... purging ALERT older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type ALERT $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge ALERT, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging INCIDENT older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge INCIDENT, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging TRACE older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge TRACE, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging CDUMP older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge CDUMP, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging HM older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge HM, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging UTSCDMP older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge UTSCDMP, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+      }
+      else {
+        trace("I", "DRYRUN - adrci RDBMS purging diagnostic destination $home_line older than $days days");
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type ALERT $nolog\"\n");
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"\n");
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"\n");
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\"\n"); 
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\"\n"); 
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"\n"); 
+      }
+    }
+  }
+
+  if ( defined($aud) )  { cleanRDBMSAudit($days); }
+}
+
+sub cleanTFA {
+  my $days = $_[0];
+  if (!defined($dryrun)) {
+    trace("I", "Purging TFA archives older then $days days");  
+    $days =  $days . "d";
+    my ($rc,@home) = system_cmd_capture("$crshome/bin/tfactl purge -older $days -force");
+    trace("W", "Not able to cleanup TFA repository")  if ($rc);
+  }
+  else {
+    trace("I", "DRYRUN - Purging TFA archives older then $days days");  
+    $days =  $days . "d";
+    print ("\t$crshome/bin/tfactl purge -older $days -force\n");
+  }
+}
+
+sub cleanOSW {
+  my $days = $_[0];
+  my $oswArchive = "/opt/oracle/oak/oswbb/archive";
+  if (!defined($dryrun)) {
+    trace("I", "Purging OSW archives older then $days days");  
+    if (! -d $oswArchive) {
+      trace("W", "Path $oswArchive does not exist, OSW archive cleanup skipped...");
+    }
+    else {
+      delOlderThen($oswArchive,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging OSW archives older then $days days");  
+    if (! -d $oswArchive) {
+      trace("W", "Path $oswArchive does not exist, OSW archive cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($oswArchive,$days);
+    }
+  }
+}
+
+sub cleanODALogs {
+  my $days = $_[0];
+  my $oakLogs = "/opt/oracle/oak/log";
+  my $dcsLogs = "/opt/oracle/dcs/log";
+  if (!defined($dryrun)) {
+    trace("I", "Purging OAK logs older then $days days");
+    if (! -d $oakLogs) {
+      trace("W", "Path $oakLogs does not exist, OAK logs cleanup skipped...");
+    }
+    else {
+      delOlderThen($oakLogs,$days);
+    }
+    trace("I", "Purging DCS logs older then $days days");
+    if (! -d $dcsLogs) {
+      trace("W", "Path $dcsLogs does not exist, DCS logs cleanup skipped...");
+    }
+    else {
+      delOlderThen($dcsLogs,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging OAK logs older then $days days");
+    if (! -d $oakLogs) {
+      trace("W", "Path $oakLogs does not exist, OAK logs cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($oakLogs,$days);
+    }
+    trace("I", "DRYRUN - Purging DCS logs older then $days days");
+    if (! -d $dcsLogs) {
+      trace("W", "Path $dcsLogs does not exist, DCS logs cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($dcsLogs,$days);
+    }   
+  }
+}
+
+sub checkExtra {
+  my $days; 
+  my $char; 
+  my @elements = split(",",$extra);
+  while (@elements) {
+    my $entry = trim_data(shift(@elements));
+    my @longpath = split(":",$entry);
+    if (!defined $longpath[0] or $longpath[0] eq "") {
+      trace("E", "Empty path provided, exiting... ");
+      exit(1);
+    }
+    if (! -d $longpath[0]) {
+      trace("E", "Path $longpath[0] does not exist, exiting... ");
+      exit(1);
+    }
+    if ( !defined($longpath[1]) ){ 
+      $longpath[1] = $def_ext; 
+    }
+    elsif (!($longpath[1] =~ /^[1-9][0-9]*$/)) {
+      trace("E", "Days=$longpath[1] in extra option not valid, exiting... "); 
+      exit(1);
+    }
+    push @aopath, [$longpath[0],$longpath[1]];
+  }
+}
+
+sub cleanExtra {
+  if (!defined($dryrun)) {
+    for my $i (0..$#aopath) {     
+      trace("I", "Purging files older then $aopath[$i][1] days on user specified folder '$aopath[$i][0]'");
+      delOlderThen($aopath[$i][0],$aopath[$i][1]); 
+    }
+  }
+  else {
+    for my $i (0..$#aopath) {     
+      trace("I", "DRYRUN - Purging files older then $aopath[$i][1] days on user specified folder '$aopath[$i][0]'");
+      dryrun_delOlderThen($aopath[$i][0],$aopath[$i][1]); 
+    }
+  }
+}
+
+__END__
+# ======================================================================
+# EndOfFile
+# ======================================================================
+

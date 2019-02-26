@@ -1,0 +1,59 @@
+node1:
+  vm_name: node1
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.101
+  vip_ip:     192.168.56.103
+  private_ip: 192.168.200.101
+  u01_disk: ./node1_u01.vdi
+
+node2:
+  vm_name: node2
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.102
+  vip_ip:     192.168.56.104
+  private_ip: 192.168.200.102
+  u01_disk: ./node2_u01.vdi
+
+shared:
+  box: ol7-latest
+  url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
+  # ---------------------------------------------
+  prefix_name:   ol7-183
+  # ---------------------------------------------
+  dns_public_ip: 192.168.56.1
+  scan_ip1:      192.168.56.105
+  scan_ip2:      192.168.56.106
+  scan_ip3:      192.168.56.107
+  # ---------------------------------------------
+  non_rotational: 'on'
+  # ---------------------------------------------
+  asm_disk_path:
+  asm_disk_num: 4
+  asm_disk_size: 20
+  # ---------------------------------------------
+
+env:
+  grid_software:   LINUX.X64_180000_grid_home.zip
+  db_software:     LINUX.X64_180000_db_home.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  grid_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  pdb_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  p1_ratio:        80
+  asm_lib_type:    ASMLIB
+  nomgmtdb:        true
+  orestart:        false
+  # ---------------------------------------------
+  db_name:         DB183H1
+  pdb_name:        PDB1
+  db_type:         RAC
+  cdb:             false
+  # ---------------------------------------------
+

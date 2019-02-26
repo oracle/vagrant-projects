@@ -1,0 +1,43 @@
+node1:
+  vm_name: primary
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.101
+  private_ip: 192.168.200.101
+  u01_disk: ./primary_u01.vdi
+
+node2:
+  vm_name: standby
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.102
+  private_ip: 192.168.200.102
+  u01_disk: ./standby_u01.vdi
+
+env:
+  box: ol7-latest
+  url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
+  # ---------------------------------------------
+  prefix_name:   ol7-183
+  # ---------------------------------------------
+  dns_public_ip: 192.168.56.1
+  # ---------------------------------------------
+  non_rotational: 'on'
+  oradata_disk_path:
+  oradata_disk_num: 2
+  oradata_disk_size: 20
+  # ---------------------------------------------
+  db_software:     LINUX.X64_180000_db_home.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  pdb_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  db_name:         DB183H1
+  pdb_name:        PDB1
+  cdb:             false
+  # ---------------------------------------------
+

@@ -1,0 +1,492 @@
+#
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/Vagrantfile,v 2.0.1.12 2018/12/10 11:20:56 rcitton Exp $
+#
+# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+#    FILE NAME
+#      vagrantfile
+#
+#    DESCRIPTION
+#      Creates two nodes Oracle RAC (Real Application Cluster) Vagrant virtual machines.
+#
+#    NOTES
+#       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+#    AUTHOR
+#       Ruggero Citton
+#
+#    MODIFIED   (MM/DD/YY)
+#    rcitton     11/06/18 - Creation
+#
+#    REVISION
+#    20181210 - $Revision: 2.0.1.12 $
+#
+#
+ 
+### -------------------------------------------------------------------
+### Disclaimer:
+###
+### EXCEPT WHERE EXPRESSLY PROVIDED OTHERWISE, THE INFORMATION, SOFTWARE,
+### PROVIDED ON AN \"AS IS\" AND \"AS AVAILABLE\" BASIS. ORACLE EXPRESSLY DISCLAIMS
+### ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT
+### LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+### PURPOSE AND NON-INFRINGEMENT. ORACLE MAKES NO WARRANTY THAT: (A) THE RESULTS
+### THAT MAY BE OBTAINED FROM THE USE OF THE SOFTWARE WILL BE ACCURATE OR
+### RELIABLE; OR (B) THE INFORMATION, OR OTHER MATERIAL OBTAINED WILL MEET YOUR
+### EXPECTATIONS. ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE DOWNLOADED OR
+### OTHERWISE OBTAINED IS DONE AT YOUR OWN DISCRETION AND RISK. ORACLE SHALL HAVE
+### NO RESPONSIBILITY FOR ANY DAMAGE TO YOUR COMPUTER SYSTEM OR LOSS OF DATA THAT
+### RESULTS FROM THE DOWNLOAD OF ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE.
+###
+### ORACLE RESERVES THE RIGHT TO MAKE CHANGES OR UPDATES TO THE SOFTWARE AT ANY
+### TIME WITHOUT NOTICE.
+###
+### Limitation of Liability:
+###
+### IN NO EVENT SHALL ORACLE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+### SPECIAL OR CONSEQUENTIAL DAMAGES, OR DAMAGES FOR LOSS OF PROFITS, REVENUE,
+### DATA OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN ACTION IN
+### CONTRACT OR TORT, ARISING FROM YOUR ACCESS TO, OR USE OF, THE SOFTWARE.
+### -------------------------------------------------------------------
+### This script is NOT supported by Oracle World Wide Technical Support. 
+### The script has been tested and appears to work as intended. 
+### -------------------------------------------------------------------
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+require 'ipaddr'
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# Costant (ol7_latest default disks number + u01)
+# -----------------------------------------------------------------
+box_disks_num = 2
+# -----------------------------------------------------------------
+
+# Variables
+# -----------------------------------------------------------------
+params = YAML.load_file 'config/vagrant.yml'
+var_box             = params['shared']['box']
+var_url             = params['shared']['url']
+#
+var_prefix_name     = params['shared']['prefix_name']
+var_group           = "/" + var_prefix_name + "-gi"
+#
+var_non_rotational  = params['shared']['non_rotational']
+var_dns_public_ip   = params['shared']['dns_public_ip']
+var_scan_ip1        = params['shared']['scan_ip1']
+var_scan_ip2        = params['shared']['scan_ip2']
+var_scan_ip3        = params['shared']['scan_ip3']
+#                   
+var_vm1_name        = params['node1']['vm_name']
+var_vm1_name = var_prefix_name + "-" + var_vm1_name
+#
+var_vm1_mem_size    = params['node1']['mem_size']
+var_vm1_cpus        = params['node1']['cpus']
+var_vm1_public_ip   = params['node1']['public_ip']
+var_vm1_vip_ip      = params['node1']['vip_ip']
+var_vm1_private_ip  = params['node1']['private_ip']
+var_vm1_u01_disk    = params['node1']['u01_disk']
+#                   
+var_vm2_name        = params['node2']['vm_name']
+var_vm2_name = var_prefix_name + "-" + var_vm2_name
+#
+var_vm2_mem_size    = params['node2']['mem_size']
+var_vm2_cpus        = params['node2']['cpus']
+var_vm2_public_ip   = params['node2']['public_ip']
+var_vm2_vip_ip      = params['node2']['vip_ip']
+var_vm2_private_ip  = params['node2']['private_ip']
+var_vm2_u01_disk    = params['node2']['u01_disk']
+#                   
+var_asm_disk_path   = params['shared']['asm_disk_path']
+var_asm_disk_num    = params['shared']['asm_disk_num']
+var_asm_disk_size   = params['shared']['asm_disk_size']
+#                   
+var_grid_software   = params['env']['grid_software']
+var_db_software     = params['env']['db_software']
+var_ora_languages   = params['env']['ora_languages']
+                    
+var_root_password   = params['env']['root_password']
+var_grid_password   = params['env']['grid_password']
+var_oracle_password = params['env']['oracle_password']
+var_sys_password    = params['env']['sys_password']
+var_pdb_password    = params['env']['pdb_password']
+                    
+var_p1_ratio        = params['env']['p1_ratio']
+var_asm_lib_type    = params['env']['asm_lib_type']
+var_nomgmtdb        = params['env']['nomgmtdb']
+var_orestart        = params['env']['orestart']
+
+var_db_name         = params['env']['db_name']
+var_pdb_name        = params['env']['pdb_name']
+var_db_type         = params['env']['db_type']
+var_cdb             = params['env']['cdb']
+# -----------------------------------------------------------------
+
+# Variables check
+# -----------------------------------------------------------------
+if var_vm1_mem_size.to_i < 6144
+  puts 'ERROR: vm1_mem_size option can not be less then 6 Gb'
+  exit
+end
+if var_vm2_mem_size.to_i < 6144
+  puts 'ERROR: vm2_mem_size option can not be less then 6 Gb'
+  exit
+end
+
+if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
+  puts 'ERROR: non_rotational option can be on or off'
+  exit
+end
+
+if ( (var_nomgmtdb != true) and (var_nomgmtdb != false) )
+  puts 'ERROR: nomgmtdb option can be true or false'
+  exit
+end
+if ( (var_orestart != true) and (var_orestart != false) )
+  puts 'ERROR: orestart option can be true or false'
+  exit
+end
+if ( (var_cdb != true) and (var_cdb != false) )
+  puts 'ERROR: cdb option can be true or false'
+  exit
+end
+
+if ( (var_orestart == true) and (var_db_type != 'SI'))
+  puts 'ERROR: orestart option supports ony Single Instance database'
+  exit
+end
+
+if ( (var_db_type != 'RAC') and (var_db_type != 'RACONE') and (var_db_type != 'SI'))
+  puts 'ERROR: db_type option can be RAC, RACONE or SI'
+  exit
+end
+if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') )
+  puts 'ERROR: asm_lib_type option can be ASMLIB or ASMFD'
+  exit
+end
+if ! var_p1_ratio.between?(10, 80)
+  puts 'ERROR: p1_ratio option can be an integer between 10 and 80'
+  exit
+end
+
+if var_asm_disk_path.to_s.empty?
+  var_asm_disk_path = "./"
+else
+  var_asm_disk_path = var_asm_disk_path + "/"
+end
+if var_asm_disk_num.to_i < 4
+  puts 'ERROR: asm_disk_num option can not be less then 4'
+  exit
+end
+if var_asm_disk_size.to_i < 10
+  puts 'ERROR: asm_disk_size option can not be less then 10 Gb'
+  exit
+end
+
+class String
+  def is_ip?
+    !!IPAddr.new(self) rescue false
+  end
+end
+
+if ! var_vm1_public_ip.is_ip?
+  puts 'ERROR: public_ip for node1 is not a valid IP address'
+  exit
+end
+if ! var_vm1_private_ip.is_ip?
+  puts 'ERROR: private_ip for node1 is not a valid IP address'
+  exit
+end
+if ! var_vm1_vip_ip.is_ip?
+  puts 'ERROR: vip_ip for node1 is not a valid IP address'
+  exit
+end
+
+if (var_orestart == false)
+  if ! var_vm2_public_ip.is_ip?
+    puts 'ERROR: public_ip for node2 is not a valid IP address'
+    exit
+  end
+  if ! var_vm2_private_ip.is_ip?
+    puts 'ERROR: private_ip for node2 is not a valid IP address'
+    exit
+  end
+  if ! var_vm2_vip_ip.is_ip?
+    puts 'ERROR: vip_ip for node1 is not a valid IP address'
+    exit
+  end
+end
+
+if ! var_scan_ip1.is_ip?
+  puts 'ERROR: scan_ip1 for node2 is not a valid IP address'
+  exit
+end
+if ! var_scan_ip2.is_ip?
+  puts 'ERROR: scan_ip3 for node1 is not a valid IP address'
+  exit
+end
+if ! var_scan_ip3.is_ip?
+  puts 'ERROR: scan_ip3 for node2 is not a valid IP address'
+  exit
+end
+
+if ! var_dns_public_ip.is_ip?
+  puts 'ERROR: dns_public_ip is not a valid IP address'
+  exit
+end
+
+if var_db_name.to_s.empty?
+ puts "ERROR: db_name is not defined"
+ exit
+end
+
+if var_root_password.to_s.empty?
+ puts "ERROR: root_password is not defined"
+ exit
+end
+if var_grid_password.to_s.empty?
+ puts "ERROR: grid_password is not defined"
+  exit
+end
+if var_oracle_password.to_s.empty?
+ puts "ERROR: oracle_password is not defined"
+ exit 
+end
+if var_sys_password.to_s.empty?
+ puts "ERROR: sys_password is not defined"
+ exit
+end
+
+if (var_cdb == true) 
+  if var_pdb_name.to_s.empty?
+   puts "ERROR: pdb_name is not defined"
+   exit
+  end
+  if var_pdb_password.to_s.empty?
+   puts "ERROR: pdb_password is not defined"
+   exit
+  end
+end
+
+path = "./ORCL_software/" + var_grid_software
+if ! File.exist?(path)
+  puts "ERROR: grid_software does not exist"
+  exit
+end
+path = "./ORCL_software/" + var_db_software
+if ! File.exist?(path)
+  puts "ERROR: db_software does not exist"
+  exit
+end
+
+#------------------------------------------------------------------
+
+# Install required Vagrant plugin
+unless Vagrant.has_plugin?("vagrant-reload")
+  puts 'Installing vagrant-reload Plugin...'
+  system('vagrant plugin install vagrant-reload')
+end
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+#unless Vagrant.has_plugin?("vagrant-vbguest")
+#  puts 'Installing vagrant-vbguest Plugin...'
+#  system('vagrant plugin install vagrant-vbguest')
+#end
+
+# Get host time zone for setting VM time zone
+offset_sec = Time.now.gmt_offset
+if (offset_sec % (60 * 60)) == 0
+  offset_hr = ((offset_sec / 60) / 60)
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+  var_system_timezone = 'Etc/GMT' + timezone_suffix
+else
+  # if host time zone isn't an integer hour offset, fall back to UTC
+  var_system_timezone = 'UTC'
+end
+
+# VMs definition
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = var_box
+  config.vm.box_url = var_url
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  config.vm.box_check_update = false
+
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+  end
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    puts "getting Proxy Configuration from Host..."
+    if ENV["http_proxy"]
+      puts "http_proxy: " + ENV["http_proxy"]
+      config.proxy.http     = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      puts "https_proxy: " + ENV["https_proxy"]
+      config.proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
+  end
+
+  # Share an additional folder to the guest VM. 
+  # The first argument is the path on the host to the actual folder.
+  # The second argument is the path on the guest to mount the folder. 
+  # And the optional third argument is a set of non-required options.
+  config.vm.synced_folder "config/",      "/vagrant_config"
+  config.vm.synced_folder "utilities/",   "/vagrant_utilities"
+  config.vm.synced_folder "userscripts/", "/vagrant_userscripts"
+  config.vm.synced_folder "scripts/",     "/vagrant_scripts"
+
+  config.ssh.forward_x11 = true
+
+  if var_orestart == false
+    # vm node2
+    config.vm.define :node2 do |node2|
+      node2.vm.hostname = var_vm2_name
+      node2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
+      node2.vm.network :private_network, ip: var_vm2_private_ip, virtualbox__intnet: "private"
+      node2.vm.provider :virtualbox do |vb|
+        vb.name   = var_vm2_name
+        vb.memory = var_vm2_mem_size
+        vb.cpus   = var_vm2_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
+        end
+
+        # Make u01 vdisk
+        unless File.exist?(var_vm2_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1024]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
+
+        # Making asm disks
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_asm_disk_num do 
+          asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(asm_disk)
+            vb.customize ['createhd', '--filename', asm_disk, '--size', var_asm_disk_size * 1024, '--format', 'VDI', '--variant', 'Fixed']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', asm_disk, '--mtype', 'shareable', '--nonrotational', var_non_rotational]
+          vb.customize ['modifymedium', 'disk', asm_disk, '--type', 'shareable']
+          disk_num += 1
+          num += 1
+        end
+      end
+    end
+  end
+
+  # vm node1
+  config.vm.define :node1 do |node1|
+    node1.vm.hostname = var_vm1_name
+    node1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+    node1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
+    node1.vm.provider :virtualbox do |vb|
+      vb.name   = var_vm1_name
+      vb.memory = var_vm1_mem_size
+      vb.cpus   = var_vm1_cpus
+      vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+
+      # Attach default guest vdisks
+      disk_num = 0
+      while disk_num < box_disks_num do
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+        disk_num += 1
+      end
+
+      # Make u01 vdisk
+      unless File.exist?(var_vm1_u01_disk)
+        vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
+      end
+      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
+      disk_num = disk_num.to_i + 1
+
+      if var_orestart == false
+        num = 0
+        while num < var_asm_disk_num do
+          asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', asm_disk, '--mtype', 'shareable', '--nonrotational', var_non_rotational]
+          disk_num += 1
+          num += 1
+        end
+      else
+        # Making asm disks
+        num = 0
+        while num < var_asm_disk_num do 
+          asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(asm_disk)
+            vb.customize ['createhd', '--filename', asm_disk, '--size', var_asm_disk_size * 1024, '--format', 'VDI', '--variant', 'Fixed']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', asm_disk, '--mtype', 'shareable', '--nonrotational', var_non_rotational]
+          vb.customize ['modifymedium', 'disk', asm_disk, '--type', 'shareable']
+          disk_num += 1
+          num += 1
+        end
+      end
+    end
+  end
+
+  # Enable ssh password authentication
+  config.vm.provision "shell", inline: <<-SHELL
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+    /bin/systemctl restart sshd
+  SHELL
+
+  # Enable provisioning with a shell script
+  config.vm.provision "shell", path: "scripts/setup.sh", env: {
+      "BOX_DISK_NUM"     => box_disks_num,
+      "SYSTEM_TIMEZONE"  => var_system_timezone,
+      "PREFIX_NAME"      => var_prefix_name,
+      "GRID_SOFTWARE"    => var_grid_software,
+      "DB_SOFTWARE"      => var_db_software,
+      "ORA_LANGUAGES"    => var_ora_languages,
+      "VM1_NAME"         => var_vm1_name,
+      "VM2_NAME"         => var_vm2_name,
+      "NODE1_PUBLIC_IP"  => var_vm1_public_ip,
+      "NODE2_PUBLIC_IP"  => var_vm2_public_ip,
+      "NODE1_VIP_IP"     => var_vm1_vip_ip,
+      "NODE2_VIP_IP"     => var_vm2_vip_ip,
+      "NODE1_PRIV_IP"    => var_vm1_private_ip,
+      "NODE2_PRIV_IP"    => var_vm2_private_ip,
+      "SCAN_IP1"         => var_scan_ip1,
+      "SCAN_IP2"         => var_scan_ip2,
+      "SCAN_IP3"         => var_scan_ip3,
+      "DNS_PUBLIC_IP"    => var_dns_public_ip,
+      "ROOT_PASSWORD"    => var_root_password,
+      "GRID_PASSWORD"    => var_grid_password,
+      "ORACLE_PASSWORD"  => var_oracle_password,
+      "SYS_PASSWORD"     => var_sys_password,
+      "PDB_PASSWORD"     => var_pdb_password,
+      "P1_RATIO"         => var_p1_ratio,
+      "ASM_LIB_TYPE"     => var_asm_lib_type,
+      "NOMGMTDB"         => var_nomgmtdb,
+      "ORESTART"         => var_orestart,
+      "DB_NAME"          => var_db_name,
+      "PDB_NAME"         => var_pdb_name,
+      "DB_TYPE"          => var_db_type,
+      "CDB"              => var_cdb
+  }
+end
+#----------------------------------------------------------
+# EndOfFile
+#----------------------------------------------------------
+

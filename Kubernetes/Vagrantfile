@@ -175,13 +175,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # kubeadm will use the first network interface, which is the NAT interface
     # on VirtualBox and is not routable -- See OraBug 26540925
     master.vm.provision :shell, inline: <<-SHELL
+      # Config file format changed in 1.12
+      # Doing substitutions blindly as only the right ones will match
+      # Pre 1.12 release
       sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-advertise-address=192.168.99.100 \\1/' /usr/bin/kubeadm-setup.sh
       sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=eth1"/' /usr/local/share/kubeadm/flannel-ol.yaml
+      # 1.12 release
+      sed -i 's/\\(bindPort: 6443\\)/\\1\\n  advertiseAddress: 192.168.99.100/' /usr/bin/kubeadm-setup.sh
+      sed -i 's/\\(- --kube-subnet-mgr\\)/\\1\\n        - --iface=eth1/' /usr/local/share/kubeadm/flannel-ol.yaml
     SHELL
     if MANAGE_FROM_HOST
       # Add localhost to the list of allowed clients
       master.vm.provision :shell, inline: <<-SHELL
+        # Pre 1.12 release
         sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-cert-extra-sans=localhost,localhost.localdomain,127.0.0.1 \\1/' /usr/bin/kubeadm-setup.sh
+        # 1.12 release
+        sed -i 's/\\(serviceSubnet: .*\\)/\\1\\napiServerCertSANs:\\n- "localhost"\\n- "localhost.localdomain"\\n- "127.0.0.1"/' /usr/bin/kubeadm-setup.sh
       SHELL
     end
     if BIND_PROXY

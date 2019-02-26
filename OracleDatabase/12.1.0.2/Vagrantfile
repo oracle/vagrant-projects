@@ -3,7 +3,7 @@
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
 # 
-# Since: July, 2018
+# Since: January, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle database Vagrant virtual machine.
 # 
@@ -17,7 +17,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 # define hostname
-NAME = "oracle18c-xe-vagrant"
+NAME = "oracle-12102-vagrant"
 
 # get host time zone for setting VM time zone, if possible
 # can override in env section below
@@ -35,9 +35,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   config.vm.define NAME
-
+  
   config.vm.box_check_update = false
-
+  
   # change memory size
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048
@@ -45,8 +45,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # VM hostname
-  # must be "localhost", or listener configuration will fail
-  config.vm.hostname = "localhost"
+  config.vm.hostname = NAME
 
   # Oracle port forwarding
   config.vm.network "forwarded_port", guest: 1521, host: 1521
@@ -55,7 +54,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
     {
+       "ORACLE_BASE"         => "/opt/oracle",
+       "ORACLE_HOME"         => "/opt/oracle/product/12.1.0.2/dbhome_1",
+       "ORACLE_SID"          => "ORCLCDB",
+       "ORACLE_PDB"          => "ORCLPDB1",
        "ORACLE_CHARACTERSET" => "AL32UTF8",
+       "ORACLE_EDITION"      => "EE",
        "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
     }
 

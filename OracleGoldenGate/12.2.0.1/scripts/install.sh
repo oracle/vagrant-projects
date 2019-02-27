@@ -166,8 +166,8 @@ echo "INSTALLER: Created and enabled oracle-rdbms systemd's service"
 
 # Install Golden Gate For Big Data
 echo 'Installer: Install GG for Big Data'
-unzip /vagrant/*Adapters_Linux*.zip -d /vagrant/oggbd && \
-sudo tar -xvf /vagrant/oggbd/*Adapters_Linux*.tar -C /u01/oggbd/ && \
+unzip /vagrant/*BigData_Linux*.zip -d /vagrant/oggbd && \
+sudo tar -xvf /vagrant/oggbd/*BigData_Linux*.tar -C /u01/oggbd/ && \
 rm -rf /vagrant/oggbd && \
 chown -R oracle:oinstall /u01/oggbd/
 echo 'INSTALLER: Oracle GG For Big Data Installed.'

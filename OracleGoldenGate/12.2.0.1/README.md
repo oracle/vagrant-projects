@@ -8,9 +8,9 @@ A vagrant box that provisions Oracle Database along with Golden Gate automatical
 ## Getting started
 1. Clone this repository `git clone https://github.com/ninadingole/vagrant-boxes`
 2. Change into the desired version folder
-3. Download the installation zip files from OTN into this folder - first time only:
-[http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html)
-1. Download the installation zip for golden gate & golden gate for Big Data into this folder - first time only:[http://www.oracle.com/technetwork/middleware/goldengate/downloads/index.html](http://www.oracle.com/technetwork/middleware/goldengate/downloads/index.html) 
+3. Download the linuxx64_12201_database.zip installation zip files from oracle edelivery into this folder - first time only: 
+[http://edelivery.oracle.com/](edelivery)
+1. Download the installation zip for golden gate (123012_fbo_ggs_Linux_x64_shiphome.zip) & golden gate for Big Data (OGG_BigData_Linux_x64_12.3.2.1.1) into this folder - first time only: [http://edelivery.oracle.com/](edelivery) 
 2. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have (a good) internet connection as the scripts will update the virtual box to the latest via `yum`.
    2. The Vagrant file allows for customization, if desired (see [Customization](#customization))

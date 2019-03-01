@@ -75,6 +75,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Does the registry use SSL?
   KUBE_SSL = default_b('KUBE_SSL', true)
 
+  # Enforce Docker/K8s version (must be in the available/selected yum repos)
+  DOCKER_VERSION = default_s('DOCKER_VERSION', '')
+  K8S_VERSION = default_s('K8S_VERSION', '')
+  # Additional yum channel to consider (e.g. local repo)
+  YUM_REPO = default_s('YUM_REPO', '')
+
 end
 
 # Convenience methods
@@ -215,6 +221,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   args.push("--preview") if USE_PREVIEW
   args.push("--dev") if USE_DEV
   args.push("--insecure", KUBE_REPO) unless KUBE_SSL
+  args.push("--d4r-version", DOCKER_VERSION) unless DOCKER_VERSION == ""
+  args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
+  args.push("--repo", YUM_REPO) unless YUM_REPO == ""
   config.vm.provision "shell",
     path: "scripts/provision.sh",
     args: args

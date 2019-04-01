@@ -75,6 +75,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Does the registry use SSL?
   KUBE_SSL = default_b('KUBE_SSL', true)
 
+  # Enforce Docker/K8s version (must be in the available/selected yum repos)
+  DOCKER_VERSION = default_s('DOCKER_VERSION', '')
+  K8S_VERSION = default_s('K8S_VERSION', '')
+  # Additional yum channel to consider (e.g. local repo)
+  YUM_REPO = default_s('YUM_REPO', '')
+
 end
 
 # Convenience methods
@@ -172,25 +178,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # Bind kubernetes default proxy port
       master.vm.network "forwarded_port", guest: 8001, host: 8001
     end
+    # Save options needed for master setup
+    master.vm.provision :shell, inline: <<-SHELL
+      > /root/.kubeadm-options
+    SHELL
     # kubeadm will use the first network interface, which is the NAT interface
     # on VirtualBox and is not routable -- See OraBug 26540925
     master.vm.provision :shell, inline: <<-SHELL
-      # Config file format changed in 1.12
-      # Doing substitutions blindly as only the right ones will match
-      # Pre 1.12 release
-      sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-advertise-address=192.168.99.100 \\1/' /usr/bin/kubeadm-setup.sh
-      sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=eth1"/' /usr/local/share/kubeadm/flannel-ol.yaml
-      # 1.12 release
-      sed -i 's/\\(bindPort: 6443\\)/\\1\\n  advertiseAddress: 192.168.99.100/' /usr/bin/kubeadm-setup.sh
+      echo -n " --apiserver-advertise-address 192.168.99.100" >> /root/.kubeadm-options
       sed -i 's/\\(- --kube-subnet-mgr\\)/\\1\\n        - --iface=eth1/' /usr/local/share/kubeadm/flannel-ol.yaml
     SHELL
     if MANAGE_FROM_HOST
       # Add localhost to the list of allowed clients
       master.vm.provision :shell, inline: <<-SHELL
-        # Pre 1.12 release
-        sed -i 's/kubeadm init \\([-$]\\)/kubeadm init --apiserver-cert-extra-sans=localhost,localhost.localdomain,127.0.0.1 \\1/' /usr/bin/kubeadm-setup.sh
-        # 1.12 release
-        sed -i 's/\\(serviceSubnet: .*\\)/\\1\\napiServerCertSANs:\\n- "localhost"\\n- "localhost.localdomain"\\n- "127.0.0.1"/' /usr/bin/kubeadm-setup.sh
+        echo -n " --apiserver-cert-extra-sans localhost,localhost.localdomain,127.0.0.1" >> /root/.kubeadm-options
       SHELL
     end
     if BIND_PROXY
@@ -220,6 +221,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   args.push("--preview") if USE_PREVIEW
   args.push("--dev") if USE_DEV
   args.push("--insecure", KUBE_REPO) unless KUBE_SSL
+  args.push("--d4r-version", DOCKER_VERSION) unless DOCKER_VERSION == ""
+  args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
+  args.push("--repo", YUM_REPO) unless YUM_REPO == ""
   config.vm.provision "shell",
     path: "scripts/provision.sh",
     args: args

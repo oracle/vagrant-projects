@@ -19,6 +19,11 @@ VAGRANTFILE_API_VERSION = "2"
 # define hostname
 NAME = "oracle-18c-vagrant"
 
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+
 # get host time zone for setting VM time zone, if possible
 # can override in env section below
 offset_sec = Time.now.gmt_offset
@@ -42,6 +47,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048
     v.name = NAME
+  end
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    puts "getting Proxy Configuration from Host..."
+    if ENV["http_proxy"]
+      puts "http_proxy: " + ENV["http_proxy"]
+      config.proxy.http     = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      puts "https_proxy: " + ENV["https_proxy"]
+      config.proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
   end
 
   # VM hostname

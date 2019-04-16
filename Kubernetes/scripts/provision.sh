@@ -77,7 +77,7 @@ systemctl start docker
 echo "Installing and configuring Kubernetes packages"
 
 # Install Kubernetes packages from the "preview" channel fulfil pre-requisites
-yum install -y  kubeadm kubelet kubectl
+yum install -y kubeadm-1.12.5 kubelet-1.12.5 kubectl-1.12.5
 # Set SeLinux to Permissive
 /usr/sbin/setenforce 0
 sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config

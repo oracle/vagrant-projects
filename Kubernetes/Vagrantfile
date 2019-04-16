@@ -99,7 +99,7 @@ end
 def setup_local_repo (node, vm)
   unless KUBE_REPO.empty? && KUBE_PREFIX.empty?
     registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) + 
-               (KUBE_PREFIX.empty? ? '/kubernetes' : KUBE_PREFIX)
+               KUBE_PREFIX
     vm.provision :shell, inline: <<-SHELL
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~vagrant/.bashrc

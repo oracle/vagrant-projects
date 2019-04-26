@@ -121,11 +121,16 @@ sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp && \
 sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /vagrant/ora-response/dbca.rsp && \
 sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp && \
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/dbca.rsp
+
+# Create DB
 su -l oracle -c "dbca -silent -createDatabase -responseFile /vagrant/ora-response/dbca.rsp"
+
+# Post DB setup tasks
 su -l oracle -c "sqlplus / as sysdba <<EOF
    ALTER PLUGGABLE DATABASE $ORACLE_PDB SAVE STATE;
    exit;
 EOF"
+
 rm /vagrant/ora-response/dbca.rsp
 
 echo 'INSTALLER: Database created'

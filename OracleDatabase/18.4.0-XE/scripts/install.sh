@@ -60,6 +60,19 @@ sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /etc/sysconfig/or
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /etc/sysconfig/oracle-xe-18c.conf
 su -l -c '/etc/init.d/oracle-xe-18c configure'
 
+chmod o+r /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
+
+# add tnsnames.ora entry for PDB
+echo 'XEPDB1 =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XEPDB1)
+    )
+  )
+' >> /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
+
 echo 'INSTALLER: Database created'
 
 # enable global port for EM Express

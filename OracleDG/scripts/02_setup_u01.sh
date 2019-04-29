@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/02_setup_u01.sh,v 2.0.1.2 2018/11/19 14:19:19 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/02_setup_u01.sh,v 2.0.1.1 2018/12/10 11:15:28 rcitton Exp $
 #
 # LICENSE UPL 1.0
 #
@@ -16,7 +16,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation

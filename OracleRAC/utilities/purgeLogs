@@ -1,10 +1,10 @@
 #!/usr/bin/perl 
 #
-# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/utilities/purgeLogs,v 2.0.1.1 2018/12/10 11:18:39 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/utilities/purgeLogs,v 2.0.1.2 2019/04/29 08:37:42 rcitton Exp $
 #
 # purgeLogs
 #
-# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      purgeLogs
@@ -18,9 +18,12 @@
 #      Use DBMS_AUDIT_MGMT for purging audit files at OS level
 #
 #    AUTHOR
-#       Ruggero Citton (Ruggero.Citton@oracle.com)
+#       Ruggero CItton (Ruggero.Citton@oracle.com)
 #
 #    MODIFIED   (MM/DD/YY)
+#    RCITTON     04/04/19 - Purge ExaWatcher Archive
+#    RCITTON     04/03/19 - Purge Sweep & Stage
+#    RCITTON     04/03/19 - RDBMS audit clean fails for some OH
 #    RCITTON     10/29/18 - adrci Bug 23342353
 #    RCITTON     10/24/18 - removing MGMTDB audit
 #    RCITTON     08/31/18 - adrci command in case of error 
@@ -116,7 +119,7 @@
 
 =head1 VERSION
 
- 20181107 - $Revision: 2.0.1.1 $
+ 20190404 - $Revision: 2.0.1.2 $
 
 =cut
 ################ End Documentation ################
@@ -145,7 +148,7 @@ my $crshome;
 my @aopath;
 
 my $module  = eval('__PACKAGE__');
-my $VERSION = sprintf "%d.%02d", q$Revision: 2.0.1.1 $ =~ /(\d+)/g;
+my $VERSION = sprintf "%d.%02d", q$Revision: 2.0.1.2 $ =~ /(\d+)/g;
 
 # ----------------------------------------------------------------------
 # Constants
@@ -1220,7 +1223,7 @@ sub cleanGI {
       trace("I", "... purging ALERT older than $days days");
       ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type ALERT $nolog\"");
       trace("W", "Not able to purge ALERT, due to error: @out") if (grep(/DIA-/, @out));
-      
+
       trace("I", "... purging INCIDENT older than $days days");
       ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"");
       trace("W", "Not able to purge INCIDENT, due to error: @out") if (grep(/DIA-/, @out));
@@ -1228,11 +1231,19 @@ sub cleanGI {
       trace("I", "... purging TRACE older than $days days");
       ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"");
       trace("W", "Not able to purge TRACE, due to error: @out") if (grep(/DIA-/, @out)); 
-      
+
       trace("I", "... purging CDUMP older than $days days");
       ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\""); 
       trace("W", "Not able to purge CDUMP, due to error: @out") if (grep(/DIA-/, @out));
-      
+
+      trace("I", "... purging STAGE older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type STAGE $nolog\""); 
+      trace("W", "Not able to purge STAGE, due to error: @out") if (grep(/DIA-/, @out));
+
+      trace("I", "... purging SWEEP older than $days days");
+      ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type SWEEP $nolog\""); 
+      trace("W", "Not able to purge SWEEP, due to error: @out") if (grep(/DIA-/, @out));
+
       trace("I", "... purging HM older than $days days");
       ($rc, @out) = system_cmd_capture("$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\""); 
       trace("W", "Not able to purge HM, due to error: @out") if (grep(/DIA-/, @out));
@@ -1247,6 +1258,8 @@ sub cleanGI {
       print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type INCIDENT $nolog\"\n");
       print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"\n");
       print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type STAGE $nolog\"\n");
+      print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type SWEEP $nolog\"\n");
       print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\"\n");
       print ("\t$gridsetenv;$crshome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"\n"); 
     }
@@ -1287,11 +1300,11 @@ sub cleanOH {
     ($rc, @home) = system_cmd_capture("$ohsetenv;$oraclehome/bin/adrci exec='show homes' |grep -v 'ADR Homes'");
     if ($rc) {
       trace("W", "Not able to get the RDBMS ADRCI homes");
-      return;
+      next;
     }
     if (grep(/No ADR homes are set/,@home)) {
       trace("W", "No ADR homes are set");
-      return;
+      next;
     }
     @home = grep { /$db_name/ } @home;
 
@@ -1348,6 +1361,22 @@ sub cleanOH {
           trace("W", "Executed command is: \n$cmd");
         }
 
+        trace("I", "... purging STAGE older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type STAGE $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge STAGE, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
+        trace("I", "... purging SWEEP older than $days days");
+        $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type SWEEP $nolog\"";
+        ($rc, @out) = system_cmd_capture($cmd);
+        if (grep(/DIA-/, @out)) {
+          trace("W", "Not able to purge SWEEP, due to error: @out");
+          trace("W", "Executed command is: \n$cmd");
+        }
+
         trace("I", "... purging UTSCDMP older than $days days");
         $cmd = "$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"";
         ($rc, @out) = system_cmd_capture($cmd);
@@ -1355,7 +1384,6 @@ sub cleanOH {
           trace("W", "Not able to purge UTSCDMP, due to error: @out");
           trace("W", "Executed command is: \n$cmd");
         }
-
       }
       else {
         trace("I", "DRYRUN - adrci RDBMS purging diagnostic destination $home_line older than $days days");
@@ -1364,6 +1392,8 @@ sub cleanOH {
         print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type TRACE $nolog\"\n");
         print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type CDUMP $nolog\"\n"); 
         print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type HM $nolog\"\n"); 
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type STAGE $nolog\"\n"); 
+        print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type SWEEP $nolog\"\n"); 
         print ("\t$ohsetenv;$oraclehome/bin/adrci exec=\"set homepath $home_line;purge -age $AGE -type UTSCDMP $nolog\"\n"); 
       }
     }
@@ -1391,18 +1421,38 @@ sub cleanOSW {
   my $days = $_[0];
   my $oswArchive = "/opt/oracle/oak/oswbb/archive";
   if (!defined($dryrun)) {
-    trace("I", "Purging OSW archives older then $days days");  
+    trace("I", "Purging ODA OSW archives older then $days days");  
     if (! -d $oswArchive) {
-      trace("W", "Path $oswArchive does not exist, OSW archive cleanup skipped...");
+      trace("W", "Path $oswArchive does not exist, ODA OSW archive cleanup skipped...");
     }
     else {
       delOlderThen($oswArchive,$days);
     }
   }
   else {
-    trace("I", "DRYRUN - Purging OSW archives older then $days days");  
+    trace("I", "DRYRUN - Purging ODA OSW archives older then $days days");  
     if (! -d $oswArchive) {
-      trace("W", "Path $oswArchive does not exist, OSW archive cleanup skipped...");
+      trace("W", "Path $oswArchive does not exist, ODA OSW archive cleanup skipped...");
+    }
+    else {
+      dryrun_delOlderThen($oswArchive,$days);
+    }
+  }
+
+  $oswArchive = "/opt/oracle.ExaWatcher/archive";
+  if (!defined($dryrun)) {
+    trace("I", "Purging ExaWatcher archives older then $days days");  
+    if (! -d $oswArchive) {
+      trace("W", "Path $oswArchive does not exist, ExaWatcher archive cleanup skipped...");
+    }
+    else {
+      delOlderThen($oswArchive,$days);
+    }
+  }
+  else {
+    trace("I", "DRYRUN - Purging ExaWatcher archives older then $days days");  
+    if (! -d $oswArchive) {
+      trace("W", "Path $oswArchive does not exist, ExaWatcher archive cleanup skipped...");
     }
     else {
       dryrun_delOlderThen($oswArchive,$days);

@@ -2,10 +2,11 @@
 #
 # $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/02_install_os_packages.sh,v 2.0.1.1 2018/12/10 11:18:35 rcitton Exp $
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# LICENSE UPL 1.0
 #
-#    FILE NAME
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
 #      02_install_os_packages.sh
 #
 #    DESCRIPTION
@@ -15,7 +16,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation
@@ -24,6 +25,9 @@ echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup yum"
 echo "-----------------------------------------------------------------"
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+cd /etc/yum.repos.d
+rm -f public-yum-ol7.repo
+wget --quiet https://yum.oracle.com/public-yum-ol7.repo
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"

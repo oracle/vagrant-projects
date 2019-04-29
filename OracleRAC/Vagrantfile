@@ -1,10 +1,11 @@
 #
-# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/Vagrantfile,v 2.0.1.12 2018/12/10 11:20:56 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/Vagrantfile,v 2.0.1.13 2019/04/29 08:37:32 rcitton Exp $
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# LICENSE UPL 1.0
 #
-#    FILE NAME
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
 #      vagrantfile
 #
 #    DESCRIPTION
@@ -14,13 +15,13 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20181210 - $Revision: 2.0.1.12 $
+#    20181210 - $Revision: 2.0.1.13 $
 #
 #
  
@@ -105,21 +106,25 @@ var_asm_disk_path   = params['shared']['asm_disk_path']
 var_asm_disk_num    = params['shared']['asm_disk_num']
 var_asm_disk_size   = params['shared']['asm_disk_size']
 #                   
-var_grid_software   = params['env']['grid_software']
+var_gi_software     = params['env']['gi_software']
+var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
+#
 var_db_software     = params['env']['db_software']
+var_db_software_ver = (var_db_software.split("_"))[1].to_i
+#
 var_ora_languages   = params['env']['ora_languages']
-                    
+#
 var_root_password   = params['env']['root_password']
 var_grid_password   = params['env']['grid_password']
 var_oracle_password = params['env']['oracle_password']
 var_sys_password    = params['env']['sys_password']
 var_pdb_password    = params['env']['pdb_password']
-                    
+#
 var_p1_ratio        = params['env']['p1_ratio']
 var_asm_lib_type    = params['env']['asm_lib_type']
 var_nomgmtdb        = params['env']['nomgmtdb']
 var_orestart        = params['env']['orestart']
-
+#
 var_db_name         = params['env']['db_name']
 var_pdb_name        = params['env']['pdb_name']
 var_db_type         = params['env']['db_type']
@@ -272,9 +277,9 @@ if (var_cdb == true)
   end
 end
 
-path = "./ORCL_software/" + var_grid_software
+path = "./ORCL_software/" + var_gi_software
 if ! File.exist?(path)
-  puts "ERROR: grid_software does not exist"
+  puts "ERROR: gi_software does not exist"
   exit
 end
 path = "./ORCL_software/" + var_db_software
@@ -453,37 +458,39 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Enable provisioning with a shell script
   config.vm.provision "shell", path: "scripts/setup.sh", env: {
-      "BOX_DISK_NUM"     => box_disks_num,
-      "SYSTEM_TIMEZONE"  => var_system_timezone,
-      "PREFIX_NAME"      => var_prefix_name,
-      "GRID_SOFTWARE"    => var_grid_software,
-      "DB_SOFTWARE"      => var_db_software,
-      "ORA_LANGUAGES"    => var_ora_languages,
-      "VM1_NAME"         => var_vm1_name,
-      "VM2_NAME"         => var_vm2_name,
-      "NODE1_PUBLIC_IP"  => var_vm1_public_ip,
-      "NODE2_PUBLIC_IP"  => var_vm2_public_ip,
-      "NODE1_VIP_IP"     => var_vm1_vip_ip,
-      "NODE2_VIP_IP"     => var_vm2_vip_ip,
-      "NODE1_PRIV_IP"    => var_vm1_private_ip,
-      "NODE2_PRIV_IP"    => var_vm2_private_ip,
-      "SCAN_IP1"         => var_scan_ip1,
-      "SCAN_IP2"         => var_scan_ip2,
-      "SCAN_IP3"         => var_scan_ip3,
-      "DNS_PUBLIC_IP"    => var_dns_public_ip,
-      "ROOT_PASSWORD"    => var_root_password,
-      "GRID_PASSWORD"    => var_grid_password,
-      "ORACLE_PASSWORD"  => var_oracle_password,
-      "SYS_PASSWORD"     => var_sys_password,
-      "PDB_PASSWORD"     => var_pdb_password,
-      "P1_RATIO"         => var_p1_ratio,
-      "ASM_LIB_TYPE"     => var_asm_lib_type,
-      "NOMGMTDB"         => var_nomgmtdb,
-      "ORESTART"         => var_orestart,
-      "DB_NAME"          => var_db_name,
-      "PDB_NAME"         => var_pdb_name,
-      "DB_TYPE"          => var_db_type,
-      "CDB"              => var_cdb
+      "BOX_DISK_NUM"       => box_disks_num,
+      "SYSTEM_TIMEZONE"    => var_system_timezone,
+      "PREFIX_NAME"        => var_prefix_name,
+      "GI_SOFTWARE"        => var_gi_software,
+      "GI_SOFTWARE_VER"    => var_gi_software_ver,
+      "DB_SOFTWARE"        => var_db_software,
+      "DB_SOFTWARE_VER"    => var_db_software_ver,
+      "ORA_LANGUAGES"      => var_ora_languages,
+      "VM1_NAME"           => var_vm1_name,
+      "VM2_NAME"           => var_vm2_name,
+      "NODE1_PUBLIC_IP"    => var_vm1_public_ip,
+      "NODE2_PUBLIC_IP"    => var_vm2_public_ip,
+      "NODE1_VIP_IP"       => var_vm1_vip_ip,
+      "NODE2_VIP_IP"       => var_vm2_vip_ip,
+      "NODE1_PRIV_IP"      => var_vm1_private_ip,
+      "NODE2_PRIV_IP"      => var_vm2_private_ip,
+      "SCAN_IP1"           => var_scan_ip1,
+      "SCAN_IP2"           => var_scan_ip2,
+      "SCAN_IP3"           => var_scan_ip3,
+      "DNS_PUBLIC_IP"      => var_dns_public_ip,
+      "ROOT_PASSWORD"      => var_root_password,
+      "GRID_PASSWORD"      => var_grid_password,
+      "ORACLE_PASSWORD"    => var_oracle_password,
+      "SYS_PASSWORD"       => var_sys_password,
+      "PDB_PASSWORD"       => var_pdb_password,
+      "P1_RATIO"           => var_p1_ratio,
+      "ASM_LIB_TYPE"       => var_asm_lib_type,
+      "NOMGMTDB"           => var_nomgmtdb,
+      "ORESTART"           => var_orestart,
+      "DB_NAME"            => var_db_name,
+      "PDB_NAME"           => var_pdb_name,
+      "DB_TYPE"            => var_db_type,
+      "CDB"                => var_cdb
   }
 end
 #----------------------------------------------------------

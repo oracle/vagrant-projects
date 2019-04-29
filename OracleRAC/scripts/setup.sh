@@ -1,12 +1,13 @@
 #!/bin/bash
 #
-# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/setup.sh,v 2.0.1.1 2018/12/10 11:18:35 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/setup.sh,v 2.0.1.2 2019/04/29 08:37:39 rcitton Exp $
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# LICENSE UPL 1.0
 #
-#    FILE NAME
-#      setup.sh
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
+#      setup.sh - 
 #
 #    DESCRIPTION
 #      Creates an Oracle RAC (Real Application Cluster) Vagrant virtual machine.
@@ -15,7 +16,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation
@@ -56,8 +57,8 @@ run_user_scripts() {
 make_09_gi_installation() {
 cat > /vagrant_scripts/09_gi_installation.sh <<EOF
 . /vagrant_config/setup.env
-${GRID_HOME}/gridSetup.sh -ignorePrereq -waitforcompletion -silent \\
-    -responseFile ${GRID_HOME}/install/response/gridsetup.rsp \\
+${GI_HOME}/gridSetup.sh -ignorePrereq -waitforcompletion -silent \\
+    -responseFile ${GI_HOME}/install/response/gridsetup.rsp \\
     INVENTORY_LOCATION=${ORA_INVENTORY} \\
     SELECTED_LANGUAGES=${ORA_LANGUAGES} \\
 EOF
@@ -164,8 +165,8 @@ EOF
 make_11_gi_config() {
 cat > /vagrant_scripts/11_gi_config.sh <<EOF
 . /vagrant_config/setup.env
-${GRID_HOME}/gridSetup.sh -silent -executeConfigTools \\
-    -responseFile ${GRID_HOME}/install/response/gridsetup.rsp \\
+${GI_HOME}/gridSetup.sh -silent -executeConfigTools \\
+    -responseFile ${GI_HOME}/install/response/gridsetup.rsp \\
     INVENTORY_LOCATION=${ORA_INVENTORY} \\
     SELECTED_LANGUAGES=${ORA_LANGUAGES} \\
 EOF
@@ -407,6 +408,20 @@ then
   echo -e "${INFO}`date +%F' '%T`: Make the setup.env"
   echo "-----------------------------------------------------------------"
 
+  GI_MAJOR=$(echo "${GI_SOFTWARE_VER}" | cut -c1-2)
+  GI_MAINTENANCE=$(echo "${GI_SOFTWARE_VER}" | cut -c3)
+  GI_APP=$(echo "${GI_SOFTWARE_VER}" | cut -c4)
+  GI_COMP=$(echo "${GI_SOFTWARE_VER}" | cut -c5)
+  GI_VERSION=${GI_MAJOR}"."${GI_MAINTENANCE}"."${GI_APP}"."${GI_COMP}
+  GI_HOME="/u01/app/"$GI_VERSION"/grid"
+
+  DB_MAJOR=$(echo "${DB_SOFTWARE_VER}" | cut -c1-2)
+  DB_MAINTENANCE=$(echo "${DB_SOFTWARE_VER}" | cut -c3)
+  DB_APP=$(echo "${DB_SOFTWARE_VER}" | cut -c4)
+  DB_COMP=$(echo "${DB_SOFTWARE_VER}" | cut -c5)
+  DB_VERSION=${DB_MAJOR}"."${DB_MAINTENANCE}"."${DB_APP}"."${DB_COMP}
+  DB_HOME="/u01/app/oracle/product/"$DB_VERSION"/dbhome_1"
+
   node1_public_ipoct1=$(echo ${NODE1_PUBLIC_IP} | tr "." " " | awk '{ print $1 }')
   node1_public_ipoct2=$(echo ${NODE1_PUBLIC_IP} | tr "." " " | awk '{ print $2 }')
   node1_public_ipoct3=$(echo ${NODE1_PUBLIC_IP} | tr "." " " | awk '{ print $3 }')
@@ -432,7 +447,7 @@ cat <<EOL > /vagrant_config/setup.env
 export PREFIX_NAME=$PREFIX_NAME
 #----------------------------------------------------------
 #----------------------------------------------------------
-export GRID_SOFTWARE=$GRID_SOFTWARE
+export GI_SOFTWARE=$GI_SOFTWARE
 export DB_SOFTWARE=$DB_SOFTWARE
 #----------------------------------------------------------
 #----------------------------------------------------------
@@ -494,8 +509,8 @@ export ORA_INVENTORY=/u01/app/oraInventory
 export GRID_BASE=/u01/app/grid
 export DB_BASE=/u01/app/oracle
 
-export GRID_HOME=/u01/app/18.3.0.0/grid
-export DB_HOME=/u01/app/oracle/product/18.3.0.0/dbhome_1
+export GI_HOME=${GI_HOME}
+export DB_HOME=${DB_HOME}
 
 export DB_NAME=$DB_NAME
 export PDB_NAME=$PDB_NAME
@@ -628,37 +643,37 @@ then
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Unzip grid software"
   echo "-----------------------------------------------------------------"
-  cd ${GRID_HOME}
-  unzip -oq /vagrant/ORCL_software/${GRID_SOFTWARE}
-  chown -R grid:oinstall ${GRID_HOME}
+  cd ${GI_HOME}
+  unzip -oq /vagrant/ORCL_software/${GI_SOFTWARE}
+  chown -R grid:oinstall ${GI_HOME}
 
   # setup ssh equivalence (node1 only)
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Setup user equivalence"
   echo "-----------------------------------------------------------------"
-  expect /vagrant_scripts/07_setup_user_equ.expect grid   ${GRID_PASSWORD}   ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GRID_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
-  expect /vagrant_scripts/07_setup_user_equ.expect oracle ${ORACLE_PASSWORD} ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GRID_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
+  expect /vagrant_scripts/07_setup_user_equ.expect grid   ${GRID_PASSWORD}   ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GI_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
+  expect /vagrant_scripts/07_setup_user_equ.expect oracle ${ORACLE_PASSWORD} ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GI_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
 
   # Install cvuqdisk package
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Install cvuqdisk package"
   echo "-----------------------------------------------------------------"
-  yum install -y ${GRID_HOME}/cv/rpm/cvuqdisk*.rpm
+  yum install -y ${GI_HOME}/cv/rpm/cvuqdisk*.rpm
 elif [ "${ORESTART}" == "true" ]
 then
   # unzip grid software 
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Unzip grid software"
   echo "-----------------------------------------------------------------"
-  cd ${GRID_HOME}
-  unzip -oq /vagrant/ORCL_software/${GRID_SOFTWARE}
-  chown -R grid:oinstall ${GRID_HOME}
+  cd ${GI_HOME}
+  unzip -oq /vagrant/ORCL_software/${GI_SOFTWARE}
+  chown -R grid:oinstall ${GI_HOME}
   
   # Install cvuqdisk package
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Install cvuqdisk package"
   echo "-----------------------------------------------------------------"
-  yum install -y ${GRID_HOME}/cv/rpm/cvuqdisk*.rpm
+  yum install -y ${GI_HOME}/cv/rpm/cvuqdisk*.rpm
 fi
 
 # ---------------------------------------------------------------------
@@ -699,7 +714,7 @@ then
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Set root user equivalence"
   echo "-----------------------------------------------------------------"
-  expect /vagrant_scripts/07_setup_user_equ.expect root ${ROOT_PASSWORD} ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GRID_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
+  expect /vagrant_scripts/07_setup_user_equ.expect root ${ROOT_PASSWORD} ${NODE1_HOSTNAME} ${NODE2_HOSTNAME} ${GI_HOME}/oui/prov/resources/scripts/sshUserSetup.sh
 
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Grid Infrastructure setup"

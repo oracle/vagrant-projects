@@ -1,11 +1,10 @@
 #
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/Vagrantfile,v 2.0.1.1 2018/12/10 11:15:20 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/Vagrantfile,v 2.0.1.2 2019/04/29 08:42:54 rcitton Exp $
 #
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
 #
-#    FILE NAME
+#    NAME
 #      vagrantfile
 #
 #    DESCRIPTION
@@ -15,13 +14,13 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/15/18 - Creation
-#
+# 
 #    REVISION
-#    20181119 - $Revision: 2.0.1.1 $
+#    20181119 - $Revision: 2.0.1.2 $
 #
 #
   
@@ -251,10 +250,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
   config.vm.box_check_update = false
-
-  if Vagrant.has_plugin?("vagrant-vbguest")
-    config.vbguest.auto_update = false
-  end
 
   # add proxy configuration from host env - optional
   if Vagrant.has_plugin?("vagrant-proxyconf")

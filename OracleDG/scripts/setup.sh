@@ -2,11 +2,12 @@
 #
 # $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/setup.sh,v 2.0.1.1 2018/12/10 11:15:28 rcitton Exp $
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# LICENSE UPL 1.0
 #
-#    FILE NAME
-#      setup.sh
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
+#      setup.sh - 
 #
 #    DESCRIPTION
 #      Creates an Oracle RAC (Real Application Cluster) Vagrant virtual machine.
@@ -15,7 +16,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation

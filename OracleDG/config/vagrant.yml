@@ -18,7 +18,7 @@ env:
   box: ol7-latest
   url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
   # ---------------------------------------------
-  prefix_name:   ol7-183
+  prefix_name:   ol7-193
   # ---------------------------------------------
   dns_public_ip: 192.168.56.1
   # ---------------------------------------------
@@ -27,7 +27,7 @@ env:
   oradata_disk_num: 2
   oradata_disk_size: 20
   # ---------------------------------------------
-  db_software:     LINUX.X64_180000_db_home.zip
+  db_software:     LINUX.X64_193000_db_home.zip
   # ---------------------------------------------
   root_password:   welcome1
   oracle_password: welcome1
@@ -36,7 +36,7 @@ env:
   # ---------------------------------------------
   ora_languages:   en,en_GB
   # ---------------------------------------------
-  db_name:         DB183H1
+  db_name:         DB193H1
   pdb_name:        PDB1
   cdb:             false
   # ---------------------------------------------

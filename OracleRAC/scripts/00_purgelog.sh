@@ -17,7 +17,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation

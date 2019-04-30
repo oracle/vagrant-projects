@@ -1,9 +1,9 @@
 # Oracle Data Guard (DG) Vagrant boxes
 
-#### Author: Ruggero Citton - Oracle Product Development - RAC Pack, Cloud Innovation and Solution Engineering Team
+#### Author: Ruggero.Citton@oracle.com
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RDBMS (18.3) nodes configured with Oracle Data Guard, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
+two Oracle RDBMS (18c, 19c) nodes configured with Oracle Data Guard, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads), recommended version 5.2
@@ -34,11 +34,11 @@ The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to Linux x86-64 -> "See All"
+    go to version (18c, 19c) for Linux x86-64 you need -> "See All", example
 
-    * Oracle Database 18c (18.3) for Linux x86-64
-       LINUX.X64_180000_db_home.zip (4,564,649,047 bytes)
-       (sha256sum - c96a4fd768787af98272008833fe10b172691cf84e42816b138c12d4de63ab96)
+    * Oracle Database 19c (19.3) for Linux x86-64
+       LINUX.X64_193000_db_home.zip (4,564,649,047 bytes)
+       (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
 
 ## Customization
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
@@ -94,7 +94,7 @@ The following can be customized:
     box: ol7-latest
     url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
     # ---------------------------------------------
-    prefix_name:   ol7-183
+    prefix_name:   ol7-193
     # ---------------------------------------------
     dns_public_ip: 192.168.56.1
     # ---------------------------------------------
@@ -103,7 +103,7 @@ The following can be customized:
     oradata_disk_num: 2
     oradata_disk_size: 20
     # ---------------------------------------------
-    db_software:     LINUX.X64_183000_db_home.zip
+    db_software:     LINUX.X64_193000_db_home.zip
     # ---------------------------------------------
     root_password:   welcome1
     oracle_password: welcome1
@@ -112,14 +112,14 @@ The following can be customized:
     # ---------------------------------------------
     ora_languages:   en,en_GB
     # ---------------------------------------------
-    db_name:         DB183H1
+    db_name:         DB193H1
     pdb_name:        PDB1
     cdb:             false
     # ---------------------------------------------
 
 ## Running scripts after setup
 You can have the installer run scripts after setup by putting them in the `userscripts` directory below the directory where you have this file checked out. Any shell (`.sh`) or SQL (`.sql`) scripts you put in the `userscripts` directory will be executed by the installer after the database is set up and started. Only shell and SQL scripts will be executed; all other files will be ignored. These scripts are completely optional.
-Shell scripts will be executed as the root user. SQL scripts will be executed as SYS.
+Shell scripts will be executed as the root user, which has sudo privileges. SQL scripts will be executed as SYS.
 To run scripts in a specific order, prefix the file names with a number, e.g., `01_shellscript.sh`, `02_tablespaces.sql`, `03_shellscript2.sh`, etc.
 
 ## Note

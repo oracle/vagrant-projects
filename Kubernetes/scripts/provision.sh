@@ -19,6 +19,8 @@ yum install -y yum-utils
 yum-config-manager --disable ol7_preview ol7_developer\* > /dev/null
 
 Insecure=""
+D4rVersion=""
+K8sVersion=""
 
 # Parse arguments
 while [ $# -gt 0 ]
@@ -41,6 +43,34 @@ do
       Insecure="$2"
       shift; shift
       ;;
+    "--d4r-version")
+      if [ $# -lt 2 ]
+      then
+        echo "Missing parameter"
+	exit 1
+      fi
+      D4rVersion="-$2"
+      shift; shift
+      ;;
+    "--k8s-version")
+      if [ $# -lt 2 ]
+      then
+        echo "Missing parameter"
+	exit 1
+      fi
+      K8sVersion="-$2"
+      shift; shift
+      ;;
+    "--repo")
+      if [ $# -lt 2 ]
+      then
+        echo "Missing parameter"
+	exit 1
+      fi
+      Repo="$2"
+      yum-config-manager --add-repo "${Repo}"
+      shift; shift
+      ;;
     *)
       echo "Invalid parameter"
       exit 1
@@ -51,7 +81,7 @@ done
 echo "Installing and configuring Docker Engine"
 
 # Install Docker
-yum install -y docker-engine btrfs-progs
+yum install -y docker-engine${D4rVersion} btrfs-progs
 
 # Create and mount a BTRFS partition for docker.
 docker-storage-config -f -s btrfs -d /dev/sdb
@@ -76,8 +106,9 @@ systemctl start docker
 
 echo "Installing and configuring Kubernetes packages"
 
-# Install Kubernetes packages from the "preview" channel fulfil pre-requisites
-yum install -y  kubeadm kubelet kubectl
+# Install Kubernetes packages from the selected channel to fulfil pre-requisites
+yum install -y kubeadm${K8sVersion} kubelet${K8sVersion} kubectl${K8sVersion}
+
 # Set SeLinux to Permissive
 /usr/sbin/setenforce 0
 sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config

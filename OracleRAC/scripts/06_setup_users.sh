@@ -1,11 +1,12 @@
 #!/bin/bash
 #
-# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/06_setup_users.sh,v 2.0.1.1 2018/12/10 11:18:35 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/06_setup_users.sh,v 2.0.1.2 2019/04/29 08:37:39 rcitton Exp $
 #
-# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# LICENSE UPL 1.0
 #
-#    FILE NAME
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
 #      06_setup_users.sh
 #
 #    DESCRIPTION
@@ -15,7 +16,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       Ruggero Citton
+#       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation
@@ -78,11 +79,11 @@ echo -e "${INFO}`date +%F' '%T`: Create GI_HOME and DB_HOME directories"
 echo "-----------------------------------------------------------------"
 mkdir -p ${GRID_BASE}
 mkdir -p ${DB_BASE}
-mkdir -p ${GRID_HOME}
+mkdir -p ${GI_HOME}
 mkdir -p ${DB_HOME}
 chown -R grid:oinstall /u01
 chown -R grid:oinstall ${GRID_BASE}
-chown -R grid:oinstall ${GRID_HOME}
+chown -R grid:oinstall ${GI_HOME}
 chown -R oracle:oinstall ${DB_BASE}
 chown -R oracle:oinstall ${DB_HOME}
 chmod -R ug+rw /u01
@@ -93,7 +94,7 @@ echo "-----------------------------------------------------------------"
 if [ `hostname` == ${NODE1_HOSTNAME} ]
 then
   cat >> /home/grid/.bash_profile << EOF
-export ORACLE_HOME=${GRID_HOME}
+export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 EOF
   if [ "${ORESTART}" == "false" ]
@@ -132,7 +133,7 @@ fi
 if [ `hostname` == ${NODE2_HOSTNAME} ]
 then
   cat >> /home/grid/.bash_profile << EOF
-export ORACLE_HOME=${GRID_HOME}
+export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 EOF
   if [ "${ORESTART}" == "false" ]

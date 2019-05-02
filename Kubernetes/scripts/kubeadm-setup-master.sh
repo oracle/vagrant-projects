@@ -57,7 +57,12 @@ then
 fi
 
 echo "$0: Setup Master node -- be patient!"
-kubeadm-setup.sh up > "${LogFile}" 2>&1
+KubeadmOptions=""
+if [ -r /root/.kubeadm-options ]
+then
+  KubeadmOptions=$(cat /root/.kubeadm-options)
+fi
+kubeadm-setup.sh up ${KubeadmOptions} > "${LogFile}" 2>&1
 
 if [ $? -ne 0 ]
 then

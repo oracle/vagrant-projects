@@ -5,7 +5,7 @@
 #      vagrantfile
 #
 #    DESCRIPTION
-#      Creates GraalVM Vagrant virtual machines.
+#      Creates Oracle Application Express Vagrant virtual machines.
 #
 #    NOTES
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.

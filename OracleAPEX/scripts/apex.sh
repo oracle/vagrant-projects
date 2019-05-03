@@ -29,7 +29,8 @@ echo "export ORACLE_PDB=$ORACLE_PDB" >> /home/oracle/.bashrc
 
 # Install new apex release
 cd $ORACLE_HOME
-unzip /vagrant/apex_18.2.zip
+APEX_INSTALL=`ls /vagrant/apex_1*.*.zip |tail -1`
+unzip $APEX_INSTALL
 chown -R oracle:oinstall $ORACLE_HOME/apex
 cd -
 

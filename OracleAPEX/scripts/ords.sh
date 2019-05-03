@@ -31,7 +31,8 @@ mkdir $ORACLE_BASE/ords
 export ORDS_HOME=$ORACLE_BASE/ords
 echo "export ORDS_HOME=$ORACLE_BASE/ords" >> /home/oracle/.bashrc
 cd  $ORDS_HOME
-unzip /vagrant/ords-18.4.0.354.1002.zip
+ORDS_INSTALL=`ls /vagrant/ords[_-]1*.*.zip |tail -1`
+unzip $ORDS_INSTALL
 chown -R oracle:oinstall $ORDS_HOME
 
 echo 'INSTALLER: Oracle Rest Data Services extracted to ORACLE_BASE'
@@ -55,6 +56,7 @@ rest.services.apex.add=true
 rest.services.ords.add=true
 schema.tablespace.default=SYSAUX
 schema.tablespace.temp=TEMP
+sys.user=sys
 sys.password=${ORACLE_PWD}
 standalone.mode=TRUE
 standalone.http.port=8080

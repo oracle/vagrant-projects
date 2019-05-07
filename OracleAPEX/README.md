@@ -23,8 +23,8 @@ A vagrant box that provisions Oracle Database XE 18.4 with Oracle Application Ex
 ## Connecting to Oracle
 * Hostname: `localhost`
 * Port: `1521`
-* SID: `ORCLCDB`
-* PDB: `ORCLPDB1`
+* SID: `XE`
+* PDB: `XEPDB1`
 * OEM port: `5500`
 * APEX Admin port: `8080` (on Host system)
 * All passwords are auto-generated and printed on install
@@ -39,12 +39,7 @@ A vagrant box that provisions Oracle Database XE 18.4 with Oracle Application Ex
 ### Customization
 You can customize your Oracle environment by amending the environment variables in the `Vagrantfile` file.
 The following can be customized:
-* `ORACLE_BASE`: `/opt/oracle/`
-* `ORACLE_HOME`: `/opt/oracle/product/18c/dbhome_1`
-* `ORACLE_SID`: `ORCLCDB`
-* `ORACLE_PDB`: `ORCLPDB1`
 * `ORACLE_CHARACTERSET`: `AL32UTF8`
-* `ORACLE_EDITION`: `EE` | `SE2`
 * `ORACLE_PWD`: `auto generated`
 * `SYSTEM_TIMEZONE`: `automatically set (see below)`
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.

@@ -123,12 +123,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provision Oracle Database on the first run
   config.vm.provision "shell", path: "scripts/database.sh", env:
     {
-       "ORACLE_BASE"         => "/opt/apex",
-       "ORACLE_HOME"         => "/opt/apex/product/18c/dbhome_1",
-       "ORACLE_SID"          => "APEXDB",
-       "ORACLE_PDB"          => "APEXPDB1",
        "ORACLE_CHARACTERSET" => "AL32UTF8",
-       "ORACLE_EDITION"      => "EE",
        "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
     }
 

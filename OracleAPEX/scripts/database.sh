@@ -31,6 +31,9 @@ echo "export ORACLE_HOME=/opt/oracle/product/18c/dbhomeXE" >> /home/oracle/.bash
 echo "export ORACLE_SID=XE" >> /home/oracle/.bashrc && \
 echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
+timedatectl set-timezone "$SYSTEM_TIMEZONE"
+echo 'INSTALLER: Timezone updated'
+
 echo 'INSTALLER: Environment variables set'
 
 echo 'INSTALLER: Oracle Database Installation Started up'
@@ -58,6 +61,22 @@ su - oracle -c "mkdir -p $ORACLE_BASE/admin"
 /etc/init.d/oracle-xe-18c configure
 
 echo 'INSTALLER: Database created'
+
+# add tns entry for XEPDB1
+chmod o+r /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
+
+# add tnsnames.ora entry for PDB
+echo 'XEPDB1 =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = oracle-18c-apex)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XEPDB1)
+    )
+  )
+' >> /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
+
+echo 'INSTALLER: TNS entry added'
 
 #clean up temporary entry in /etc/hosts
 sed -i -e "s/10.0.2.15/127.0.0.1/" /etc/hosts

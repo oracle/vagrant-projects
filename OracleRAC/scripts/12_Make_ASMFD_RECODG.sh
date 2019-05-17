@@ -44,8 +44,8 @@ ${GI_HOME}/bin/sqlplus / as sysasm <<EOF
 CREATE DISKGROUP RECO NORMAL REDUNDANCY 
  ${DISKS_STRING} 
  ATTRIBUTE 
-   'compatible.asm'='18.3.0.0', 
-   'compatible.rdbms'='11.2.0.4',
+   'compatible.asm'='${GI_VERSION}', 
+   'compatible.rdbms'='${DB_VERSION}',
    'sector_size'='512',
    'AU_SIZE'='4M',
    'content.type'='recovery';

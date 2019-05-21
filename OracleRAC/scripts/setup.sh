@@ -274,8 +274,23 @@ EOF
 make_13_RDBMS_software_installation() {
 cat > /vagrant_scripts/13_RDBMS_software_installation.sh <<EOF
 . /vagrant_config/setup.env
+EOF
+
+DB_MAJOR=$(echo "${DB_SOFTWARE_VER}" | cut -c1-2)
+if [ "${DB_MAJOR}" == "12" ]
+then
+  cat >> /vagrant_scripts/13_RDBMS_software_installation.sh <<EOF
+${DB_HOME}/database/runInstaller -ignorePrereq -waitforcompletion -silent \\
+        -responseFile ${DB_HOME}/database/response/db_install.rsp \\
+EOF
+else
+  cat >> /vagrant_scripts/13_RDBMS_software_installation.sh <<EOF
 ${DB_HOME}/runInstaller -ignorePrereq -waitforcompletion -silent \\
         -responseFile ${DB_HOME}/install/response/db_install.rsp \\
+EOF
+fi
+
+cat >> /vagrant_scripts/13_RDBMS_software_installation.sh <<EOF
         oracle.install.option=INSTALL_DB_SWONLY \\
         ORACLE_HOSTNAME=${ORACLE_HOSTNAME} \\
         UNIX_GROUP_NAME=oinstall \\
@@ -449,6 +464,10 @@ export PREFIX_NAME=$PREFIX_NAME
 #----------------------------------------------------------
 export GI_SOFTWARE=$GI_SOFTWARE
 export DB_SOFTWARE=$DB_SOFTWARE
+#----------------------------------------------------------
+#----------------------------------------------------------
+export GI_VERSION=$GI_VERSION
+export DB_VERSION=$DB_VERSION
 #----------------------------------------------------------
 #----------------------------------------------------------
 export SYS_PASSWORD=$SYS_PASSWORD
@@ -772,6 +791,11 @@ then
   sh ${DB_HOME}/root.sh
   ssh root@${NODE2_HOSTNAME} sh ${DB_HOME}/root.sh
 
+  if [ "${DB_MAJOR}" == "12" ]
+  then
+    rm -fr ${DB_HOME}/database
+  fi
+
   # Make 14_create_database.sh
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Make create database command"
@@ -859,6 +883,11 @@ then
   echo "-----------------------------------------------------------------"
   su - oracle -c 'sh /vagrant_scripts/13_RDBMS_software_installation.sh'
   sh ${DB_HOME}/root.sh
+
+  if [ "${DB_MAJOR}" == "12" ]
+  then
+    rm -fr ${DB_HOME}/database
+  fi
 
   # Make 14_create_database.sh
   echo "-----------------------------------------------------------------"

@@ -97,20 +97,23 @@ su -l oracle -c "$ORACLE_HOME/jdk/bin/java -jar $ORDS_HOME/ords.war setup --para
 
 echo 'INSTALLER: Oracle Rest Data Services installation completed'
 
-# Create script to start ORDS service
-cat > /home/oracle/start_ORDS.sh << EOF
-export JAVA_HOME=\$ORACLE_HOME/jdk/bin
-export ORDS_HOME=\$ORACLE_BASE/ords
-export PATH=$PATH:\$ORACLE_HOME/bin:\$JAVA_HOME
-cd \$ORDS_HOME
-java -jar ords.war install simple > ords.log 2>&1 &
+# Start ORDS service
+export JAVA_HOME=$ORACLE_HOME/jdk/bin
+cat > /etc/systemd/system/ords.service << EOF
+[Unit]
+Description=Start Oracle REST Data Services
+After=oracle-xe-18c.service
+
+[Service]
+User=oracle
+ExecStart=${JAVA_HOME}/java -jar ${ORDS_HOME}/ords.war
+StandardOutput=syslog
+SyslogIdentifier=ords
+
+[Install]
+WantedBy=multi-user.target
 EOF
-chown oracle:oinstall /home/oracle/start_ORDS.sh
-chmod 700 /home/oracle/start_ORDS.sh
-
-# Start ORDS
-su - oracle /home/oracle/start_ORDS.sh
-
+systemctl enable --now ords
 echo 'INSTALLER: Oracle Rest Data Services started'
 
 echo ""

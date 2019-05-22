@@ -68,6 +68,11 @@ unless Vagrant.has_plugin?("vagrant-proxyconf")
   system('vagrant plugin install vagrant-proxyconf')
 end
 
+unless Vagrant.has_plugin?("vagrant-vbguest")
+  puts 'Installing vagrant-vbguest Plugin...'
+  system('vagrant plugin install vagrant-vbguest')
+end
+
 # get host time zone for setting VM time zone, if possible
 # can override in env section below
 offset_sec = Time.now.gmt_offset

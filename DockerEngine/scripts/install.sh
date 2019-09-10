@@ -27,6 +27,9 @@ systemctl enable docker
 # Add vagrant user to docker group
 usermod -a -G docker vagrant
 
+# Relax /etc/docker permissions (vagrant-proxyconf maintains system-wide config)
+chmod a+x /etc/docker
+
 echo 'Docker engine is ready to use'
 echo 'To get started, on your host, run:'
 echo '  vagrant ssh'

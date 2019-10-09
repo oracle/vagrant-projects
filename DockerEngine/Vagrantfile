@@ -19,11 +19,49 @@ VAGRANTFILE_API_VERSION = "2"
 # define hostname
 NAME = "ol7-docker-engine"
 
+# Convenience function -- Ensure URL has a scheme
+def ensure_scheme(url)
+  (url =~ /.*:\/\// ? '' : 'http://') + url
+end
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
   config.vm.define NAME
   
+  # Set proxies if vagrant-proxyconf is installed
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTP proxy: " + proxy
+        config.proxy.http = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTPS proxy: " + proxy
+        config.proxy.https = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    # We should not proxy local IPs (docker bridge, ...)
+    # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
+    # 'blacklist' *all* IPs
+    no_proxy = ''
+    ["no_proxy", "NO_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        no_proxy = ENV[proxy_var]
+        puts "No proxy: " + no_proxy
+        no_proxy += ','
+        break
+      end
+    end
+    config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
+  end
+
   config.vm.box_check_update = false
   
   # change memory size
@@ -33,7 +71,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # VM hostname
-  config.vm.hostname = NAME
+  config.vm.hostname = NAME + ".vagrant.vm"
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh"

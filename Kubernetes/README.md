@@ -12,8 +12,8 @@ worker nodes (2 by default).
 1. Run `vagrant up`
 
 Your cluster is ready!  
-Within the master guest you can check the status of the cluster (as the
-`vagrant` user). E.g.:
+Within the master guest (`vagrant ssh master`) you can check the status of the
+cluster (as the `vagrant` user). E.g.:
 - `kubectl cluster-info`
 - `kubectl get nodes`
 - `kubectl get pods --namespace=kube-system`
@@ -21,7 +21,7 @@ Within the master guest you can check the status of the cluster (as the
 ## If your Container Registry requires authentication
 _Note_: as of October 2019, the Oracle Container Registry does no longer
 require authentication for open source projects. Use these instructions if
-you mirror the contaier images on a registry requiring authentication.
+you mirror the container images on a registry requiring authentication.
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
 1. Change into the `vagrant-boxes/Kubernetes` folder

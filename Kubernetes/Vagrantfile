@@ -68,10 +68,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # KUBE_REPO = "local-registry.example.com:5000"
   # KUBE_PREFIX = "/kubernetes"
   KUBE_REPO = default_s('KUBE_REPO', '')
-  KUBE_PREFIX = default_s('KUBE_PREFIX', '')
+  KUBE_PREFIX = default_s('KUBE_PREFIX', '/kubernetes')
   # Does the registry requires login? If no login is required, the provisioning
   # script will be able to run kubadm-setup on all nodes!
-  KUBE_LOGIN = default_b('KUBE_LOGIN', true)
+  KUBE_LOGIN = default_b('KUBE_LOGIN', false)
   # Does the registry use SSL?
   KUBE_SSL = default_b('KUBE_SSL', true)
 
@@ -96,7 +96,7 @@ def default_b(key, default)
   default_s(key, default).to_s.downcase == 'true'
 end
 
-def setup_local_repo (node, vm)
+def setup_repo (node, vm)
   unless KUBE_REPO.empty? && KUBE_PREFIX.empty?
     registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) + 
                KUBE_PREFIX
@@ -201,7 +201,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	systemctl daemon-reload
       SHELL
     end
-    setup_local_repo("master", master.vm)
+    setup_repo("master", master.vm)
   end
   # - Workers
   (1..NB_WORKERS).each do |i|
@@ -212,7 +212,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true
       end
-      setup_local_repo("worker", worker.vm)
+      setup_repo("worker", worker.vm)
     end
   end
 

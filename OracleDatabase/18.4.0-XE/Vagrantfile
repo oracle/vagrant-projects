@@ -1,0 +1,83 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# 
+# Since: July, 2018
+# Author: gerald.venzl@oracle.com
+# Description: Creates an Oracle database Vagrant virtual machine.
+# 
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+# 
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# define hostname
+NAME = "oracle18c-xe-vagrant"
+
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+
+# get host time zone for setting VM time zone, if possible
+# can override in env section below
+offset_sec = Time.now.gmt_offset
+if (offset_sec % (60 * 60)) == 0
+  offset_hr = ((offset_sec / 60) / 60)
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+  SYSTEM_TIMEZONE = 'Etc/GMT' + timezone_suffix
+else
+  # if host time zone isn't an integer hour offset, fall back to UTC
+  SYSTEM_TIMEZONE = 'UTC'
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ol7-latest"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.define NAME
+
+  config.vm.box_check_update = false
+
+  # change memory size
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.name = NAME
+  end
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    puts "getting Proxy Configuration from Host..."
+    if ENV["http_proxy"]
+      puts "http_proxy: " + ENV["http_proxy"]
+      config.proxy.http     = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      puts "https_proxy: " + ENV["https_proxy"]
+      config.proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
+  end
+
+  # VM hostname
+  # must be "localhost", or listener configuration will fail
+  config.vm.hostname = "localhost"
+
+  # Oracle port forwarding
+  config.vm.network "forwarded_port", guest: 1521, host: 1521
+  config.vm.network "forwarded_port", guest: 5500, host: 5500
+
+  # Provision everything on the first run
+  config.vm.provision "shell", path: "scripts/install.sh", env:
+    {
+       "ORACLE_CHARACTERSET" => "AL32UTF8",
+       "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
+    }
+
+end

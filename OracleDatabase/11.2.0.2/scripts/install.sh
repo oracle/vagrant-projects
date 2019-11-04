@@ -29,12 +29,17 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
+# set system time zone
+sudo timedatectl set-timezone $SYSTEM_TIMEZONE
+echo "INSTALLER: System time zone set to $SYSTEM_TIMEZONE"
+
 echo 'INSTALLER: Oracle directories created'
 
 # install Oracle
-unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /vagrant && \
-sudo rpm -i /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
-rm -rf /vagrant/Disk1 && \
+unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /tmp && \
+sudo rpm -i /tmp/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
+chmod -R u+w /tmp/Disk1 && \
+rm -rf /tmp/Disk1 && \
 sudo ln -s /u01/app/oracle /opt/oracle
 
 echo 'INSTALLER: Oracle software installed'
@@ -42,8 +47,10 @@ echo 'INSTALLER: Oracle software installed'
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -hex 8`"}
 
-sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
-sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp
+cp /vagrant/ora-response/xe.rsp.tmpl /tmp/xe.rsp
+sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /tmp/xe.rsp
+sudo /etc/init.d/oracle-xe configure responseFile=/tmp/xe.rsp
+rm /tmp/xe.rsp
 
 echo 'INSTALLER: Database created'
 
@@ -59,6 +66,33 @@ sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
 sudo chmod a+rx /home/oracle/setPassword.sh
 
 echo "INSTALLER: setPassword.sh file setup";
+
+# run user-defined post-setup scripts
+echo 'INSTALLER: Running user-defined post-setup scripts'
+
+for f in /vagrant/userscripts/*
+  do
+    case "${f,,}" in
+      *.sh)
+        echo "INSTALLER: Running $f"
+        . "$f"
+        echo "INSTALLER: Done running $f"
+        ;;
+      *.sql)
+        echo "INSTALLER: Running $f"
+        su -l oracle -c "echo 'exit' | sqlplus -s / as sysdba @\"$f\""
+        echo "INSTALLER: Done running $f"
+        ;;
+      /vagrant/userscripts/put_custom_scripts_here.txt)
+        :
+        ;;
+      *)
+        echo "INSTALLER: Ignoring $f"
+        ;;
+    esac
+  done
+
+echo 'INSTALLER: Done running user-defined post-setup scripts'
 
 echo "ORACLE PASSWORD FOR SYS AND SYSTEM: $ORACLE_PWD";
 

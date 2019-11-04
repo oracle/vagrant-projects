@@ -13,6 +13,16 @@
 
 echo 'INSTALLER: Started up'
 
+echo 'Fix dracut issue'
+cat > /etc/dracut.conf.d/01-dracut-vm.conf << EOD
+
+add_drivers+=" xen_netfront xen_blkfront "
+add_drivers+=" virtio_blk virtio_net virtio virtio_pci virtio_balloon "
+add_drivers+=" hyperv_keyboard hv_netvsc hid_hyperv hv_utils hv_storvsc hyperv_fb "
+add_drivers+=" ahci libahci "
+
+EOD
+
 # get up to date
 yum upgrade -y
 
@@ -24,4 +34,4 @@ echo LC_ALL=en_US.utf-8 >> /etc/environment
 
 echo 'INSTALLER: Locale set'
 
-echo 'INSTALLER: Installation complete, Oracle Linux ready to use!'
+echo 'INSTALLER: Going to reboot to get updated system'

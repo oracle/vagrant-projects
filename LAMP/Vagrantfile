@@ -1,0 +1,74 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# 
+# Since: April, 2018
+# Author: simon.coter@oracle.com
+# Description: Creates an Oracle Linux virtual machine with LAMP architecture
+# 
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+# 
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# define hostname
+NAME = "ol7-lamp"
+
+unless Vagrant.has_plugin?("vagrant-reload")
+  puts 'Installing vagrant-reload Plugin...'
+  system('vagrant plugin install vagrant-reload')
+end
+
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ol7-latest"
+  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.define NAME
+  
+  config.vm.box_check_update = false
+  
+  # change memory size
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.name = NAME
+  end
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    puts "getting Proxy Configuration from Host..."
+    if ENV["http_proxy"]
+      puts "http_proxy: " + ENV["http_proxy"]
+      config.proxy.http     = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      puts "https_proxy: " + ENV["https_proxy"]
+      config.proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
+  end
+
+  # VM hostname
+  config.vm.hostname = NAME
+  
+  # Oracle port forwarding
+  # config.vm.network "forwarded_port", guest: 22, host: 2220
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Provision everything on the first run
+  config.vm.provision "shell", path: "scripts/install.sh"
+  config.vm.provision :reload
+  config.vm.provision "shell", path: "scripts/lamp.sh"
+  config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 7 LAMP architecture ready to use!'"
+
+end

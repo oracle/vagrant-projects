@@ -41,7 +41,7 @@ su -l oracle -c "sqlplus / as sysdba <<EOF
 	ALTER DATABASE DATAFILE '$ORACLE_BASE/oradata/$ORACLE_SID/system01.dbf' resize 1024m;
 	ALTER DATABASE DATAFILE '$ORACLE_BASE/oradata/$ORACLE_SID/sysaux01.dbf' resize 1024m;
 	alter session set container=$ORACLE_PDB;
-	CREATE TABLESPACE apex DATAFILE '$ORACLE_BASE/oradata/$ORACLE_SID/apex01.dbf'
+	CREATE TABLESPACE apex DATAFILE '$ORACLE_BASE/oradata/$ORACLE_SID/$ORACLE_PDB/apex01.dbf'
         SIZE 300M AUTOEXTEND ON NEXT 1M;
 	exit;
 EOF"

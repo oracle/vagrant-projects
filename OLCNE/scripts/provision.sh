@@ -205,6 +205,9 @@ parse_args() {
 setup_repos() {
   msg "Configure YUM repos for Oracle Linux Cloud Native Environment"
 
+  # Install jq (OCI requirement)
+  echo_do yum install -y jq
+
   # Install the yum-utils package for repo selection
   echo_do yum install -y yum-utils
 

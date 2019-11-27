@@ -337,6 +337,7 @@ install_packages() {
     systemctl daemon-reload
   fi
   if [[ -n "${MASTER}" ]]; then
+    echo_do yum install -y bash-completion
     echo_do firewall-cmd --add-port=6443/tcp --permanent
     # Expose the kubectl proxy to the host
     sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' \
@@ -555,7 +556,10 @@ fixups() {
     echo_do ssh ${node} "\"\
       mkdir -p ~vagrant/.kube; \
       cp /etc/kubernetes/admin.conf ~vagrant/.kube/config; \
-      chown -R vagrant: ~vagrant/.kube;\
+      chown -R vagrant: ~vagrant/.kube; \
+      echo 'source <(kubectl completion bash)' >> ~vagrant/.bashrc; \
+      echo 'alias k=kubectl' >> ~vagrant/.bashrc; \
+      echo 'complete -F __start_kubectl k' >> ~vagrant/.bashrc; \
       \""
   done
 

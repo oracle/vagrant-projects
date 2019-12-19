@@ -1,0 +1,9 @@
+Any shell (.sh) or SQL (.sql) scripts you put in this directory
+will be executed by the installer after the database is set up
+and started.  Only shell and SQL scripts will be executed; 
+all other files will be ignored.  
+These scripts are completely optional.
+Shell scripts will be executed as the vagrant user, which has
+sudo privileges.  SQL scripts will be executed as SYS.
+To run scripts in a specific order, prefix the file names with a number, 
+e.g., 01_shellscript.sh, 02_tablespaces.sql, 03_shellscript2.sh, etc.

@@ -2,12 +2,11 @@
 #
 # $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/setup.sh,v 2.0.1.1 2018/12/10 11:15:28 rcitton Exp $
 #
-# LICENSE UPL 1.0
+# Copyright © 2019 Oracle and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-#
-#    NAME
-#      setup.sh - 
+#    FILE NAME
+#      setup.sh
 #
 #    DESCRIPTION
 #      Creates an Oracle RAC (Real Application Cluster) Vagrant virtual machine.
@@ -16,7 +15,7 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       ruggero.citton@oracle.com
+#       Ruggero Citton
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     11/06/18 - Creation
@@ -77,6 +76,9 @@ export PREFIX_NAME=$PREFIX_NAME
 #----------------------------------------------------------
 #----------------------------------------------------------
 export DB_SOFTWARE=$DB_SOFTWARE
+#----------------------------------------------------------
+#----------------------------------------------------------
+export DB_MAJOR=$DB_MAJOR
 #----------------------------------------------------------
 #----------------------------------------------------------
 export SYS_PASSWORD=$SYS_PASSWORD
@@ -173,6 +175,11 @@ echo "-----------------------------------------------------------------"
 su - oracle -c 'sh /vagrant_scripts/06_do_RDBMS_software_installation.sh'
 sh ${ORA_INVENTORY}/orainstRoot.sh
 sh ${DB_HOME}/root.sh
+
+if [ "${DB_MAJOR}" == "12" ]
+then
+  rm -fr ${DB_HOME}/database
+fi
 
 # Oracle Net Setup
 echo "-----------------------------------------------------------------"

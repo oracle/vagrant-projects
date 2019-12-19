@@ -2,23 +2,23 @@ node1:
   vm_name: primary
   mem_size: 8192
   cpus: 2
-  public_ip:  192.168.56.101
-  private_ip: 192.168.200.101
+  public_ip:  192.168.56.131
+  private_ip: 192.168.200.131
   u01_disk: ./primary_u01.vdi
 
 node2:
   vm_name: standby
   mem_size: 8192
   cpus: 2
-  public_ip:  192.168.56.102
-  private_ip: 192.168.200.102
+  public_ip:  192.168.56.132
+  private_ip: 192.168.200.132
   u01_disk: ./standby_u01.vdi
 
 env:
   box: ol7-latest
   url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
   # ---------------------------------------------
-  prefix_name:   ol7-193
+  prefix_name:   ol7-dg
   # ---------------------------------------------
   dns_public_ip: 192.168.56.1
   # ---------------------------------------------

@@ -516,7 +516,7 @@ export NODE1_FQ_PRIVNAME=\${NODE1_PRIVNAME}.\${DOMAIN_NAME}
 export NODE2_FQ_PRIVNAME=\${NODE2_PRIVNAME}.\${DOMAIN_NAME}
 #----------------------------------------------------------
 #----------------------------------------------------------
-export CLUSTER_NAME=${PREFIX_NAME}-cluster
+export CLUSTER_NAME=${PREFIX_NAME}-c
 
 export ORA_LANGUAGES=$ORA_LANGUAGES
 

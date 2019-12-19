@@ -2,30 +2,30 @@ node1:
   vm_name: node1
   mem_size: 8192
   cpus: 2
-  public_ip:  192.168.56.101
-  vip_ip:     192.168.56.103
-  private_ip: 192.168.200.101
+  public_ip:  192.168.56.111
+  vip_ip:     192.168.56.112
+  private_ip: 192.168.200.111
   u01_disk: ./node1_u01.vdi
 
 node2:
   vm_name: node2
   mem_size: 8192
   cpus: 2
-  public_ip:  192.168.56.102
-  vip_ip:     192.168.56.104
-  private_ip: 192.168.200.102
+  public_ip:  192.168.56.121
+  vip_ip:     192.168.56.122
+  private_ip: 192.168.200.122
   u01_disk: ./node2_u01.vdi
 
 shared:
   box: ol7-latest
   url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
   # ---------------------------------------------
-  prefix_name:   ol7-193
+  prefix_name:   ol7-rac
   # ---------------------------------------------
   dns_public_ip: 192.168.56.1
-  scan_ip1:      192.168.56.105
-  scan_ip2:      192.168.56.106
-  scan_ip3:      192.168.56.107
+  scan_ip1:      192.168.56.115
+  scan_ip2:      192.168.56.116
+  scan_ip3:      192.168.56.117
   # ---------------------------------------------
   non_rotational: 'on'
   # ---------------------------------------------

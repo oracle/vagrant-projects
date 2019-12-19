@@ -6,8 +6,8 @@ This directory contains Vagrant build files to provision automatically
 one Oracle RAC node (18.3, 19c) setup for FPP, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
 
 ## Prerequisites
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads), recommended version 5.2 or above
-2. Install [Vagrant](https://vagrantup.com/), recommended version 2.2 or above.
+1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+2. Install [Vagrant](https://vagrantup.com/)
 3. You need to download Grid Infrastructure and Database binary separately.
 
 ## Free disk space requirement

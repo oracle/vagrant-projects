@@ -14,6 +14,8 @@ two Oracle RAC nodes (12.2, 18c, 19c), using Vagrant/VirtualBox, Oracle Linux 7 
   - Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
   - Grid Infrastructure and Database binary on u01 vdisk (node1/node2): ~20 Gb 
   - OS guest vdisk (node1/node2): ~2 Gb
+    - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
+    - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
   - ASM shared virtual disks (fixed size): ~80 Gb
 
 ## Memory requirement
@@ -59,7 +61,7 @@ The following can be customized:
 - `u01_disk`:   Oracle binary virtual disk (u01) file path
 
 #### shared network
-- `prefix_name`:    VM Guest prefix name
+- `prefix_name`:    VM Guest prefix name (the GI cluster name will be: <prefix_name>-c')
 - `dns_public_ip`:  DNS IP
 - `scan_ip1`:       Oracle RAC SCAN IP1
 - `scan_ip2`:       Oracle RAC SCAN IP2
@@ -93,30 +95,30 @@ The following can be customized:
       vm_name: node1
       mem_size: 8192
       cpus: 2
-      public_ip:  192.168.56.101
-      vip_ip:     192.168.56.103
-      private_ip: 192.168.200.101
+      public_ip:  192.168.56.111
+      vip_ip:     192.168.56.112
+      private_ip: 192.168.200.111
       u01_disk: ./node1_u01.vdi
 
     node2:
       vm_name: node2
       mem_size: 8192
       cpus: 2
-      public_ip:  192.168.56.102
-      vip_ip:     192.168.56.104
-      private_ip: 192.168.200.102
+      public_ip:  192.168.56.121
+      vip_ip:     192.168.56.122
+      private_ip: 192.168.200.122
       u01_disk: ./node2_u01.vdi
 
     shared:
       box: ol7-latest
       url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
       # ---------------------------------------------
-      prefix_name:   ol7-193
+      prefix_name:   ol7-rac
       # ---------------------------------------------
       dns_public_ip: 192.168.56.1
-      scan_ip1:      192.168.56.105
-      scan_ip2:      192.168.56.106
-      scan_ip3:      192.168.56.107
+      scan_ip1:      192.168.56.115
+      scan_ip2:      192.168.56.116
+      scan_ip3:      192.168.56.117
       # ---------------------------------------------
       non_rotational: 'on'
       # ---------------------------------------------

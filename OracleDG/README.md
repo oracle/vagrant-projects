@@ -3,17 +3,19 @@
 #### Author: Ruggero.Citton@oracle.com
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RDBMS (12.2, 18c, 19c) nodes configured with Oracle Data Guard, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
+two Oracle RDBMS (18c, 19c) nodes configured with Oracle Data Guard, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
 
 ## Prerequisites
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads), recommended version 5.2 or above.
-2. Install [Vagrant](https://vagrantup.com/), recommended version 2.2 or above.
+1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads), recommended version 5.2
+2. Install [Vagrant](https://vagrantup.com/), recommended version 2.2.
 3. You need to download Database binary separately.
 
 ## Free disk space requirement
   - Database binary zip under "./ORCL_software": ~3.2 Gb
   - Database binary on u01 vdisk (node1/node2): ~10 Gb 
   - OS guest vdisk (node1/node2): ~2 Gb
+    - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
+    - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
   - Database virtual disks (dynamic size): ~80 Gb
 
 ## Memory requirement
@@ -34,7 +36,7 @@ The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to version (12.2, 18c, 19c) for Linux x86-64 you need -> "See All", example
+    go to version (18c, 19c) for Linux x86-64 you need -> "See All", example
 
     * Oracle Database 19c (19.3) for Linux x86-64
        LINUX.X64_193000_db_home.zip (4,564,649,047 bytes)
@@ -78,23 +80,23 @@ The following can be customized:
     vm_name: primary
     mem_size: 8192
     cpus: 2
-    public_ip:  192.168.56.101
-    private_ip: 192.168.200.101
+    public_ip:  192.168.56.131
+    private_ip: 192.168.200.131
     u01_disk: ./primary_u01.vdi
   
   node2:
     vm_name: standby
     mem_size: 8192
     cpus: 2
-    public_ip:  192.168.56.102
-    private_ip: 192.168.200.102
+    public_ip:  192.168.56.132
+    private_ip: 192.168.200.132
     u01_disk: ./standby_u01.vdi
   
   env:
     box: ol7-latest
     url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
     # ---------------------------------------------
-    prefix_name:   ol7-193
+    prefix_name:   ol7-dg
     # ---------------------------------------------
     dns_public_ip: 192.168.56.1
     # ---------------------------------------------

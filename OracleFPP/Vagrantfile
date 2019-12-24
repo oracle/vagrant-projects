@@ -1,5 +1,5 @@
 #
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/Vagrantfile,v 2.0.1.15 2019/11/19 08:42:54 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/Vagrantfile,v 2.0.1.3 2019/10/15 16:18:32 rcitton Exp $
 #
 # LICENSE UPL 1.0
 #
@@ -9,7 +9,7 @@
 #      vagrantfile
 #
 #    DESCRIPTION
-#      Creates two nodes Vagrant virtual machines configured with Oracle Data Guard
+#      Creates Oracle Fleet Patching and Provisioning (FPP) Vagrant virtual machines.
 #
 #    NOTES
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -18,13 +18,13 @@
 #       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
-#    rcitton     11/15/18 - Creation
-# 
+#    rcitton     10/01/19 - Creation
+#
 #    REVISION
-#    20191119 - $Revision: 2.0.1.15 $
+#    20191015 - $Revision: 2.0.1.4 $
 #
 #
-  
+ 
 ### -------------------------------------------------------------------
 ### Disclaimer:
 ###
@@ -70,14 +70,17 @@ box_disks_num = 2
 # Variables
 # -----------------------------------------------------------------
 params = YAML.load_file 'config/vagrant.yml'
-var_box             = params['env']['box']
-var_url             = params['env']['url']
+var_box             = params['shared']['box']
+var_url             = params['shared']['url']
 #
-var_prefix_name     = params['env']['prefix_name']
-var_group           = "/" + var_prefix_name + "-dg"
+var_prefix_name     = params['shared']['prefix_name']
+var_group           = "/" + var_prefix_name + "-fpp"
 #
-var_non_rotational  = params['env']['non_rotational']
-var_dns_public_ip   = params['env']['dns_public_ip']
+var_network         = params['shared']['network']
+var_dns_public_ip   = params['shared']['dns_public_ip']
+var_netmask         = params['shared']['netmask']
+var_gateway         = params['shared']['gateway']
+var_domain          = params['shared']['domain']
 #                   
 var_vm1_name        = params['node1']['vm_name']
 var_vm1_name = var_prefix_name + "-" + var_vm1_name
@@ -85,57 +88,74 @@ var_vm1_name = var_prefix_name + "-" + var_vm1_name
 var_vm1_mem_size    = params['node1']['mem_size']
 var_vm1_cpus        = params['node1']['cpus']
 var_vm1_public_ip   = params['node1']['public_ip']
+var_vm1_vip_ip      = params['node1']['vip_ip']
 var_vm1_private_ip  = params['node1']['private_ip']
+var_scan_ip1        = params['node1']['scan_ip1']
+var_scan_ip2        = params['node1']['scan_ip2']
+var_scan_ip3        = params['node1']['scan_ip3']
+var_gns_ip          = params['node1']['gns_ip']
+var_ha_vip          = params['node1']['ha_vip']
 var_vm1_u01_disk    = params['node1']['u01_disk']
-#                   
+#
 var_vm2_name        = params['node2']['vm_name']
 var_vm2_name = var_prefix_name + "-" + var_vm2_name
+var_vm2_deploy      = params['node2']['deploy']
 #
 var_vm2_mem_size    = params['node2']['mem_size']
 var_vm2_cpus        = params['node2']['cpus']
 var_vm2_public_ip   = params['node2']['public_ip']
-var_vm2_private_ip  = params['node2']['private_ip']
 var_vm2_u01_disk    = params['node2']['u01_disk']
+#
+var_non_rotational  = params['shared']['non_rotational']
+var_asm_disk_path   = params['shared']['asm_disk_path']
+var_asm_disk_num    = params['shared']['asm_disk_num']
+var_asm_disk_size   = params['shared']['asm_disk_size']
 #                   
-var_oradata_disk_path  = params['env']['oradata_disk_path']
-var_oradata_disk_num   = params['env']['oradata_disk_num']
-var_oradata_disk_size  = params['env']['oradata_disk_size']
-#                   
-var_db_software     = params['env']['db_software']
+var_gi_software     = params['env']['gi_software']
+var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
+#
 var_ora_languages   = params['env']['ora_languages']
 #
 var_root_password   = params['env']['root_password']
+var_grid_password   = params['env']['grid_password']
 var_oracle_password = params['env']['oracle_password']
-var_sys_password    = params['env']['sys_password']
-var_pdb_password    = params['env']['pdb_password']
 #
-var_db_name         = params['env']['db_name']
-var_pdb_name        = params['env']['pdb_name']
-var_cdb             = params['env']['cdb']
-# -----------------------------------------------------------------
+var_sys_password    = params['env']['sys_password']
+#
+var_asm_lib_type    = params['env']['asm_lib_type']
+#
 
+# -----------------------------------------------------------------
 # Variables check
 # -----------------------------------------------------------------
-if var_vm1_mem_size.to_i < 6144
-  puts 'ERROR: vm1_mem_size option can not be less then 6 Gb'
+if var_vm1_mem_size.to_i < 12288
+  puts 'ERROR: vm1_mem_size option can not be less then 12 Gb'
   exit
 end
-if var_vm2_mem_size.to_i < 6144
-  puts 'ERROR: vm2_mem_size option can not be less then 6 Gb'
-  exit
-end
-
 if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
   puts 'ERROR: non_rotational option can be on or off'
   exit
 end
-
-if ( (var_cdb != true) and (var_cdb != false) )
-  puts 'ERROR: cdb option can be true or false'
+if ( (var_vm2_deploy != 'true') and (var_vm2_deploy != 'false') )
+  puts "ERROR: 'deploy' option can be 'true' or 'false'" 
   exit
 end
 
-if var_oradata_disk_size.to_i < 10
+if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') )
+  puts 'ERROR: asm_lib_type option can be ASMLIB or ASMFD'
+  exit
+end
+
+if var_asm_disk_path.to_s.empty?
+  var_asm_disk_path = "./"
+else
+  var_asm_disk_path = var_asm_disk_path + "/"
+end
+if var_asm_disk_num.to_i < 4
+  puts 'ERROR: asm_disk_num option can not be less then 4'
+  exit
+end
+if var_asm_disk_size.to_i < 10
   puts 'ERROR: asm_disk_size option can not be less then 10 Gb'
   exit
 end
@@ -154,13 +174,30 @@ if ! var_vm1_private_ip.is_ip?
   puts 'ERROR: private_ip for node1 is not a valid IP address'
   exit
 end
-
-if ! var_vm2_public_ip.is_ip?
-  puts 'ERROR: public_ip for node2 is not a valid IP address'
+if ! var_vm1_vip_ip.is_ip?
+  puts 'ERROR: vip_ip for node1 is not a valid IP address'
   exit
 end
-if ! var_vm2_private_ip.is_ip?
-  puts 'ERROR: private_ip for node2 is not a valid IP address'
+
+if ! var_scan_ip1.is_ip?
+  puts 'ERROR: scan_ip1 for node1 is not a valid IP address'
+  exit
+end
+if ! var_scan_ip2.is_ip?
+  puts 'ERROR: scan_ip3 for node1 is not a valid IP address'
+  exit
+end
+if ! var_scan_ip3.is_ip?
+  puts 'ERROR: scan_ip3 for node1 is not a valid IP address'
+  exit
+end
+
+if ! var_gns_ip.is_ip?
+  puts 'ERROR: gns_ip for node1 is not a valid IP address'
+  exit
+end
+if ! var_ha_vip.is_ip?
+  puts 'ERROR: ha_vip for node1 is not a valid IP address'
   exit
 end
 
@@ -169,52 +206,63 @@ if ! var_dns_public_ip.is_ip?
   exit
 end
 
-if var_db_name.to_s.empty?
- puts "ERROR: db_name is not defined"
- exit
+
+if var_vm2_deploy == 'true'
+  if var_vm2_mem_size.to_i < 6144
+    puts 'ERROR: vm2_mem_size option can not be less then 6 Gb'
+    exit
+  end
+  if ! var_vm2_public_ip.is_ip?
+    puts 'ERROR: public_ip for node2 is not a valid IP address'
+    exit
+  end
 end
 
 if var_root_password.to_s.empty?
  puts "ERROR: root_password is not defined"
  exit
 end
+if var_grid_password.to_s.empty?
+ puts "ERROR: grid_password is not defined"
+  exit
+end
 if var_oracle_password.to_s.empty?
  puts "ERROR: oracle_password is not defined"
  exit 
 end
-if var_sys_password.to_s.empty?
- puts "ERROR: sys_password is not defined"
- exit
-end
 
-if (var_cdb == true) 
-  if var_pdb_name.to_s.empty?
-   puts "ERROR: pdb_name is not defined"
-   exit
-  end
-  if var_pdb_password.to_s.empty?
-   puts "ERROR: pdb_password is not defined"
-   exit
-  end
-end
-
-path = "./ORCL_software/" + var_db_software
+path = "./ORCL_software/" + var_gi_software
 if ! File.exist?(path)
-  puts "ERROR: db_software does not exist"
+  puts "ERROR: gi_software does not exist"
   exit
 end
 
-if var_oradata_disk_path.to_s.empty?
-  var_oradata_disk_path = "./"
-else
-  var_oradata_disk_path = var_oradata_disk_path + "/"
-end
-if var_oradata_disk_num.to_i < 2
-  puts 'ERROR: oradata_disk_num option can not be less then 2'
+if ( (var_network != 'hostonly') and (var_network != 'public') )
+  puts "ERROR: network option can be 'public' or 'hostonly'"
   exit
 end
 
-var_db_software_ver = (var_db_software.split("_"))[1].to_i
+if var_network == 'public'
+  if var_gateway.to_s.empty?
+   puts "ERROR: Using public network gateway must be defined"
+   exit
+  end
+  if var_netmask.to_s.empty?
+    puts "ERROR: Using public network netmask must be defined"
+    exit
+  end
+
+  if ! var_netmask.is_ip?
+      puts "ERROR: netmask is not a valid IP address"
+      exit
+  end
+  if ! var_gateway.is_ip?
+      puts "ERROR: gateway is not a valid IP address"
+      exit
+  end
+end
+
+
 #------------------------------------------------------------------
 
 # Install required Vagrant plugin
@@ -252,6 +300,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # `vagrant box outdated`. This is not recommended.
   config.vm.box_check_update = false
 
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = true
+  end
+
   # add proxy configuration from host env - optional
   if Vagrant.has_plugin?("vagrant-proxyconf")
     puts "getting Proxy Configuration from Host..."
@@ -281,79 +333,94 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # vm node1
   config.vm.define :node1 do |node1|
     node1.vm.hostname = var_vm1_name
-    node1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+    if (var_network == 'hostonly')
+      node1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+    end
+    if (var_network == 'public')
+      node1.vm.network "public_network", ip: var_vm1_public_ip, :netmask => var_netmask, gateway: var_gateway
+    end
     node1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
     node1.vm.provider :virtualbox do |vb|
       vb.name   = var_vm1_name
       vb.memory = var_vm1_mem_size
       vb.cpus   = var_vm1_cpus
       vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
-
+  
       # Attach default guest vdisks
       disk_num = 0
       while disk_num < box_disks_num do
         vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
         disk_num += 1
       end
-
+  
       # Make u01 vdisk
       unless File.exist?(var_vm1_u01_disk)
-        vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
+        vb.customize ['createhd', 
+                      '--filename', var_vm1_u01_disk, 
+                      '--size', 100 * 1024]
       end
-      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
-
-      # Making oradata disks
+      vb.customize ['storageattach', :id, 
+                      '--storagectl', 'SATA Controller', 
+                      '--port', disk_num, 
+                      '--device', 0, 
+                      '--type', 'hdd', 
+                      '--medium', var_vm1_u01_disk, 
+                      '--nonrotational', var_non_rotational]
+      disk_num = disk_num.to_i + 1
+  
+      # Making asm disks
       disk_num = disk_num.to_i + 1
       num = 0
-      while num < var_oradata_disk_num do 
-        oradata_disk = var_oradata_disk_path + "primary_oradata_disk" + num.to_s + ".vdi"
-        # Making oradata disks
-        unless File.exist?(oradata_disk)
-          vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
-        end
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
-         disk_num += 1
-         num += 1
+      while num < var_asm_disk_num do 
+          asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(asm_disk)
+            vb.customize ['createhd', 
+                          '--filename', asm_disk, 
+                          '--size', var_asm_disk_size * 1024, 
+                          '--format', 'VDI']
+          end
+          vb.customize ['storageattach', :id, 
+                        '--storagectl', 'SATA Controller', 
+                        '--port', disk_num, 
+                        '--device', 0, 
+                        '--type', 'hdd', 
+                        '--medium', asm_disk, 
+                        '--nonrotational', var_non_rotational]
+          disk_num += 1
+          num += 1
       end
     end
   end
 
   # vm node2
-  config.vm.define :node2 do |node2|
-    node2.vm.hostname = var_vm2_name
-    node2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
-    node2.vm.network :private_network, ip: var_vm2_private_ip, virtualbox__intnet: "private"
-    node2.vm.provider :virtualbox do |vb|
-      vb.name   = var_vm2_name
-      vb.memory = var_vm2_mem_size
-      vb.cpus   = var_vm2_cpus
-      vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
-
-      # Attach default guest vdisks
-      disk_num = 0
-      while disk_num < box_disks_num  do
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
-        disk_num += 1
+  if var_vm2_deploy == 'true'
+    config.vm.define :node2 do |node2|
+      node2.vm.hostname = var_vm2_name
+      if (var_network == 'hostonly')
+        node2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
       end
-
-      # Make u01 vdisk
-      unless File.exist?(var_vm1_u01_disk)
-        vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1024]
+      if (var_network == 'public')
+        node2.vm.network "public_network", ip: var_vm2_public_ip, :netmask => var_netmask, gateway: var_gateway
       end
-      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
-
-      # Making oradata disks
-      disk_num = disk_num.to_i + 1
-      num = 0
-      while num < var_oradata_disk_num do 
-        oradata_disk = var_oradata_disk_path + "standby_oradata_disk" + num.to_s + ".vdi"
-        # Making oradata disks
-        unless File.exist?(oradata_disk)
-          vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+      node2.vm.provider :virtualbox do |vb|
+        vb.name   = var_vm2_name
+        vb.memory = var_vm2_mem_size
+        vb.cpus   = var_vm2_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+    
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num  do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
         end
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
-         disk_num += 1
-         num += 1
+    
+        # Make u01 vdisk
+        unless File.exist?(var_vm2_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1034]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
       end
     end
   end
@@ -364,29 +431,40 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     /bin/systemctl restart sshd
   SHELL
 
+  # execute code before reload
+  config.vm.provision "shell", inline: <<-SHELL
+     echo "Rebuild VirtualBox Guest Additions..."
+     /sbin/rcvboxadd setup
+  SHELL
+
   # Enable provisioning with a shell script
   config.vm.provision "shell", path: "scripts/setup.sh", env: {
-      "BOX_DISK_NUM"     => box_disks_num,
-      "VM1_NAME"         => var_vm1_name,
-      "VM2_NAME"         => var_vm2_name,
-      "SYSTEM_TIMEZONE"  => var_system_timezone,
-      "PREFIX_NAME"      => var_prefix_name,
-      "DB_SOFTWARE"      => var_db_software,
-      "DB_SOFTWARE_VER"  => var_db_software_ver,
-      "ORA_LANGUAGES"    => var_ora_languages,
-      "NODE1_PUBLIC_IP"  => var_vm1_public_ip,
-      "NODE2_PUBLIC_IP"  => var_vm2_public_ip,
-      "NODE1_PRIV_IP"    => var_vm1_private_ip,
-      "NODE2_PRIV_IP"    => var_vm2_private_ip,
-      "DNS_PUBLIC_IP"    => var_dns_public_ip,
-      "ROOT_PASSWORD"    => var_root_password,
-      "ORACLE_PASSWORD"  => var_oracle_password,
-      "SYS_PASSWORD"     => var_sys_password,
-      "PDB_PASSWORD"     => var_pdb_password,
-      "DB_NAME"          => var_db_name,
-      "PDB_NAME"         => var_pdb_name,
-      "CDB"              => var_cdb
+      "BOX_DISK_NUM"       => box_disks_num,
+      "SYSTEM_TIMEZONE"    => var_system_timezone,
+      "PREFIX_NAME"        => var_prefix_name,
+      "GI_SOFTWARE"        => var_gi_software,
+      "GI_SOFTWARE_VER"    => var_gi_software_ver,
+      "ORA_LANGUAGES"      => var_ora_languages,
+      "VM1_NAME"           => var_vm1_name,
+      "NODE1_PUBLIC_IP"    => var_vm1_public_ip,
+      "NODE1_VIP_IP"       => var_vm1_vip_ip,
+      "NODE1_PRIV_IP"      => var_vm1_private_ip,
+      "SCAN_IP1"           => var_scan_ip1,
+      "SCAN_IP2"           => var_scan_ip2,
+      "SCAN_IP3"           => var_scan_ip3,
+      "GNS_IP"             => var_gns_ip,
+      "HA_VIP"             => var_ha_vip,
+      "DNS_PUBLIC_IP"      => var_dns_public_ip,
+      "DOMAIN"             => var_domain,
+      "VM2_NAME"           => var_vm2_name,
+      "NODE2_PUBLIC_IP"    => var_vm2_public_ip,
+      "ROOT_PASSWORD"      => var_root_password,
+      "GRID_PASSWORD"      => var_grid_password,
+      "ORACLE_PASSWORD"    => var_oracle_password,
+      "SYS_PASSWORD"       => var_sys_password,
+      "ASM_LIB_TYPE"       => var_asm_lib_type
   }
+
 end
 #----------------------------------------------------------
 # EndOfFile

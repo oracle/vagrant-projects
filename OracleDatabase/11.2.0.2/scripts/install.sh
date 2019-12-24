@@ -11,6 +11,9 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 # 
 
+# Abort on any error
+set -e
+
 echo 'INSTALLER: Started up'
 
 # get up to date
@@ -36,10 +39,10 @@ echo "INSTALLER: System time zone set to $SYSTEM_TIMEZONE"
 echo 'INSTALLER: Oracle directories created'
 
 # install Oracle
-unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /vagrant && \
-sudo rpm -i /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
-chmod -R u+w /vagrant/Disk1 && \
-rm -rf /vagrant/Disk1 && \
+unzip /vagrant/oracle-xe-11.2.0-1.0.x86_64.rpm.zip -d /tmp && \
+sudo rpm -i /tmp/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm && \
+chmod -R u+w /tmp/Disk1 && \
+rm -rf /tmp/Disk1 && \
 sudo ln -s /u01/app/oracle /opt/oracle
 
 echo 'INSTALLER: Oracle software installed'
@@ -47,10 +50,10 @@ echo 'INSTALLER: Oracle software installed'
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -hex 8`"}
 
-cp /vagrant/ora-response/xe.rsp.tmpl /vagrant/ora-response/xe.rsp
-sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/xe.rsp
-sudo /etc/init.d/oracle-xe configure responseFile=/vagrant/ora-response/xe.rsp
-rm /vagrant/ora-response/xe.rsp
+cp /vagrant/ora-response/xe.rsp.tmpl /tmp/xe.rsp
+sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /tmp/xe.rsp
+sudo /etc/init.d/oracle-xe configure responseFile=/tmp/xe.rsp
+rm /tmp/xe.rsp
 
 echo 'INSTALLER: Database created'
 

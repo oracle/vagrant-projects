@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
@@ -21,7 +21,7 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20190518 - $Revision: 2.0.1.14 $
+#    20191119 - $Revision: 2.0.1.15 $
 #
 #
  

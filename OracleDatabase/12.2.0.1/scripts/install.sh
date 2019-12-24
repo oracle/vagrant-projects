@@ -11,6 +11,9 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
+# Abort on any error
+set -e
+
 echo 'INSTALLER: Started up'
 
 # get up to date
@@ -52,16 +55,16 @@ echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
 
-unzip /vagrant/linux*122*.zip -d /vagrant
-cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
-sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp
-su -l oracle -c "yes | /vagrant/database/runInstaller -silent -showProgress -ignorePrereq -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
+unzip /vagrant/linux*122*.zip -d /tmp
+cp /vagrant/ora-response/db_install.rsp.tmpl /tmp/db_install.rsp
+sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /tmp/db_install.rsp && \
+sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /tmp/db_install.rsp && \
+sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /tmp/db_install.rsp
+su -l oracle -c "yes | /tmp/database/runInstaller -silent -showProgress -ignorePrereq -waitforcompletion -responseFile /tmp/db_install.rsp"
 $ORACLE_BASE/oraInventory/orainstRoot.sh
 $ORACLE_HOME/root.sh
-rm -rf /vagrant/database
-rm /vagrant/ora-response/db_install.rsp
+rm -rf /tmp/database
+rm /tmp/db_install.rsp
 
 echo 'INSTALLER: Oracle software installed'
 
@@ -102,14 +105,14 @@ echo 'INSTALLER: Listener created'
 # Auto generate ORACLE PWD if not passed on
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
 
-cp /vagrant/ora-response/dbca.rsp.tmpl /vagrant/ora-response/dbca.rsp
-sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/dbca.rsp
+cp /vagrant/ora-response/dbca.rsp.tmpl /tmp/dbca.rsp
+sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /tmp/dbca.rsp && \
+sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /tmp/dbca.rsp && \
+sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /tmp/dbca.rsp && \
+sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /tmp/dbca.rsp
 
 # Create DB
-su -l oracle -c "dbca -silent -createDatabase -responseFile /vagrant/ora-response/dbca.rsp"
+su -l oracle -c "dbca -silent -createDatabase -responseFile /tmp/dbca.rsp"
 
 # Post DB setup tasks
 su -l oracle -c "sqlplus / as sysdba <<EOF
@@ -118,7 +121,7 @@ su -l oracle -c "sqlplus / as sysdba <<EOF
    exit;
 EOF"
 
-rm /vagrant/ora-response/dbca.rsp
+rm /tmp/dbca.rsp
 
 echo 'INSTALLER: Database created'
 

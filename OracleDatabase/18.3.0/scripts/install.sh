@@ -61,7 +61,14 @@ sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.
 sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp && \
 chown oracle:oinstall -R $ORACLE_BASE
 
-su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
+su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp" || {
+  ret=$?
+  if [ $ret -ne 6 ]; then
+    echo "Oracle Database installer exited with error!"
+    exit $ret;
+  fi;
+}
+
 $ORACLE_BASE/oraInventory/orainstRoot.sh
 $ORACLE_HOME/root.sh
 rm /vagrant/ora-response/db_install.rsp

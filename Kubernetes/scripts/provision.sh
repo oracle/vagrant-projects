@@ -81,7 +81,7 @@ done
 echo "Installing and configuring Docker Engine"
 
 # Install Docker
-yum install -y docker-engine${D4rVersion} btrfs-progs
+yum install -y docker-engine${D4rVersion} docker-cli${D4rVersion} btrfs-progs
 
 # Create and mount a BTRFS partition for docker.
 docker-storage-config -f -s btrfs -d /dev/sdb

@@ -38,17 +38,17 @@ yum install -y oracle-database-server-12cR2-preinstall openssl
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir -p $ORACLE_BASE && \
-chown oracle:oinstall -R $ORACLE_BASE && \
-mkdir -p /u01/app && \
+mkdir -p $ORACLE_BASE
+chown oracle:oinstall -R $ORACLE_BASE
+mkdir -p /u01/app
 ln -s $ORACLE_BASE /u01/app/oracle
 
 echo 'INSTALLER: Oracle directories created'
 
 # set environment variables
-echo "export ORACLE_BASE=$ORACLE_BASE" >> /home/oracle/.bashrc && \
-echo "export ORACLE_HOME=$ORACLE_HOME" >> /home/oracle/.bashrc && \
-echo "export ORACLE_SID=$ORACLE_SID" >> /home/oracle/.bashrc   && \
+echo "export ORACLE_BASE=$ORACLE_BASE" >> /home/oracle/.bashrc
+echo "export ORACLE_HOME=$ORACLE_HOME" >> /home/oracle/.bashrc
+echo "export ORACLE_SID=$ORACLE_SID" >> /home/oracle/.bashrc
 echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
 echo 'INSTALLER: Environment variables set'
@@ -57,8 +57,8 @@ echo 'INSTALLER: Environment variables set'
 
 unzip /vagrant/linux*122*.zip -d /tmp
 cp /vagrant/ora-response/db_install.rsp.tmpl /tmp/db_install.rsp
-sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /tmp/db_install.rsp && \
-sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /tmp/db_install.rsp && \
+sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /tmp/db_install.rsp
+sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /tmp/db_install.rsp
 sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /tmp/db_install.rsp
 su -l oracle -c "yes | /tmp/database/runInstaller -silent -showProgress -ignorePrereq -waitforcompletion -responseFile /tmp/db_install.rsp"
 $ORACLE_BASE/oraInventory/orainstRoot.sh
@@ -106,9 +106,9 @@ echo 'INSTALLER: Listener created'
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
 
 cp /vagrant/ora-response/dbca.rsp.tmpl /tmp/dbca.rsp
-sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /tmp/dbca.rsp && \
-sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /tmp/dbca.rsp && \
-sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /tmp/dbca.rsp && \
+sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /tmp/dbca.rsp
+sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /tmp/dbca.rsp
+sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /tmp/dbca.rsp
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /tmp/dbca.rsp
 
 # Create DB
@@ -136,7 +136,7 @@ sudo systemctl enable oracle-rdbms
 sudo systemctl start oracle-rdbms
 echo "INSTALLER: Created and enabled oracle-rdbms systemd's service"
 
-sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
+sudo cp /vagrant/scripts/setPassword.sh /home/oracle/
 sudo chmod a+rx /home/oracle/setPassword.sh
 
 echo "INSTALLER: setPassword.sh file setup";

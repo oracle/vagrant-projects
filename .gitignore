@@ -2,4 +2,3 @@
 database/
 *.zip
 .DS_Store
-.env

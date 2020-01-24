@@ -36,6 +36,10 @@ else
   SYSTEM_TIMEZONE = 'UTC'
 end
 
+# define listener and EM Express ports
+LISTENER_PORT = 1521
+EM_EXPRESS_PORT = 5500
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ol7-latest"
   config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
@@ -69,8 +73,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = NAME
 
   # Oracle port forwarding
-  config.vm.network "forwarded_port", guest: 1521, host: 1521
-  config.vm.network "forwarded_port", guest: 5500, host: 5500
+  config.vm.network "forwarded_port", guest: LISTENER_PORT, host: LISTENER_PORT
+  config.vm.network "forwarded_port", guest: EM_EXPRESS_PORT, host: EM_EXPRESS_PORT
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
@@ -81,6 +85,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
        "ORACLE_PDB"          => "ORCLPDB1",
        "ORACLE_CHARACTERSET" => "AL32UTF8",
        "ORACLE_EDITION"      => "EE",
+       "LISTENER_PORT"       => LISTENER_PORT,
+       "EM_EXPRESS_PORT"     => EM_EXPRESS_PORT,
        "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
     }
 

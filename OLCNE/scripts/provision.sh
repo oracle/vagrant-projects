@@ -282,6 +282,9 @@ requirements() {
 
 #######################################
 # Install packages on the node
+# Note: As of OLCNE 1.0.1 kubernetes packages are deployed automatically.
+# We are still installing them to be able to customize the configuration for
+# the vagrant environment.
 # Globals:
 #   OPERATOR OLCNE_VERSION MASTER WORKER K8S_VERSION MULTI_MASTER
 # Arguments:
@@ -305,7 +308,6 @@ install_packages() {
     echo_do yum install -y kubeadm${K8S_VERSION} kubelet${K8S_VERSION} kubectl${K8S_VERSION}
     echo_do sysctl -p /etc/sysctl.d/k8s.conf
     echo_do systemctl enable olcne-agent.service
-    echo_do systemctl enable kubelet.service
     if [[ -n "${HTTP_PROXY}" ]]; then
       # CRI-O proxies
       mkdir /etc/systemd/system/crio.service.d
@@ -316,7 +318,6 @@ install_packages() {
 	Environment="NO_PROXY=${NO_PROXY}"
 	EOF
     fi
-    echo_do systemctl enable --now crio.service
     echo_do firewall-cmd --add-masquerade --permanent
     echo_do firewall-cmd --add-port=8090/tcp --permanent
     echo_do firewall-cmd --add-port=10250/tcp --permanent
@@ -326,10 +327,10 @@ install_packages() {
     # Ensure kubelet uses the right interface
     ip_addr=$(ip addr | awk -F'[ /]+' '/192.168.99.255/ {print $3}')
     kubelet_node="/etc/systemd/system/kubelet.service.d/90-node-ip.conf"
-    ExecStart=$(grep ExecStart=/ /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed -e 's/\$KUBELET_EXTRA_ARGS/\$KUBELET_EXTRA_ARGS \$KUBELET_NODE_ip_addr_ARGS/')
+    ExecStart=$(grep ExecStart=/ /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed -e 's/\$KUBELET_EXTRA_ARGS/\$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ADDR_ARGS/')
     cat <<-EOF >${kubelet_node}
 	[Service]
-	Environment="KUBELET_NODE_ip_addr_ARGS=--node-ip=${ip_addr}"
+	Environment="KUBELET_NODE_IP_ADDR_ARGS=--node-ip=${ip_addr}"
 	ExecStart=
 	${ExecStart}
 	EOF
@@ -344,11 +345,12 @@ install_packages() {
       /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf
     echo_do firewall-cmd --add-port=8001/tcp --permanent
     echo_do systemctl enable kubectl-proxy.service
+    # OLCNE 1.0.1 requires these ports for single master as well
+    echo_do firewall-cmd --add-port=10251/tcp --permanent
+    echo_do firewall-cmd --add-port=10252/tcp --permanent
+    echo_do firewall-cmd --add-port=2379/tcp --permanent
+    echo_do firewall-cmd --add-port=2380/tcp --permanent
     if [[ -n "${MULTI_MASTER}" ]]; then
-      echo_do firewall-cmd --add-port=10251/tcp --permanent
-      echo_do firewall-cmd --add-port=10252/tcp --permanent
-      echo_do firewall-cmd --add-port=2379/tcp --permanent
-      echo_do firewall-cmd --add-port=2380/tcp --permanent
       # Multi-master load balancer
       echo_do yum install -y olcne-nginx keepalived
       echo_do firewall-cmd --add-port=6444/tcp --permanent
@@ -363,8 +365,6 @@ install_packages() {
 		Environment="NO_PROXY=${NO_PROXY}"
 		EOF
       fi
-      echo_do systemctl enable olcne-nginx.service
-      echo_do systemctl enable keepalived.service
     fi
   fi
 

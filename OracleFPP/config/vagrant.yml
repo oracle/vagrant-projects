@@ -1,4 +1,4 @@
-node1:
+host1:
   vm_name: fpps
   mem_size: 16384
   cpus: 1
@@ -12,7 +12,7 @@ node1:
   ha_vip:        192.168.56.109
   u01_disk: ./fpps_u01.vdi
 
-node2:
+host2:
   vm_name: fppc
   mem_size: 8192
   cpus: 1

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/08_asmlib_label_disk.sh,v 2.0.1.2 2019/10/15 13:54:21 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/08_asmlib_label_disk.sh,v 2.0.1.2 2020/02/17 12:19:54 rcitton Exp $
 #
 # LICENSE UPL 1.0
 #

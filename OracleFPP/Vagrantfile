@@ -1,5 +1,5 @@
 #
-# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/Vagrantfile,v 2.0.1.5 2020/02/17 09:14:31 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/Vagrantfile,v 2.0.1.6 2020/02/17 12:19:46 rcitton Exp $
 #
 # LICENSE UPL 1.0
 #
@@ -22,7 +22,7 @@
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20200214 - $Revision: 2.0.1.5 $
+#    20200218 - $Revision: 2.0.1.6 $
 #
 #
  
@@ -83,29 +83,29 @@ var_netmask         = params['shared']['netmask']
 var_gateway         = params['shared']['gateway']
 var_domain          = params['shared']['domain']
 #                   
-var_vm1_name        = params['node1']['vm_name']
+var_vm1_name        = params['host1']['vm_name']
 var_vm1_name = var_prefix_name + "-" + var_vm1_name
 #
-var_vm1_mem_size    = params['node1']['mem_size']
-var_vm1_cpus        = params['node1']['cpus']
-var_vm1_public_ip   = params['node1']['public_ip']
-var_vm1_vip_ip      = params['node1']['vip_ip']
-var_vm1_private_ip  = params['node1']['private_ip']
-var_scan_ip1        = params['node1']['scan_ip1']
-var_scan_ip2        = params['node1']['scan_ip2']
-var_scan_ip3        = params['node1']['scan_ip3']
-var_gns_ip          = params['node1']['gns_ip']
-var_ha_vip          = params['node1']['ha_vip']
-var_vm1_u01_disk    = params['node1']['u01_disk']
+var_vm1_mem_size    = params['host1']['mem_size']
+var_vm1_cpus        = params['host1']['cpus']
+var_vm1_public_ip   = params['host1']['public_ip']
+var_vm1_vip_ip      = params['host1']['vip_ip']
+var_vm1_private_ip  = params['host1']['private_ip']
+var_scan_ip1        = params['host1']['scan_ip1']
+var_scan_ip2        = params['host1']['scan_ip2']
+var_scan_ip3        = params['host1']['scan_ip3']
+var_gns_ip          = params['host1']['gns_ip']
+var_ha_vip          = params['host1']['ha_vip']
+var_vm1_u01_disk    = params['host1']['u01_disk']
 #
-var_vm2_name        = params['node2']['vm_name']
+var_vm2_name        = params['host2']['vm_name']
 var_vm2_name = var_prefix_name + "-" + var_vm2_name
-var_vm2_deploy      = params['node2']['deploy']
+var_vm2_deploy      = params['host2']['deploy']
 #
-var_vm2_mem_size    = params['node2']['mem_size']
-var_vm2_cpus        = params['node2']['cpus']
-var_vm2_public_ip   = params['node2']['public_ip']
-var_vm2_u01_disk    = params['node2']['u01_disk']
+var_vm2_mem_size    = params['host2']['mem_size']
+var_vm2_cpus        = params['host2']['cpus']
+var_vm2_public_ip   = params['host2']['public_ip']
+var_vm2_u01_disk    = params['host2']['u01_disk']
 #
 var_non_rotational  = params['shared']['non_rotational']
 var_asm_disk_path   = params['shared']['asm_disk_path']
@@ -168,37 +168,37 @@ class String
 end
 
 if ! var_vm1_public_ip.is_ip?
-  puts 'ERROR: public_ip for node1 is not a valid IP address'
+  puts 'ERROR: public_ip for host1 is not a valid IP address'
   exit
 end
 if ! var_vm1_private_ip.is_ip?
-  puts 'ERROR: private_ip for node1 is not a valid IP address'
+  puts 'ERROR: private_ip for host1 is not a valid IP address'
   exit
 end
 if ! var_vm1_vip_ip.is_ip?
-  puts 'ERROR: vip_ip for node1 is not a valid IP address'
+  puts 'ERROR: vip_ip for host1 is not a valid IP address'
   exit
 end
 
 if ! var_scan_ip1.is_ip?
-  puts 'ERROR: scan_ip1 for node1 is not a valid IP address'
+  puts 'ERROR: scan_ip1 for host1 is not a valid IP address'
   exit
 end
 if ! var_scan_ip2.is_ip?
-  puts 'ERROR: scan_ip3 for node1 is not a valid IP address'
+  puts 'ERROR: scan_ip3 for host1 is not a valid IP address'
   exit
 end
 if ! var_scan_ip3.is_ip?
-  puts 'ERROR: scan_ip3 for node1 is not a valid IP address'
+  puts 'ERROR: scan_ip3 for host1 is not a valid IP address'
   exit
 end
 
 if ! var_gns_ip.is_ip?
-  puts 'ERROR: gns_ip for node1 is not a valid IP address'
+  puts 'ERROR: gns_ip for host1 is not a valid IP address'
   exit
 end
 if ! var_ha_vip.is_ip?
-  puts 'ERROR: ha_vip for node1 is not a valid IP address'
+  puts 'ERROR: ha_vip for host1 is not a valid IP address'
   exit
 end
 
@@ -214,7 +214,7 @@ if var_vm2_deploy == 'true'
     exit
   end
   if ! var_vm2_public_ip.is_ip?
-    puts 'ERROR: public_ip for node2 is not a valid IP address'
+    puts 'ERROR: public_ip for host2 is not a valid IP address'
     exit
   end
 end
@@ -331,17 +331,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.ssh.forward_x11 = true
 
-  # vm node1
-  config.vm.define :node1 do |node1|
-    node1.vm.hostname = var_vm1_name
+  # vm host1
+  config.vm.define :host1 do |host1|
+    host1.vm.hostname = var_vm1_name
     if (var_network == 'hostonly')
-      node1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+      host1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
     end
     if (var_network == 'public')
-      node1.vm.network "public_network", ip: var_vm1_public_ip, :netmask => var_netmask, gateway: var_gateway
+      host1.vm.network "public_network", ip: var_vm1_public_ip, :netmask => var_netmask, gateway: var_gateway
     end
-    node1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
-    node1.vm.provider :virtualbox do |vb|
+    host1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
+    host1.vm.provider :virtualbox do |vb|
       vb.name   = var_vm1_name
       vb.memory = var_vm1_mem_size
       vb.cpus   = var_vm1_cpus
@@ -394,17 +394,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # vm node2
+  # vm host2
   if var_vm2_deploy == 'true'
-    config.vm.define :node2 do |node2|
-      node2.vm.hostname = var_vm2_name
+    config.vm.define :host2 do |host2|
+      host2.vm.hostname = var_vm2_name
       if (var_network == 'hostonly')
-        node2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
+        host2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
       end
       if (var_network == 'public')
-        node2.vm.network "public_network", ip: var_vm2_public_ip, :netmask => var_netmask, gateway: var_gateway
+        host2.vm.network "public_network", ip: var_vm2_public_ip, :netmask => var_netmask, gateway: var_gateway
       end
-      node2.vm.provider :virtualbox do |vb|
+      host2.vm.provider :virtualbox do |vb|
         vb.name   = var_vm2_name
         vb.memory = var_vm2_mem_size
         vb.cpus   = var_vm2_cpus

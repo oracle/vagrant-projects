@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/03_setup_hosts.sh,v 2.0.1.3 2019/10/15 14:49:11 rcitton Exp $
+# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/03_setup_hosts.sh,v 2.0.1.2 2020/02/17 12:19:54 rcitton Exp $
 #
 # LICENSE UPL 1.0
 #

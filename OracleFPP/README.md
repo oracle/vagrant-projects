@@ -3,7 +3,8 @@
 #### Author: Ruggero.Citton@oracle.com
 
 This directory contains Vagrant build files to provision automatically
-one Oracle RAC node (18.3, 19c) setup for FPP, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
+one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant/VirtualBox, Oracle Linux 7.4 and shell scripts.
+![](images/OracleFPP.png)
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
@@ -19,9 +20,9 @@ one Oracle RAC node (18.3, 19c) setup for FPP, using Vagrant/VirtualBox, Oracle 
   - Dynamically allocated storage for ASM shared virtual disks (node1, location set by `asm_disk_path`): ~24 Gb
 
 ## Memory requirement
-Deploy one Grid Infrastructure and FPP Server node at least 12Gb are required
+Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
 +
-Deploy OL7 node2 (optional) as Oracle FPP target at least 6Gb are required
+Deploy OL7 host2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## VirtualBox host-Only
 The guest VMs are using "host-Only" network defined as 'vboxnet0' or a bridge network
@@ -52,7 +53,7 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
 The following can be customized:
 
-#### node1
+#### host1
 - `vm_name`        : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
 - `mem_size`       : VM Guest memory size Mb (minimum 12Gb --> 12288)
 - `cpus`           : VM Guest virtual cores
@@ -66,7 +67,7 @@ The following can be customized:
 - `ha_vip`         : Oracle RAC HA_VIP (FPP requirement)
 - `u01_disk`       : Oracle binary virtual disk (u01) file path
 
-#### node2
+#### host2
 - `vm_name`        : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
 - `mem_size`       : VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`           : VM Guest virtual cores
@@ -98,7 +99,7 @@ The following can be customized:
 - `asm_lib_type`   : ASM library in use (ASMLIB/AFD)
 
 #### Example1 (Oracle FPP Server available on host-only Virtualbox network):
-    node1:
+    host1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -112,7 +113,7 @@ The following can be customized:
       ha_vip:        192.168.56.109
       u01_disk: ./fpps_u01.vdi
 
-    node2:
+    host2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -226,9 +227,11 @@ The following can be customized:
 ## FPP commands you could test postdeploy based on the configuration file above
   Note1 : as you need the Database binaries zip file under "ORCL_software"
   Note2 : having limited resource you may want setup the following JAVA env variables for grid user : JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2" before rhpctl commands executions
+  Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'
+  Note4 : following some fpp commands you may want to try 
   - rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip
   - rhpctl import image -image gi_19300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_grid_home.zip
-  - rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode ol7-193-fppc -root
+  - rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode ol7-fpp-fppc -root
   - rhpctl add database -workingcopy wc_db_19300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root
   - (...)
 

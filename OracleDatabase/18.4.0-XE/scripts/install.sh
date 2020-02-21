@@ -48,7 +48,7 @@ echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
-yum -y localinstall /vagrant/oracle-database-xe-18c-*.x86_64.rpm
+yum -y localinstall https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-18c-1.0-1.x86_64.rpm
 
 echo 'INSTALLER: Oracle software installed'
 

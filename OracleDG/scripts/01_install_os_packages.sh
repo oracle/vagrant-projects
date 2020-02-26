@@ -22,14 +22,6 @@
 #    rcitton     11/06/18 - Creation
 #
 echo "-----------------------------------------------------------------"
-echo -e "${INFO}`date +%F' '%T`: Setup yum"
-echo "-----------------------------------------------------------------"
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-cd /etc/yum.repos.d
-rm -f public-yum-ol7.repo
-wget --quiet https://yum.oracle.com/public-yum-ol7.repo
-
-echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 yum install -y deltarpm tree unzip zip 

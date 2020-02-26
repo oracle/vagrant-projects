@@ -38,16 +38,16 @@ yum install -y oracle-database-preinstall-18c openssl
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # create directories
-mkdir -p $ORACLE_HOME && \
-mkdir -p /u01/app && \
+mkdir -p $ORACLE_HOME
+mkdir -p /u01/app
 ln -s $ORACLE_BASE /u01/app/oracle
 
 echo 'INSTALLER: Oracle directories created'
 
 # set environment variables
-echo "export ORACLE_BASE=$ORACLE_BASE" >> /home/oracle/.bashrc && \
-echo "export ORACLE_HOME=$ORACLE_HOME" >> /home/oracle/.bashrc && \
-echo "export ORACLE_SID=$ORACLE_SID" >> /home/oracle/.bashrc   && \
+echo "export ORACLE_BASE=$ORACLE_BASE" >> /home/oracle/.bashrc
+echo "export ORACLE_HOME=$ORACLE_HOME" >> /home/oracle/.bashrc
+echo "export ORACLE_SID=$ORACLE_SID" >> /home/oracle/.bashrc
 echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
 echo 'INSTALLER: Environment variables set'
@@ -56,12 +56,19 @@ echo 'INSTALLER: Environment variables set'
 
 unzip /vagrant/LINUX.X64_180000_db_home.zip -d $ORACLE_HOME/
 cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
-sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp && \
-sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp && \
+sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp
+sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp
+sed -i -e "s|###ORACLE_EDITION###|$ORACLE_EDITION|g" /vagrant/ora-response/db_install.rsp
 chown oracle:oinstall -R $ORACLE_BASE
 
-su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp"
+su -l oracle -c "yes | $ORACLE_HOME/runInstaller -silent -ignorePrereqFailure -waitforcompletion -responseFile /vagrant/ora-response/db_install.rsp" || {
+  ret=$?
+  if [ $ret -ne 6 ]; then
+    echo "Oracle Database installer exited with error!"
+    exit $ret;
+  fi;
+}
+
 $ORACLE_BASE/oraInventory/orainstRoot.sh
 $ORACLE_HOME/root.sh
 rm /vagrant/ora-response/db_install.rsp
@@ -106,9 +113,9 @@ echo 'INSTALLER: Listener created'
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
 
 cp /vagrant/ora-response/dbca.rsp.tmpl /vagrant/ora-response/dbca.rsp
-sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /vagrant/ora-response/dbca.rsp && \
-sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp && \
+sed -i -e "s|###ORACLE_SID###|$ORACLE_SID|g" /vagrant/ora-response/dbca.rsp
+sed -i -e "s|###ORACLE_PDB###|$ORACLE_PDB|g" /vagrant/ora-response/dbca.rsp
+sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /vagrant/ora-response/dbca.rsp
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /vagrant/ora-response/dbca.rsp
 
 # Create DB
@@ -136,7 +143,7 @@ sudo systemctl enable oracle-rdbms
 sudo systemctl start oracle-rdbms
 echo "INSTALLER: Created and enabled oracle-rdbms systemd's service"
 
-sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
+sudo cp /vagrant/scripts/setPassword.sh /home/oracle/
 sudo chmod a+rx /home/oracle/setPassword.sh
 
 echo "INSTALLER: setPassword.sh file setup";

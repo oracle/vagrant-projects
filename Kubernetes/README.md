@@ -2,6 +2,10 @@
 This Vagrantfile will provision a Kubernetes cluster with one master and _n_
 worker nodes (2 by default).
 
+__Note:__ this Vagrantfile is deprecated in favour of the [OLCNE](../OLCNE)
+one. It can still be used to provision earlier version of Kubernetes clusters
+(e.g. 1.12).
+
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 1. Install [Vagrant](https://vagrantup.com/)

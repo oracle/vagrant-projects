@@ -81,7 +81,7 @@ done
 echo "Installing and configuring Docker Engine"
 
 # Install Docker
-yum install -y docker-engine${D4rVersion} btrfs-progs
+yum install -y docker-engine${D4rVersion} docker-cli${D4rVersion} btrfs-progs
 
 # Create and mount a BTRFS partition for docker.
 docker-storage-config -f -s btrfs -d /dev/sdb
@@ -89,7 +89,7 @@ docker-storage-config -f -s btrfs -d /dev/sdb
 # Kubernetes: Docker should not touch iptables -- See Orabug 26641724/26641807
 # Alternatively you could use firewalld as described in the Kubernetes User's Guide
 # On the ol74 box, firewalld is installed but disabled by default.
-sed -i "s/^OPTIONS='\(.*\)'/OPTIONS='\1 --iptables=false'/" /etc/sysconfig/docker
+sed -i 's/^{/{\n    "iptables": false,/' /etc/docker/daemon.json
 
 # Configure insecure (non-ssl) registry if needed
 if [ -n "${Insecure}" ]

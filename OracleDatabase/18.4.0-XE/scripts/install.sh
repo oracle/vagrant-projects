@@ -40,15 +40,15 @@ yum install -y oracle-database-preinstall-18c openssl
 echo 'INSTALLER: Oracle preinstall and openssl complete'
 
 # set environment variables
-echo "export ORACLE_BASE=/opt/oracle" >> /home/oracle/.bashrc && \
-echo "export ORACLE_HOME=/opt/oracle/product/18c/dbhomeXE" >> /home/oracle/.bashrc && \
-echo "export ORACLE_SID=XE" >> /home/oracle/.bashrc && \
+echo "export ORACLE_BASE=/opt/oracle" >> /home/oracle/.bashrc
+echo "export ORACLE_HOME=/opt/oracle/product/18c/dbhomeXE" >> /home/oracle/.bashrc
+echo "export ORACLE_SID=XE" >> /home/oracle/.bashrc
 echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 
 echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
-yum -y localinstall /vagrant/oracle-database-xe-18c-*.x86_64.rpm
+yum -y localinstall https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-18c-1.0-1.x86_64.rpm
 
 echo 'INSTALLER: Oracle software installed'
 
@@ -56,10 +56,10 @@ echo 'INSTALLER: Oracle software installed'
 export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
 
 # Create database
-mv /etc/sysconfig/oracle-xe-18c.conf /etc/sysconfig/oracle-xe-18c.conf.original && \
-cp /vagrant/ora-response/oracle-xe-18c.conf.tmpl /etc/sysconfig/oracle-xe-18c.conf && \
-chmod g+w /etc/sysconfig/oracle-xe-18c.conf && \
-sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /etc/sysconfig/oracle-xe-18c.conf && \
+mv /etc/sysconfig/oracle-xe-18c.conf /etc/sysconfig/oracle-xe-18c.conf.original
+cp /vagrant/ora-response/oracle-xe-18c.conf.tmpl /etc/sysconfig/oracle-xe-18c.conf
+chmod g+w /etc/sysconfig/oracle-xe-18c.conf
+sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /etc/sysconfig/oracle-xe-18c.conf
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /etc/sysconfig/oracle-xe-18c.conf
 su -l -c '/etc/init.d/oracle-xe-18c configure'
 
@@ -92,8 +92,8 @@ sudo systemctl enable oracle-xe-18c
 sudo systemctl start oracle-xe-18c
 echo "INSTALLER: Created and enabled oracle-xe-18c systemd's service"
 
-sudo cp /vagrant/scripts/setPassword.sh /home/oracle/ && \
-sudo chown oracle:oinstall /home/oracle/setPassword.sh && \
+sudo cp /vagrant/scripts/setPassword.sh /home/oracle/
+sudo chown oracle:oinstall /home/oracle/setPassword.sh
 sudo chmod u+x /home/oracle/setPassword.sh
 
 echo "INSTALLER: setPassword.sh file setup";

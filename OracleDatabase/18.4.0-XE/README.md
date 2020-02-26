@@ -7,14 +7,12 @@ A vagrant box that provisions Oracle Database automatically, using Vagrant, an O
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. Change into the desired version folder
-3. Download the installation rpm file from OTN into this folder - first time only:
-[https://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html](https://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html)
-4. Run `vagrant up`
+2. Change into the 18.4.0-XE folder
+3. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have (a good) internet connection as the scripts will update the virtual box to the latest via `yum`.
    2. The Vagrant file allows for customization, if desired (see [Customization](#customization))
-5. Connect to the database.
-6. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+4. Connect to the database.
+5. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 ## Connecting to Oracle
 * Hostname: `localhost`

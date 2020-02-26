@@ -75,7 +75,7 @@ var_box             = params['env']['box']
 var_url             = params['env']['url']
 #
 var_prefix_name     = params['env']['prefix_name']
-var_group           = "/" + var_prefix_name + "-dg"
+var_group           = "/" + var_prefix_name
 #
 var_non_rotational  = params['env']['non_rotational']
 var_dns_public_ip   = params['env']['dns_public_ip']

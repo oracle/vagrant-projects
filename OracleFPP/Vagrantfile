@@ -75,7 +75,7 @@ var_box             = params['shared']['box']
 var_url             = params['shared']['url']
 #
 var_prefix_name     = params['shared']['prefix_name']
-var_group           = "/" + var_prefix_name + "-fpp"
+var_group           = "/" + var_prefix_name
 #
 var_network         = params['shared']['network']
 var_dns_public_ip   = params['shared']['dns_public_ip']

@@ -4,6 +4,7 @@
 
 This directory contains Vagrant build files to provision automatically
 two Oracle RDBMS (18c, 19c) nodes configured with Oracle Data Guard, using Vagrant/VirtualBox, Oracle Linux 7 and shell scripts.
+![](images/OracleDG.png)
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)

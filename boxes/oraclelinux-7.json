@@ -1,0 +1,42 @@
+{
+  "description": "Oracle Linux 7",
+  "short_description": "Oracle Linux 7",
+  "name": "oraclelinux/7",
+  "versions": [{
+      "version": "7.7.15",
+      "status": "active",
+      "description_html": "<ul>\n<li>Refreshed for OL7 Update 7</li>\n</ul>\n",
+      "description_markdown": "* Refreshed for OL7 Update 7",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u7-virtualbox-b15.box",
+        "checksum": "71a6f7088d6c0ab037684afe0a0e0cc3935c9b775a26fae79d0310892af48efe",
+        "checksum_type": "sha256"
+      }]
+    },
+    {
+      "version": "7.6.10",
+      "status": "active",
+      "description_html": "<ul>\n<li>Refreshed for OL7 Update 6</li>\n</ul>\n",
+      "description_markdown": "* Refreshed for OL7 Update 6",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u6-virtualbox-b10.box",
+        "checksum": "cfb58aaa12f56702afd739966273df63cd3ff3362e6a5a3fa6fa9ffcec4762e3",
+        "checksum_type": "sha256"
+      }]
+    },
+    {
+      "version": "7.5.5",
+      "status": "active",
+      "description_html": "<ul>\n<li>Refreshed for OL7 Update 5</li>\n</ul>\n",
+      "description_markdown": "* Refreshed for OL7 Update 5",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u5-virtualbox-b5.box",
+        "checksum": "efb5554701e3ccb7c568c4d95faa4c29fd82ab8cbfe170864e01a9fa7ef67672",
+        "checksum_type": "sha256"
+      }]
+    }
+  ]
+}

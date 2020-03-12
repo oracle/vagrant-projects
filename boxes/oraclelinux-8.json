@@ -5,25 +5,29 @@
   "versions": [{
       "version": "8.1.25",
       "status": "active",
+      "release_date": "14-FEB-2020",
       "description_html": "<ul>\n<li>Refreshed for OL8 Update 1</li>\n</ul>\n",
       "description_markdown": "* Refreshed for OL8 Update 1",
       "providers": [{
         "name": "virtualbox",
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u1-virtualbox-b25.box",
         "checksum": "3e64f00ab19e64e7652ba64b8741895cbefdf2b1ab2d2d5c59fdf38dc74685f6",
-        "checksum_type": "sha256"
+        "checksum_type": "sha256",
+        "size": 811886812
       }]
     },
     {
       "version": "8.0.20",
       "status": "active",
+      "release_date": "03-OCT-2019",
       "description_html": "<ul>\n<li>OL8 GA</li>\n</ul>\n",
       "description_markdown": "* OL8 GA",
       "providers": [{
         "name": "virtualbox",
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u0-virtualbox-b20.box",
         "checksum": "86948a260f75f13091c7cf975b581dfdff58880f3d82700a6c1305bd6335d58a",
-        "checksum_type": "sha256"
+        "checksum_type": "sha256",
+        "size": 661233740
       }]
     }
   ]

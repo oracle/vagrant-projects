@@ -13,7 +13,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u10-virtualbox-b13.box",
         "checksum": "12bfc9804ca37a96b633db3cdc5a2277f68170a74780a92b09180a6ebd79a1bd",
         "checksum_type": "sha256",
-        "size": 415160320
+        "size": 415160320,
+        "kernel": "4.1.12-124.24.5.el6uek.x86_64"
       }]
     },
     {
@@ -27,7 +28,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u9-virtualbox-b8.box",
         "checksum": "2d0a699a80a265a420710c351d98a27d14c3646538c8f2203ae488c2ed447ea8",
         "checksum_type": "sha256",
-        "size": 346203188
+        "size": 346203188,
+        "kernel": "Unknown"
       }]
     },
     {
@@ -41,7 +43,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u8-virtualbox-b3.box",
         "checksum": "e33203c030ddba053ae1535b1ceba93109c752117a7cc006163a588949ea6cc6",
         "checksum_type": "sha256",
-        "size": 398179026
+        "size": 398179026,
+        "kernel": "Unknown"
       }]
     }
   ]

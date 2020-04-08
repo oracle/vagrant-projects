@@ -3,6 +3,21 @@
   "short_description": "Oracle Linux 7",
   "name": "oraclelinux/7",
   "versions": [{
+      "version": "7.8.103",
+      "status": "active",
+      "release_date": "08-Apr-2020",
+      "description_html": "<ul>\n<li>Refreshed for OL7 Update 8</li>\n</ul>\n",
+      "description_markdown": "* Refreshed for OL7 Update 8",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-virtualbox-b103.box",
+        "checksum": "7ca525ba636025bffd709056ad3e1f01d5e517cb1980fca30e737954c401d0c9",
+        "checksum_type": "sha256",
+        "size": 529002950,
+        "kernel": "4.14.35-1902.300.11.el7uek.x86_64"
+      }]
+    },
+    {
       "version": "7.7.15",
       "status": "active",
       "release_date": "12-MAR-2020",
@@ -13,7 +28,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u7-virtualbox-b15.box",
         "checksum": "71a6f7088d6c0ab037684afe0a0e0cc3935c9b775a26fae79d0310892af48efe",
         "checksum_type": "sha256",
-        "size": 573026000
+        "size": 573026000,
+        "kernel": "4.14.35-1902.10.7.el7uek.x86_64 "
       }]
     },
     {
@@ -27,7 +43,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u6-virtualbox-b10.box",
         "checksum": "cfb58aaa12f56702afd739966273df63cd3ff3362e6a5a3fa6fa9ffcec4762e3",
         "checksum_type": "sha256",
-        "size": 577689600
+        "size": 577689600,
+        "kernel": "Unknown"
       }]
     },
     {
@@ -41,7 +58,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u5-virtualbox-b5.box",
         "checksum": "efb5554701e3ccb7c568c4d95faa4c29fd82ab8cbfe170864e01a9fa7ef67672",
         "checksum_type": "sha256",
-        "size": 453003890
+        "size": 453003890,
+        "kernel": "Unknown"
       }]
     }
   ]

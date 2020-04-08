@@ -3,6 +3,21 @@
   "short_description": "Oracle Linux 8",
   "name": "oraclelinux/8",
   "versions": [{
+      "version": "8.1.101",
+      "status": "active",
+      "release_date": "08-Apr-2020",
+      "description_html": "<ul>\n<li>OL8 Update 1 with UEK6</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.1.101",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u1-virtualbox-b101.box",
+        "checksum": "ccdec80017ed5a153777071529fc0d25d957245cdbb383d038a2b1557bdac8f3",
+        "checksum_type": "sha256",
+        "size": 598085831,
+        "kernel": "5.4.17-2011.0.7.el8uek.x86_64"
+      }]
+    },
+    {
       "version": "8.1.25",
       "status": "active",
       "release_date": "14-FEB-2020",
@@ -13,7 +28,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u1-virtualbox-b25.box",
         "checksum": "3e64f00ab19e64e7652ba64b8741895cbefdf2b1ab2d2d5c59fdf38dc74685f6",
         "checksum_type": "sha256",
-        "size": 811886812
+        "size": 811886812,
+        "kernel": "4.18.0-147.el8.x86_64"
       }]
     },
     {
@@ -27,7 +43,8 @@
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u0-virtualbox-b20.box",
         "checksum": "86948a260f75f13091c7cf975b581dfdff58880f3d82700a6c1305bd6335d58a",
         "checksum_type": "sha256",
-        "size": 661233740
+        "size": 661233740,
+        "kernel": "Unknown"
       }]
     }
   ]

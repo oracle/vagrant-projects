@@ -5,7 +5,7 @@
   "versions": [{
       "version": "6.10.13",
       "status": "active",
-      "release_date": "18-APR-2019",
+      "release_date": "18-Apr-2019",
       "description_html": "<ul>\n<li>Refreshed for OL6 Update 10</li>\n</ul>\n",
       "description_markdown": "* Refreshed for OL6 Update 10",
       "providers": [{
@@ -20,7 +20,7 @@
     {
       "version": "6.9.8",
       "status": "active",
-      "release_date": "22-MAR-2018",
+      "release_date": "22-Mar-2018",
       "description_html": "<ul>\n<li>Refreshed for OL6 Update 9</li>\n</ul>\n",
       "description_markdown": "* Refreshed for OL6 Update 9",
       "providers": [{
@@ -35,7 +35,7 @@
     {
       "version": "6.8.3",
       "status": "active",
-      "release_date": "18-APR-2017",
+      "release_date": "18-Apr-2017",
       "description_html": "<ul>\n<li>Refreshed for OL6 Update 8</li>\n</ul>\n",
       "description_markdown": "* Refreshed for OL6 Update 8",
       "providers": [{

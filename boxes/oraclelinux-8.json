@@ -20,7 +20,7 @@
     {
       "version": "8.1.25",
       "status": "active",
-      "release_date": "14-FEB-2020",
+      "release_date": "14-Feb-2020",
       "description_html": "<ul>\n<li>Refreshed for OL8 Update 1</li>\n</ul>\n",
       "description_markdown": "* Refreshed for OL8 Update 1",
       "providers": [{
@@ -35,7 +35,7 @@
     {
       "version": "8.0.20",
       "status": "active",
-      "release_date": "03-OCT-2019",
+      "release_date": "03-Oct-2019",
       "description_html": "<ul>\n<li>OL8 GA</li>\n</ul>\n",
       "description_markdown": "* OL8 GA",
       "providers": [{

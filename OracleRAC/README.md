@@ -110,8 +110,8 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      box: ol7-latest
-      url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
+      box: oraclelinux/7
+      url: 'https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-7.json'
       # ---------------------------------------------
       prefix_name:   ol7-rac
       # ---------------------------------------------

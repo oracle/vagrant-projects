@@ -81,8 +81,8 @@ else
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "ol7-latest"
-  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box"
+  config.vm.box = "oraclelinux/7"
+  config.vm.box_url = "https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-7.json"
   config.vm.define NAME
   
   config.vm.box_check_update = false

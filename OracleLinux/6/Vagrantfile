@@ -2,13 +2,13 @@
 # LICENSE UPL 1.0
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-# 
+#
 # Since: January, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle Linux virtual machine.
-# 
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
-# 
+#
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -30,12 +30,12 @@ unless Vagrant.has_plugin?("vagrant-proxyconf")
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "ol6-latest"
-  config.vm.box_url = "https://yum.oracle.com/boxes/oraclelinux/latest/ol6-latest.box"
+  config.vm.box = "oraclelinux/6"
+  config.vm.box_url = "https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-6.json"
   config.vm.define NAME
-  
+
   config.vm.box_check_update = false
-  
+
   # change memory size
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048
@@ -60,7 +60,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # VM hostname
   config.vm.hostname = NAME
-  
+
   # Oracle port forwarding
   # config.vm.network "forwarded_port", guest: 22, host: 2220
 

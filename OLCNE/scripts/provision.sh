@@ -2,7 +2,7 @@
 #
 # Provision Oracle Linux Cloud Native Environment nodes
 #
-# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -14,8 +14,6 @@
 
 # Constants
 readonly CERT_DIR=/etc/olcne/pki
-readonly OLCNE_CLUSTER="olcne-cluster"
-readonly OLCNE_ENV="olcne-env"
 
 #######################################
 # Convenience function used to limit output during provisioning
@@ -37,7 +35,7 @@ echo_do() {
   local tmp_file
   local ret_code
 
-  [[ -n "${VERBOSE}" ]] && echo "    $@"
+  [[ -n "${VERBOSE}" ]] && echo "    $*"
   tmp_file=$(mktemp /var/tmp/cmd_XXXXX.log)
   eval "$@" > "${tmp_file}" 2>&1
   ret_code=$?
@@ -62,7 +60,7 @@ echo_do() {
 #   None
 #######################################
 msg() {
-  echo "===== ${@} ====="
+  echo "===== ${*} ====="
 }
 
 #######################################
@@ -78,9 +76,10 @@ msg() {
 #   None
 #######################################
 parse_args() {
-  OLCNE_DEV= OLCNE_VERSION= K8S_VERSION= MASTER= MASTERS= WORKER= WORKERS=
-  OPERATOR= MULTI_MASTER= REGISTRY_K8S= REGISTRY_OLCNE= VERBOSE= EXTRA_REPO=
-  NGINX_IMAGE= IP_ADDR=
+  OLCNE_CLUSTER_NAME='' OLCNE_ENV_NAME='' OLCNE_DEV=0 OLCNE_VERSION='' REGISTRY_OLCNE=''
+  OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
+  K8S_VERSION='' REGISTRY_K8S='' VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
+  DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -103,6 +102,22 @@ parse_args() {
       "--olcne-dev")
         OLCNE_DEV=1
         shift
+        ;;
+      "--olcne-environment-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --olcne-environment-name" >&2
+          exit 1
+        fi
+        OLCNE_ENV_NAME="$2"
+        shift; shift;
+        ;;
+      "--olcne-cluster-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --olcne-cluster-name" >&2
+          exit 1
+        fi
+        OLCNE_CLUSTER_NAME="$2"
+        shift; shift;
         ;;
       "--olcne-version")
         if [[ $# -lt 2 ]]; then
@@ -139,7 +154,7 @@ parse_args() {
       "--repo")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --repo" >&2
-	  exit 1
+	        exit 1
         fi
         EXTRA_REPO="$2"
         shift; shift
@@ -147,7 +162,7 @@ parse_args() {
       "--registry-k8s")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --registry-k8s" >&2
-	  exit 1
+	        exit 1
         fi
         REGISTRY_K8S="$2"
         shift; shift
@@ -155,7 +170,7 @@ parse_args() {
       "--registry-olcne")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --registry-olcne" >&2
-	  exit 1
+	        exit 1
         fi
         REGISTRY_OLCNE="$2"
         shift; shift
@@ -163,7 +178,7 @@ parse_args() {
       "--masters")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --masters" >&2
-	  exit 1
+	        exit 1
         fi
         MASTERS="$2"
         shift; shift
@@ -171,9 +186,34 @@ parse_args() {
       "--workers")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --workers" >&2
-	  exit 1
+	        exit 1
         fi
         WORKERS="$2"
+        shift; shift
+        ;;
+      "--with-helm")
+        DEPLOY_HELM=1
+        shift
+        ;;
+      "--helm-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --helm-module-name" >&2
+	        exit 1
+        fi
+        HELM_MODULE_NAME="$2"
+        shift; shift
+        ;;
+      "--with-istio")
+        DEPLOY_HELM=1
+        DEPLOY_ISTIO=1
+        shift
+        ;;
+      "--istio-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --istio-module-name" >&2
+	        exit 1
+        fi
+        ISTIO_MODULE_NAME="$2"
         shift; shift
         ;;
       "--verbose")
@@ -187,9 +227,10 @@ parse_args() {
     esac
   done
 
-  readonly OLCNE_DEV OLCNE_VERSION K8S_VERSION MASTER MASTERS WORKER WORKERS
-  readonly OPERATOR MULTI_MASTER REGISTRY_K8S REGISTRY_OLCNE VERBOSE EXTRA_REPO
-  readonly NGINX_IMAGE IP_ADDR
+  readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV OLCNE_VERSION REGISTRY_OLCNE
+  readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
+  readonly K8S_VERSION REGISTRY_K8S VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
+  readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
 }
 
 #######################################
@@ -211,8 +252,10 @@ setup_repos() {
   # Install the yum-utils package for repo selection
   echo_do yum install -y yum-utils
 
-  # Add OLCNE channel
+  # Add OLCNE 1.1 channel
   echo_do yum install -y oracle-olcne-release-el7
+  echo_do yum-config-manager --disable ol7_olcne
+  echo_do yum-config-manager --enable ol7_olcne11
 
   # Disable Developer channels
   echo_do yum-config-manager --disable ol7_developer\*
@@ -221,10 +264,10 @@ setup_repos() {
   echo_do yum-config-manager --enable ol7_kvm_utils
 
   # Optional extra repo
-  [[ -n "${EXTRA_REPO}" ]] && echo_do yum-config-manager --add-repo "${EXTRA_REPO}"
+  if [[ -n ${EXTRA_REPO} ]]; then echo_do yum-config-manager --add-repo "${EXTRA_REPO}"; fi
 
   # Enable OLCNE developer channel
-  [[ -n "${OLCNE_DEV}" ]] && echo_do yum-config-manager --enable ol7_developer_olcne
+  if [[ ${OLCNE_DEV} == 1 ]]; then echo_do yum-config-manager --enable ol7_developer_olcne; fi
 }
 
 #######################################
@@ -276,8 +319,9 @@ requirements() {
   echo_do /usr/sbin/setenforce 0
   echo_do sed -i "'s/^SELINUX=.*/SELINUX=permissive/g'" /etc/selinux/config
 
-  # Enable & start firewalld
+  # Enable & start firewalld; add eth0 to the public zone
   echo_do systemctl enable --now firewalld
+  echo_do firewall-cmd --permanent --zone=public --add-interface=eth0
 }
 
 #######################################
@@ -295,22 +339,22 @@ requirements() {
 install_packages() {
   local ip_addr kubelet_node ExecStart
 
-  if [[ -n "${OPERATOR}" ]]; then
+  if [[ ${OPERATOR} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
-    echo_do yum install -y olcnectl${OLCNE_VERSION} olcne-api-server${OLCNE_VERSION} olcne-utils${OLCNE_VERSION}
+    echo_do yum install -y olcnectl"${OLCNE_VERSION}" olcne-api-server"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
     echo_do systemctl enable olcne-api-server.service
     echo_do firewall-cmd --add-port=8091/tcp --permanent
     echo_do firewall-cmd --add-masquerade --permanent
   fi
-  if [[ -n "${MASTER}" || -n "${WORKER}" ]]; then
+  if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform Agent"
-    echo_do yum install -y olcne-agent${OLCNE_VERSION} olcne-utils${OLCNE_VERSION}
-    echo_do yum install -y kubeadm${K8S_VERSION} kubelet${K8S_VERSION} kubectl${K8S_VERSION}
+    echo_do yum install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
+    echo_do yum install -y kubeadm"${K8S_VERSION}" kubelet"${K8S_VERSION}" kubectl"${K8S_VERSION}"
     echo_do sysctl -p /etc/sysctl.d/k8s.conf
     echo_do systemctl enable olcne-agent.service
-    if [[ -n "${HTTP_PROXY}" ]]; then
+    if [[ -n ${HTTP_PROXY} ]]; then
       # CRI-O proxies
-      mkdir /etc/systemd/system/crio.service.d
+      mkdir -p /etc/systemd/system/crio.service.d
       cat > /etc/systemd/system/crio.service.d/crio-proxy.conf <<-EOF
 	[Service]
 	Environment="HTTP_PROXY=${HTTP_PROXY}"
@@ -318,7 +362,7 @@ install_packages() {
 	Environment="NO_PROXY=${NO_PROXY}"
 	EOF
     fi
-    echo_do firewall-cmd --add-masquerade --permanent
+    echo_do firewall-cmd --zone=trusted --add-interface=cni0 --permanent
     echo_do firewall-cmd --add-port=8090/tcp --permanent
     echo_do firewall-cmd --add-port=10250/tcp --permanent
     echo_do firewall-cmd --add-port=10255/tcp --permanent
@@ -327,6 +371,7 @@ install_packages() {
     # Ensure kubelet uses the right interface
     ip_addr=$(ip addr | awk -F'[ /]+' '/192.168.99.255/ {print $3}')
     kubelet_node="/etc/systemd/system/kubelet.service.d/90-node-ip.conf"
+    # shellcheck disable=SC2016
     ExecStart=$(grep ExecStart=/ /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed -e 's/\$KUBELET_EXTRA_ARGS/\$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ADDR_ARGS/')
     cat <<-EOF >${kubelet_node}
 	[Service]
@@ -337,7 +382,7 @@ install_packages() {
     chmod 644 ${kubelet_node}
     systemctl daemon-reload
   fi
-  if [[ -n "${MASTER}" ]]; then
+  if [[ ${MASTER} == 1 ]]; then
     echo_do yum install -y bash-completion
     echo_do firewall-cmd --add-port=6443/tcp --permanent
     # Expose the kubectl proxy to the host
@@ -350,22 +395,9 @@ install_packages() {
     echo_do firewall-cmd --add-port=10252/tcp --permanent
     echo_do firewall-cmd --add-port=2379/tcp --permanent
     echo_do firewall-cmd --add-port=2380/tcp --permanent
-    if [[ -n "${MULTI_MASTER}" ]]; then
-      # Multi-master load balancer
-      echo_do yum install -y olcne-nginx keepalived
-      echo_do firewall-cmd --add-port=6444/tcp --permanent
-      echo_do firewall-cmd --add-protocol=vrrp --permanent
-      if [[ -n "${HTTP_PROXY}" ]]; then
-        # NGINX proxies
-        mkdir /etc/systemd/system/olcne-nginx.service.d
-        cat > /etc/systemd/system/olcne-nginx.service.d/proxy.conf <<-EOF
-		[Service]
-		Environment="HTTP_PROXY=${HTTP_PROXY}"
-		Environment="HTTPS_PROXY=${HTTPS_PROXY}"
-		Environment="NO_PROXY=${NO_PROXY}"
-		EOF
-      fi
-    fi
+    # Multi-master load balancer firewall rules
+    echo_do firewall-cmd --add-port=6444/tcp --permanent
+    echo_do firewall-cmd --add-protocol=vrrp --permanent
   fi
 
   # Restart firewalld
@@ -385,13 +417,14 @@ passwordless_ssh() {
   msg "Allow passwordless ssh between VMs"
   # Generate common key
   if [[ ! -f /vagrant/id_rsa ]]; then
+    msg "Generating shared SSH keypair"
     echo_do ssh-keygen -t rsa -f /vagrant/id_rsa -q -N "''"
   fi
   # Install private key
-  echo_do mkdir ~/.ssh
-  echo_do cp /vagrant/id_rsa ~/.ssh/
+  echo_do mkdir /root/.ssh
+  echo_do cp /vagrant/id_rsa /root/.ssh/
   # Authorise passwordless ssh
-  echo_do cp /vagrant/id_rsa.pub ~/.ssh/authorized_keys
+  echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
   echo_do eval "cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys"
   # Don't do host checking
   cat > ~/.ssh/config <<-EOF
@@ -401,9 +434,13 @@ passwordless_ssh() {
 	  LogLevel QUIET
 	EOF
   # Set permissions
-  echo_do chmod -R 0600 ~/.ssh
+  echo_do chmod 0700 /root/.ssh
+  echo_do chmod 0600 /root/.ssh/authorized_keys
   # Last node removes the key
-  [[ -n "${OPERATOR}" ]] && echo_do rm /vagrant/id_rsa /vagrant/id_rsa.pub
+  if [[ ${OPERATOR} == 1 ]]; then
+    msg "Removing the shared SSH keypair"
+    echo_do rm /vagrant/id_rsa /vagrant/id_rsa.pub
+  fi
 }
 
 #######################################
@@ -419,12 +456,13 @@ certificates() {
   local nodes
 
   msg "Generate and deploy X.509 Certificates"
-  nodes=$(echo ${MASTERS} ${WORKERS} | sed -e "s/ /,/g")
-  if [[ -z "${MASTER}" ]]; then
+  nodes="${MASTERS// /,},${WORKERS// /,}"
+
+  if [[ ${MASTER} == 0 ]]; then
     # Standalone operator
     nodes="192.168.99.100,${nodes}"
   fi
-  echo_do /etc/olcne/gen-certs-helper.sh --nodes ${nodes}  --cert-dir ${CERT_DIR}
+  echo_do /etc/olcne/gen-certs-helper.sh --nodes "${nodes}"  --cert-dir "${CERT_DIR}"
 
   echo_do sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
 
@@ -451,8 +489,8 @@ bootstrap_olcne() {
     --olcne-node-key-path ${CERT_DIR}/production/node.key \
     --olcne-component api-server
 
-  for node in ${MASTERS} ${WORKERS}; do
-    echo_do ssh ${node} /etc/olcne/bootstrap-olcne.sh \
+  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+    echo_do ssh "${node}" /etc/olcne/bootstrap-olcne.sh \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
       --olcne-ca-path ${CERT_DIR}/production/ca.cert \
@@ -464,7 +502,8 @@ bootstrap_olcne() {
 #######################################
 # Deploy Kubernetes cluster
 # Globals:
-#   CERT_DIR MASTERS MULTI_MASTER OLCNE_CLUSTER OLCNE_ENV
+#   CERT_DIR MASTERS MULTI_MASTER 
+#   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
 #   REGISTRY_K8S REGISTRY_OLCNE NGINX_IMAGE
 # Arguments:
 #   None
@@ -472,71 +511,141 @@ bootstrap_olcne() {
 #   None
 #######################################
 deploy_kubernetes() {
-  local node gateway
+  local node gateway master_nodes worker_nodes
+  master_nodes="${MASTERS//,/:8090,}:8090"
+  worker_nodes="${WORKERS//,/:8090,}:8090"
 
-  msg "Create the Oracle Linux Cloud Native Environment: ${OLCNE_ENV}"
+  msg "Create the Oracle Linux Cloud Native Environment: ${OLCNE_ENV_NAME}"
   echo_do olcnectl --api-server 127.0.0.1:8091 environment create \
-      --environment-name ${OLCNE_ENV} \
+      --environment-name "${OLCNE_ENV_NAME}" \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
       --olcne-ca-path ${CERT_DIR}/production/ca.cert \
       --olcne-node-key-path ${CERT_DIR}/production/node.key \
       --update-config
 
-  msg "Create the Kubernetes module for ${OLCNE_ENV} "
-  if [[ -z "${MULTI_MASTER}" ]]; then
+  msg "Create the Kubernetes module for ${OLCNE_ENV_NAME} "
+  if [[ ${MULTI_MASTER} == 0 ]]; then
     # Single master
     echo_do olcnectl module create \
-      --environment-name ${OLCNE_ENV} \
-      --module kubernetes --name ${OLCNE_CLUSTER} \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       ${REGISTRY_K8S:+--container-registry $REGISTRY_K8S} \
-      --apiserver-advertise-address $(echo ${MASTERS} | sed -e "s/.* //") \
-      --master-nodes $(echo ${MASTERS} | sed -e "s/ /:8090,/g" -e "s/$/:8090/")\
-      --worker-nodes $(echo ${WORKERS} | sed -e "s/ /:8090,/g" -e "s/$/:8090/")
+      ${REGISTRY_OLCNE:+--nginx-image $REGISTRY_OLCNE/$NGINX_IMAGE} \
+      --apiserver-advertise-address "${MASTERS}" \
+      --virtual-ip 192.168.99.99 \
+      --master-nodes "${master_nodes}"\
+      --worker-nodes "${worker_nodes}"
   else
     # HA Multi-master
     echo_do olcnectl module create \
-      --environment-name ${OLCNE_ENV} \
-      --module kubernetes --name ${OLCNE_CLUSTER} \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       ${REGISTRY_K8S:+--container-registry $REGISTRY_K8S} \
-      --virtual-ip 192.168.99.99 \
       ${REGISTRY_OLCNE:+--nginx-image $REGISTRY_OLCNE/$NGINX_IMAGE} \
-      --master-nodes $(echo ${MASTERS} | sed -e "s/ /:8090,/g" -e "s/$/:8090/")\
-      --worker-nodes $(echo ${WORKERS} | sed -e "s/ /:8090,/g" -e "s/$/:8090/")
+      --virtual-ip 192.168.99.99 \
+      --master-nodes "${master_nodes}"\
+      --worker-nodes "${worker_nodes}"
   fi
 
   msg "Validate all required prerequisites are met for the Kubernetes module"
   echo_do olcnectl module validate \
-    --environment-name ${OLCNE_ENV} \
-    --name ${OLCNE_CLUSTER}
+    --environment-name "${OLCNE_ENV_NAME}" \
+    --name "${OLCNE_CLUSTER_NAME}"
 
-  if [[ -n "${MULTI_MASTER}" ]]; then
+  if [[ ${MULTI_MASTER} == 1 ]]; then
     # Force the routing through eth1 during setup (Workaround for OLCNE-1028)
-    if [[ -z "${MASTER}" ]]; then
+    if [[ ${MASTER} == 0 ]]; then
       # Standalone operator
       msg "Set masters default route on eth1 via the operator node"
       gateway="192.168.99.100"
-    else
-      msg "Set masters default route on eth1 via worker1"
-      gateway=$(echo ${WORKERS} | sed -e 's/ .*//')
     fi
     
-    for node in ${MASTERS}; do
-      echo_do ssh ${node} "\"\
+    for node in ${MASTERS//,/ }; do
+      echo_do ssh "${node}" "\"\
         ip route list 0/0 | grep -q default && ip route del default; \
         ip route add default via ${gateway} dev eth1; \
-	grep -q DEFROUTE /etc/sysconfig/network-scripts/ifcfg-eth0 || \
-	  echo 'DEFROUTE=no' >> /etc/sysconfig/network-scripts/ifcfg-eth0; \
-	grep -q GATEWAY /etc/sysconfig/network-scripts/ifcfg-eth1 || \
-	  echo 'GATEWAY=${gateway}' >> /etc/sysconfig/network-scripts/ifcfg-eth1; \
-        \""
+        grep -q DEFROUTE /etc/sysconfig/network-scripts/ifcfg-eth0 || \
+        echo 'DEFROUTE=no' >> /etc/sysconfig/network-scripts/ifcfg-eth0; \
+        grep -q GATEWAY /etc/sysconfig/network-scripts/ifcfg-eth1 || \
+        echo 'GATEWAY=${gateway}' >> /etc/sysconfig/network-scripts/ifcfg-eth1; \
+       \""
     done
   fi
 
-  msg "Deploy the Kubernetes module into ${OLCNE_ENV} (Be patient!)"
+  msg "Deploy the Kubernetes module into ${OLCNE_ENV_NAME} (Be patient!)"
   echo_do olcnectl module install \
-    --environment-name ${OLCNE_ENV} \
-    --name ${OLCNE_CLUSTER}
+    --environment-name "${OLCNE_ENV_NAME}" \
+    --name "${OLCNE_CLUSTER_NAME}"
+}
+
+#######################################
+# Deploy Kubernetes cluster
+# Globals:
+#   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
+#   DEPLOY_HELM HELM_MODULE_NAME 
+#   DEPLOY_ISTIO ISTIO_MODULE_NAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+deploy_modules() {
+  local node
+
+  msg "Deploying additional modules"
+
+  # Helm module
+  if [[ ${DEPLOY_HELM} == 1 ]]; then
+    
+    # Create the Helm module
+    msg "Creating the Helm module: ${HELM_MODULE_NAME}"
+    echo_do olcnectl module create \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --module helm \
+      --name "${HELM_MODULE_NAME}" \
+      --helm-kubernetes-module "${OLCNE_CLUSTER_NAME}"
+
+    # Validate the Helm module
+    msg "Validating the Helm module: ${HELM_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${HELM_MODULE_NAME}"
+
+    # Deploy the Helm module
+    msg "Deploying the Helm module: ${HELM_MODULE_NAME} into ${OLCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${HELM_MODULE_NAME}"
+  fi
+
+  # Istio module
+  if [[ ${DEPLOY_ISTIO} == 1 ]]; then
+    
+    # Create the Istio module
+    msg "Creating the Istio module: ${ISTIO_MODULE_NAME}"
+    echo_do olcnectl module create \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --module istio \
+      --name "${ISTIO_MODULE_NAME}" \
+      ${REGISTRY_K8S:+--istio-container-registry $REGISTRY_K8S} \
+      --istio-helm-module "${HELM_MODULE_NAME}"
+
+
+    # Validate the Istio module
+    msg "Validating the Istio module: ${ISTIO_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${ISTIO_MODULE_NAME}"
+
+    # Deploy the Istio module
+    msg "Deploying the Istio module: ${ISTIO_MODULE_NAME} into ${OLCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${ISTIO_MODULE_NAME}"
+  fi
+
+
 }
 
 #######################################
@@ -552,8 +661,8 @@ fixups() {
   local node
 
   msg "Copying admin.conf for vagrant user on master node(s)"
-  for node in ${MASTERS}; do
-    echo_do ssh ${node} "\"\
+  for node in ${MASTERS//,/ }; do
+    echo_do ssh "${node}" "\"\
       mkdir -p ~vagrant/.kube; \
       cp /etc/kubernetes/admin.conf ~vagrant/.kube/config; \
       chown -R vagrant: ~vagrant/.kube; \
@@ -566,8 +675,8 @@ fixups() {
   msg "Updating Flannel DaemonSet for Vagrant"
   # This needs to be done on a master node, just pick one from the list
   # (Workaround for OLCNE-1079)
-  node=$(echo ${MASTERS} | sed -e 's/.* //')
-  echo_do ssh vagrant@${node} "\"\
+  node=${MASTERS//,*/}
+  echo_do ssh vagrant@"${node}" "\"\
     kubectl --namespace kube-system get ds/kube-flannel-ds -o yaml > /tmp/kube-flannel-ds.yaml;\
     kubectl delete -f /tmp/kube-flannel-ds.yaml;\
     sed -i 's/\(- --kube-subnet-mgr\)/\1\n        - --iface=eth1/' /tmp/kube-flannel-ds.yaml;\
@@ -577,9 +686,10 @@ fixups() {
     \""
 
   msg "Starting kubectl proxy service on master nodes"
-  for node in ${MASTERS}; do
-    echo_do ssh ${node} systemctl start kubectl-proxy.service
+  for node in ${MASTERS//,/ }; do
+    echo_do ssh "${node}" systemctl start kubectl-proxy.service
   done
+
 }
 
 #######################################
@@ -595,8 +705,8 @@ ready() {
   local node
 
   msg "Your Oracle Linux Cloud Native Environment is operational."
-  node=$(echo ${MASTERS} | sed -e 's/.* //')
-  ssh vagrant@${node} kubectl get nodes
+  node=${MASTERS//,*/}
+  ssh vagrant@"${node}" kubectl get nodes
 }
 
 #######################################
@@ -611,10 +721,11 @@ main () {
   passwordless_ssh
   msg "Oracle Linux base software installation complete."
   # All nodes are up, orchestrate installation
-  if [[ -n "${OPERATOR}" ]]; then
+  if [[ ${OPERATOR} == 1 ]]; then
     certificates
     bootstrap_olcne
     deploy_kubernetes
+    deploy_modules
     fixups
     ready
   fi

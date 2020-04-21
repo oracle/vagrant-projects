@@ -3,11 +3,11 @@
 # LICENSE UPL 1.0
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-# 
+#
 # Since: January, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Updates Oracle Linux to the latest version
-# 
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
@@ -63,7 +63,7 @@ The Oracle Linux End-User License Agreement can be viewed here:
 
 For additional packages, updates, documentation and community help, see:
 
-    * http://yum.oracle.com/
+    * https://yum.oracle.com/
 
 To test your environment is correctly working, just open following URL from your Host OS:
 http://localhost:8080/info.php

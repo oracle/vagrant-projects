@@ -40,6 +40,10 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# Box metadata location and box name
+BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_NAME = "oraclelinux/7"
+
 # Define constants
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Use vagrant-env plugin if available
@@ -98,7 +102,7 @@ end
 
 def setup_repo (node, vm)
   unless KUBE_REPO.empty? && KUBE_PREFIX.empty?
-    registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) + 
+    registry = (KUBE_REPO.empty? ? 'container-registry.oracle.com' : KUBE_REPO) +
                KUBE_PREFIX
     vm.provision :shell, inline: <<-SHELL
 	echo 'export KUBE_REPO_PREFIX="#{registry}"' >> ~/.bashrc
@@ -121,8 +125,8 @@ end
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # We start from the latest OL 7 Box
-  config.vm.box = "oraclelinux/7"
-  config.vm.box_url = "https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-7.json"
+  config.vm.box = BOX_NAME
+  config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
 
   # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs
   # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and

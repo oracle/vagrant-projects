@@ -20,6 +20,10 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# Box metadata location and box name
+BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_NAME = "oraclelinux/7"
+
 # Hostname
 NAME = "registry"
 
@@ -54,8 +58,8 @@ end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # We start from the latest OL 7 Box
-  config.vm.box = "oraclelinux/7"
-  config.vm.box_url = "https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-7.json"
+  config.vm.box = BOX_NAME
+  config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define NAME
 
   # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs

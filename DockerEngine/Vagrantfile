@@ -2,19 +2,23 @@
 # LICENSE UPL 1.0
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-# 
+#
 # Since: February, 2018
 # Author: sergio.leunissen@oracle.com
 # Description: Creates an Docker engine installation on Oracle Linux 7 using Btrfs
-# 
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
-# 
+#
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
+
+# Box metadata location and box name
+BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_NAME = "oraclelinux/7"
 
 # define hostname
 NAME = "ol7-docker-engine"
@@ -25,10 +29,10 @@ def ensure_scheme(url)
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "oraclelinux/7"
-  config.vm.box_url = "https://oracle.github.io/vagrant-boxes/boxes/oraclelinux-7.json"
+  config.vm.box = BOX_NAME
+  config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define NAME
-  
+
   # Set proxies if vagrant-proxyconf is installed
   if Vagrant.has_plugin?("vagrant-proxyconf")
     ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
@@ -63,7 +67,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.box_check_update = false
-  
+
   # change memory size
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048

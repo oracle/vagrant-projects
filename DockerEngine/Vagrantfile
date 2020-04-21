@@ -66,8 +66,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
   end
 
-  config.vm.box_check_update = false
-
   # change memory size
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048

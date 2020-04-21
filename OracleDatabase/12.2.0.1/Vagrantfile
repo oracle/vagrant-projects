@@ -45,8 +45,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define NAME
 
-  config.vm.box_check_update = false
-
   # change memory size
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048

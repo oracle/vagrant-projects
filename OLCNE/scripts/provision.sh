@@ -6,7 +6,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
-# Description: Installs the Oracle Linux Cloud Native Environment packages, 
+# Description: Installs the Oracle Linux Cloud Native Environment packages,
 # configures all prerequisites and deploys the Kubernetes module.
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -395,7 +395,7 @@ install_packages() {
     echo_do firewall-cmd --add-port=10252/tcp --permanent
     echo_do firewall-cmd --add-port=2379/tcp --permanent
     echo_do firewall-cmd --add-port=2380/tcp --permanent
-    # Multi-master load balancer firewall rules
+    # Software load balancer firewall rules
     echo_do firewall-cmd --add-port=6444/tcp --permanent
     echo_do firewall-cmd --add-protocol=vrrp --permanent
   fi
@@ -456,7 +456,7 @@ certificates() {
   local nodes
 
   msg "Generate and deploy X.509 Certificates"
-  nodes="${MASTERS// /,},${WORKERS// /,}"
+  nodes="${MASTERS},${WORKERS}"
 
   if [[ ${MASTER} == 0 ]]; then
     # Standalone operator
@@ -502,7 +502,7 @@ bootstrap_olcne() {
 #######################################
 # Deploy Kubernetes cluster
 # Globals:
-#   CERT_DIR MASTERS MULTI_MASTER 
+#   CERT_DIR MASTERS MULTI_MASTER
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
 #   REGISTRY_K8S REGISTRY_OLCNE NGINX_IMAGE
 # Arguments:
@@ -555,12 +555,9 @@ deploy_kubernetes() {
 
   if [[ ${MULTI_MASTER} == 1 ]]; then
     # Force the routing through eth1 during setup (Workaround for OLCNE-1028)
-    if [[ ${MASTER} == 0 ]]; then
-      # Standalone operator
-      msg "Set masters default route on eth1 via the operator node"
-      gateway="192.168.99.100"
-    fi
-    
+    msg "Set masters default route on eth1 via the operator node"
+    gateway="192.168.99.100"
+
     for node in ${MASTERS//,/ }; do
       echo_do ssh "${node}" "\"\
         ip route list 0/0 | grep -q default && ip route del default; \
@@ -580,10 +577,10 @@ deploy_kubernetes() {
 }
 
 #######################################
-# Deploy Kubernetes cluster
+# Deploy additional modules
 # Globals:
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
-#   DEPLOY_HELM HELM_MODULE_NAME 
+#   DEPLOY_HELM HELM_MODULE_NAME
 #   DEPLOY_ISTIO ISTIO_MODULE_NAME
 # Arguments:
 #   None
@@ -597,7 +594,7 @@ deploy_modules() {
 
   # Helm module
   if [[ ${DEPLOY_HELM} == 1 ]]; then
-    
+
     # Create the Helm module
     msg "Creating the Helm module: ${HELM_MODULE_NAME}"
     echo_do olcnectl module create \
@@ -621,7 +618,7 @@ deploy_modules() {
 
   # Istio module
   if [[ ${DEPLOY_ISTIO} == 1 ]]; then
-    
+
     # Create the Istio module
     msg "Creating the Istio module: ${ISTIO_MODULE_NAME}"
     echo_do olcnectl module create \

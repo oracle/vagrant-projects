@@ -642,7 +642,6 @@ deploy_modules() {
       --name "${ISTIO_MODULE_NAME}"
   fi
 
-
 }
 
 #######################################
@@ -654,8 +653,20 @@ deploy_modules() {
 # Returns:
 #   None
 #######################################
-k8s_fixups() {
+fixups() {
   local node
+
+  msg "Copying admin.conf for vagrant user on master node(s)"
+  for node in ${MASTERS//,/ }; do
+    echo_do ssh "${node}" "\"\
+      mkdir -p ~vagrant/.kube; \
+      cp /etc/kubernetes/admin.conf ~vagrant/.kube/config; \
+      chown -R vagrant: ~vagrant/.kube; \
+      echo 'source <(kubectl completion bash)' >> ~vagrant/.bashrc; \
+      echo 'alias k=kubectl' >> ~vagrant/.bashrc; \
+      echo 'complete -F __start_kubectl k' >> ~vagrant/.bashrc; \
+      \""
+  done
 
   msg "Updating Flannel DaemonSet for Vagrant"
   # This needs to be done on a master node, just pick one from the list
@@ -673,32 +684,6 @@ k8s_fixups() {
   msg "Starting kubectl proxy service on master nodes"
   for node in ${MASTERS//,/ }; do
     echo_do ssh "${node}" systemctl start kubectl-proxy.service
-  done
-
-}
-
-#######################################
-# Run config fixups
-# Globals:
-#   MASTERS
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_fixups() {
-  local node
-
-  msg "Copying admin.conf for vagrant user on master node(s)"
-  for node in ${MASTERS//,/ }; do
-    echo_do ssh "${node}" "\"\
-      mkdir -p ~vagrant/.kube; \
-      cp /etc/kubernetes/admin.conf ~vagrant/.kube/config; \
-      chown -R vagrant: ~vagrant/.kube; \
-      echo 'source <(kubectl completion bash)' >> ~vagrant/.bashrc; \
-      echo 'alias k=kubectl' >> ~vagrant/.bashrc; \
-      echo 'complete -F __start_kubectl k' >> ~vagrant/.bashrc; \
-      \""
   done
 
 }
@@ -736,9 +721,8 @@ main () {
     certificates
     bootstrap_olcne
     deploy_kubernetes
-    k8s_fixups
     deploy_modules
-    config_fixups
+    fixups
     ready
   fi
 }

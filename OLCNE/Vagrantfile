@@ -1,7 +1,7 @@
 #
 # Vagrantfile for Oracle Linux Cloud Native Environment
 #
-# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -41,19 +41,27 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.env.load(".env.local", ".env") # enable the plugin
   end
 
-  # Memory for the VMs (2GB)
-  MEMORY = default_i("MEMORY", 2048)
+  # vCPUS (2) and Memory for the VMs (2GB)
+  CPUS = default_i('CPUS', 2)
+  MEMORY = default_i("MEMORY", 3072)
 
   # Group VirtualBox containers
   VB_GROUP = default_s("VB_GROUP", "OLCNE")
 
+  # Multi-master setup. Deploy 3 masters in HA mode.
+  MULTI_MASTER = default_b('MULTI_MASTER', false)
+
   # Separate operator node for the Oracle Linux Cloud Native Environment
   # Platform API Server and Platform Agent (default is to install the
   # components on the (first) master node
-  STANDALONE_OPERATOR = default_b('STANDALONE_OPERATOR', false)
-
-  # Multi-master setup. Deploy 3 masters in HA mode.
-  MULTI_MASTER = default_b('MULTI_MASTER', false)
+  #
+  # If multi-master is enabled, the standalone operator is automatically
+  # enabled for routing purposes
+  if MULTI_MASTER
+    STANDALONE_OPERATOR = true
+  else
+    STANDALONE_OPERATOR = default_b('STANDALONE_OPERATOR', false)
+  end
 
   # Override number of masters to deploy
   # This should not be changed -- for development purpose
@@ -71,11 +79,28 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Add Oracle Linux Cloud Native Environment developer channel
   OLCNE_DEV = default_b('OLCNE_DEV', false)
 
+  # Set the default OLCNE_ENV_NAME and OLCNE_CLUSTER_NAMEs
+  OLCNE_ENV_NAME = default_s('OLCNE_ENV_NAME', 'olcne-env')
+  OLCNE_CLUSTER_NAME = default_s('OLCNE_CLUSTER_NAME', 'olcne-cluster')
+
   # Container registry for the Kubernetes module images
   REGISTRY_K8S = default_s('REGISTRY_K8S', 'container-registry.oracle.com/olcne')
 
   # Container registry for other Oracle Linux Cloud Native Environment images
   REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', '')
+
+  # Deploy Istio?
+  DEPLOY_ISTIO = default_b('DEPLOY_ISTIO', false)
+
+  # Helm is required to deploy Istio otherwise it's optional
+  if DEPLOY_ISTIO
+    DEPLOY_HELM = true
+  else
+    DEPLOY_HELM = default_b('DEPLOY_HELM', false)
+  end
+
+  HELM_MODULE_NAME = default_s('HELM_MODULE_NAME', 'olcne-helm')
+  ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'olcne-istio')
 
   # Use specific component version (mainly used for development)
   OLCNE_VERSION = default_s('OLCNE_VERSION', '')
@@ -105,10 +130,16 @@ end
 
 def provision_vm(vm, vm_args)
   args = vm_args.clone
+  args.push("--olcne-environment-name", OLCNE_ENV_NAME)
+  args.push("--olcne-cluster-name", OLCNE_CLUSTER_NAME)
   args.push("--multi-master") if MULTI_MASTER
   args.push("--repo", YUM_REPO) unless YUM_REPO == ""
   args.push("--olcne-dev") if OLCNE_DEV
   args.push("--registry-k8s", REGISTRY_K8S) if REGISTRY_K8S
+  args.push("--with-helm") if DEPLOY_HELM
+  args.push("--helm-module-name", HELM_MODULE_NAME) if DEPLOY_HELM
+  args.push("--with-istio") if DEPLOY_ISTIO
+  args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
   args.push("--registry-olcne", REGISTRY_OLCNE) if REGISTRY_OLCNE
   args.push("--olcne-version", OLCNE_VERSION) unless OLCNE_VERSION == ""
   args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
@@ -120,7 +151,6 @@ end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  # We start from the latest OL 7 Box
   config.vm.box = BOX_NAME
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
 
@@ -165,6 +195,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provider-specific configuration -- VirtualBox
   config.vm.provider "virtualbox" do |vb|
     vb.memory = MEMORY
+    vb.cpus = CPUS
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
   end
@@ -176,7 +207,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       worker.vm.hostname = "worker#{i}.vagrant.vm"
       ip = 110 + i
       ip_addr = "192.168.99.#{ip}"
-      workers += " #{ip_addr}"
+      workers += "#{ip_addr},"
       worker.vm.network "private_network", ip: ip_addr, auto_config: false
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
@@ -193,7 +224,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       master.vm.hostname = "master#{i}.vagrant.vm"
       ip = 100 + i
       ip_addr = "192.168.99.#{ip}"
-      masters += " #{ip_addr}"
+      masters += "#{ip_addr},"
       master.vm.network "private_network", ip: ip_addr, auto_config: false
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
@@ -206,8 +237,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       args = ["--master", "--ip-addr", ip_addr]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
-        args.push("--workers", workers)
-        args.push("--masters", masters)
+        args.push("--workers", workers.chop)
+        args.push("--masters", masters.chop)
         args.push("--nginx-image", NGINX_IMAGE)
       end
       provision_vm(master.vm, args)
@@ -223,8 +254,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
       args = ["--operator", "--ip-addr", "192.168.99.100"]
-      args.push("--workers", workers)
-      args.push("--masters", masters)
+      args.push("--workers", workers.chop)
+      args.push("--masters", masters.chop)
       args.push("--nginx-image", NGINX_IMAGE)
       provision_vm(operator.vm, args)
     end

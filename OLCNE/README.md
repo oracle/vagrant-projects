@@ -4,17 +4,23 @@ This Vagrantfile will deploy and configure the following components:
 - One or more master nodes (one by default, 3 in HA mode)
 - One or more worker nodes (2 by default)
 - An optional operator node for the Oracle Linux Cloud Native Environment
-Platform API Server and Platform CLI tool (default is to install these 
+Platform API Server and Platform CLI tool (default is to install these
 components on the first master node)
 
-All master and worker nodes will have the Oracle Linux Cloud Native 
+If you enable multiple master nodes, an operator node is automatically deployed
+to provide egress routing for the cluster.
+
+All master and worker nodes will have the Oracle Linux Cloud Native
 Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Linux Cloud
-Native Environment which deploys Kubernetes 1.14.8 configured to use
-the CRI-O runtime interface. Two runtime engines are installed, runc and 
+Native Environment which deploys Kubernetes 1.17.4 configured to use
+the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
+
+You may optionally enable the deployment of the Helm and Istio modules. Note
+that enabling the Istio module will automatically enable the Helm module.
 
 _Note:_ Kata Containers requires Intel hardware virtualization support and
 will not work in a VirtualBox guest until nested virtualization support is
@@ -31,7 +37,7 @@ makes configuration much easier
 1. Change into the `vagrant-boxes/OLCNE` folder
 1. Run `vagrant up`
 
-Your Oracle Linux Cloud Native Environment is ready!  
+Your Oracle Linux Cloud Native Environment is ready!
 
 From any master node (e.g. master1) you can check the status of the cluster (as
 the `vagrant` user). E.g.:
@@ -78,11 +84,11 @@ is installed)
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
 
 ### Cluster parameters
-- `STANDALONE_OPERATOR` (default: `false`): create a separate VM for the 
-operator node -- default is to install the operator components on the (first) 
+- `STANDALONE_OPERATOR` (default: `false`): create a separate VM for the
+operator node -- default is to install the operator components on the (first)
 master node.
 - `MULTI_MASTER` (default: `false`): multi-master setup. Deploy 3 masters in
-HA mode.  
+HA mode.
 __Note__: in multi-master mode, to circumvent a networking limitation, the
 default route on master nodes needs to be on the private network interface
 (`eth1`). To achieve this we use a non-master node as default gateway.
@@ -92,14 +98,14 @@ running or you masters will loose Internet connectivity!
 - `NB_WORKERS` (default: 2): number of worker nodes to provision.
 At least one worker node is required.
 - `BIND_PROXY` (default: `false`): bind the kubectl proxy port (8001) from the
-(first) master to the Vagrant host.  
+(first) master to the Vagrant host.
 __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
 
 ### Repositories
 - `YUM_REPO` (default: none): additional yum repository to consider
 (e.g. local repo)
-- `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud 
+- `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
 Native Environment developer channel.
 - `REGISTRY_K8S` (default: `container-registry.oracle.com/olcne`): container
 registry for the Kubernetes module images.
@@ -107,7 +113,7 @@ registry for the Kubernetes module images.
 registry for other Oracle Linux Cloud Native Environment images (nginx, ...).
 
 ### Advanced Parameters
-Danger zone!  
+Danger zone!
 Mainly used for development.
 
 - The following parameters can be set to use specific component version:

@@ -435,7 +435,7 @@ passwordless_ssh() {
 	EOF
   # Set permissions
   echo_do chmod 0700 /root/.ssh
-  echo_do chmod 0600 /root/.ssh/authorized_keys
+  echo_do chmod 0600 /root/.ssh/authorized_keys /root/.ssh/id_rsa
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Removing the shared SSH keypair"

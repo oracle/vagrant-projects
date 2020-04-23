@@ -13,7 +13,7 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 
 ## Free disk space requirement
   - Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
-  - Grid Infrastructure on u01 vdisk (node1, location set by `u01_disk`): ~7 Gb 
+  - Grid Infrastructure on u01 vdisk (node1, location set by `u01_disk`): ~7 Gb
   - OS guest vdisk (node1/node2) located on default VirtualBox VM location: ~2.5 Gb
     - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
@@ -78,7 +78,7 @@ The following can be customized:
 #### shared network
 - `prefix_name`    : VM Guest prefix name (the GI cluster name will be: <prefix_name>-c')
 - `dns_public_ip`  : DNS IP
-- `network`        : It can be 'hostonly' or 'public'. 
+- `network`        : It can be 'hostonly' or 'public'.
                      In case of 'hostonly', the guest VMs are using "host-Only" network defined as 'vboxnet0'
                      In case of 'public' a bridge network will be setup ('netmask' and 'gateway' are required). During startup the bridge network is required
 - `netmask`        : Required in case of 'public' network
@@ -122,8 +122,8 @@ The following can be customized:
       deploy: 'true'
 
     shared:
-      box: ol7-latest
-      url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
+      box: oraclelinux/7
+      url: 'https://oracle.github.io/vagrant-boxes/boxes/oraclelinux/7.json'
       # ---------------------------------------------
       prefix_name:   ol7-fpp
       # ---------------------------------------------
@@ -133,7 +133,7 @@ The following can be customized:
       # ---------------------------------------------
       non_rotational: 'on'
       # ---------------------------------------------
-      asm_disk_path: 
+      asm_disk_path:
       asm_disk_num: 8
       asm_disk_size: 10
       # ---------------------------------------------
@@ -165,7 +165,7 @@ The following can be customized:
       ha_vip:     10.0.0.109
       private_ip: 192.168.200.101
       u01_disk: ./fpps_u01.vdi
-    
+
     node2:
       vm_name: fppc
       mem_size: 8192
@@ -173,7 +173,7 @@ The following can be customized:
       public_ip:  10.0.0.201
       u01_disk: ./fppc_u01.vdi
       deploy: 'false'
-    
+
     shared:
       box: ol74
       url: 'https://yum.oracle.com/boxes/oraclelinux/ol74/ol74.box'
@@ -192,7 +192,7 @@ The following can be customized:
       asm_disk_num: 4
       asm_disk_size: 200
       # ---------------------------------------------
-    
+
     env:
       gi_software: LINUX.X64_193000_grid_home.zip
       # ---------------------------------------------
@@ -223,17 +223,14 @@ The following can be customized:
 #### (Windows)
   - set http_proxy=http://proxy:port
   - set https_proxy=https://proxy:port
-    
+
 ## FPP commands you could test postdeploy based on the configuration file above
   Note1 : as you need the Database binaries zip file under "ORCL_software"
   Note2 : having limited resource you may want setup the following JAVA env variables for grid user : JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2" before rhpctl commands executions
   Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'
-  Note4 : following some fpp commands you may want to try 
+  Note4 : following some fpp commands you may want to try
   - rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip
   - rhpctl import image -image gi_19300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_grid_home.zip
   - rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode ol7-fpp-fppc -root
   - rhpctl add database -workingcopy wc_db_19300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root
   - (...)
-
-
-

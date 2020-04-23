@@ -12,7 +12,7 @@ two Oracle RAC nodes (12.2, 18c, 19c), using Vagrant/VirtualBox, Oracle Linux 7 
 
 ## Free disk space requirement
   - Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
-  - Grid Infrastructure and Database binary on u01 vdisk (node1/node2): ~20 Gb 
+  - Grid Infrastructure and Database binary on u01 vdisk (node1/node2): ~20 Gb
   - OS guest vdisk (node1/node2): ~2 Gb
     - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
@@ -23,7 +23,7 @@ Running two nodes RAC at least 6Gb per node are required
 Using Oracle Restart, only one node it's active
 
 ## VirtualBox host-Only
-The guest VMs are using an "host-Only" network defined as 'vboxnet0' 
+The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
@@ -110,8 +110,8 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      box: ol7-latest
-      url: 'https://yum.oracle.com/boxes/oraclelinux/latest/ol7-latest.box'
+      box: oraclelinux/7
+      url: 'https://oracle.github.io/vagrant-boxes/boxes/oraclelinux/7.json'
       # ---------------------------------------------
       prefix_name:   ol7-rac
       # ---------------------------------------------
@@ -122,7 +122,7 @@ The following can be customized:
       # ---------------------------------------------
       non_rotational: 'on'
       # ---------------------------------------------
-      asm_disk_path: 
+      asm_disk_path:
       asm_disk_num: 8
       asm_disk_size: 10
       # ---------------------------------------------
@@ -164,7 +164,7 @@ To run scripts in a specific order, prefix the file names with a number, e.g., `
   You can specify a different time zone using a time zone name (e.g., "America/Los_Angeles") or an offset from GMT (e.g., "Etc/GMT-2"). For more information on specifying time zones, see [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
 - Using Oracle Restart (`orestart=true`) only one node (node1) is created and the Grid Infrastructure will be configured as Oracle Restart. Oracle Restart supports single instance (SI) database only.
-  
+
 - purgelog (purgeLogs: Cleanup traces, logs in one command (Doc ID 2081655.1))
   it's configured to run everyday at 2.00am purging GI/RDBMS, Audit logs, listeners log and TFA traces older then 5 days
 

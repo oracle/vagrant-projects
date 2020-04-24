@@ -29,7 +29,13 @@ echo "export ORACLE_PDB=$ORACLE_PDB" >> /home/oracle/.bashrc
 
 # Install new apex release
 cd $ORACLE_HOME
-APEX_INSTALL=`ls /vagrant/apex_1*.*.zip |tail -1`
+APEX_INSTALL=$(find /vagrant -maxdepth 1 -name "apex_*.*.zip" -type f | tail -1)
+
+if [[ -z ${APEX_INSTALL} || ! -r "${APEX_INSTALL}" ]]; then
+  echo 'INSTALLER: Could not find APEX installer file. Exiting.'
+  exit 1
+fi
+
 unzip $APEX_INSTALL
 chown -R oracle:oinstall $ORACLE_HOME/apex
 cd -

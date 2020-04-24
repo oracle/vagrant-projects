@@ -43,6 +43,7 @@ To run scripts in a specific order, prefix the file names with a number, e.g., `
 ### Customization
 You can customize your Oracle environment by amending the environment variables in the `Vagrantfile` file.
 The following can be customized:
+* `LISTENER_PORT`: `1521` (edit the `LISTENER_PORT = 1521` line to customize)
 * `ORACLE_PWD`: `auto generated`
 * `SYSTEM_TIMEZONE`: `automatically set (see below)`
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.

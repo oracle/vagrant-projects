@@ -68,7 +68,7 @@ msg() {
 # Exit on error.
 # Globals:
 #   OLCNE_DEV OLCNE_VERSION K8S_VERSION MASTER MASTERS WORKER WORKERS
-#   OPERATOR MULTI_MASTER REGISTRY_K8S REGISTRY_OLCNE VERBOSE EXTRA_REPO
+#   OPERATOR MULTI_MASTER REGISTRY_OLCNE VERBOSE EXTRA_REPO
 #   NGINX_IMAGE IP_ADDR
 # Arguments:
 #   Command line
@@ -496,7 +496,7 @@ bootstrap_olcne() {
 # Globals:
 #   CERT_DIR MASTERS MULTI_MASTER
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
-#   REGISTRY_K8S REGISTRY_OLCNE NGINX_IMAGE
+#   REGISTRY_OLCNE NGINX_IMAGE
 # Arguments:
 #   None
 # Returns:
@@ -574,6 +574,7 @@ deploy_kubernetes() {
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
 #   DEPLOY_HELM HELM_MODULE_NAME
 #   DEPLOY_ISTIO ISTIO_MODULE_NAME
+#   REGISTRY_OLCNE
 # Arguments:
 #   None
 # Returns:
@@ -617,7 +618,7 @@ deploy_modules() {
       --environment-name "${OLCNE_ENV_NAME}" \
       --module istio \
       --name "${ISTIO_MODULE_NAME}" \
-      ${REGISTRY_K8S:+--istio-container-registry $REGISTRY_K8S} \
+      --istio-container-registry "${REGISTRY_OLCNE}" \
       --istio-helm-module "${HELM_MODULE_NAME}"
 
 

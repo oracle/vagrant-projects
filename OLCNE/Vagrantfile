@@ -83,11 +83,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   OLCNE_ENV_NAME = default_s('OLCNE_ENV_NAME', 'olcne-env')
   OLCNE_CLUSTER_NAME = default_s('OLCNE_CLUSTER_NAME', 'olcne-cluster')
 
-  # Container registry for the Kubernetes module images
-  REGISTRY_K8S = default_s('REGISTRY_K8S', 'container-registry.oracle.com/olcne')
-
-  # Container registry for other Oracle Linux Cloud Native Environment images
-  REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', '')
+    # Container registry for Oracle Linux Cloud Native Environment images
+  REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', 'container-registry.oracle.com/olcne')
 
   # Deploy Istio?
   DEPLOY_ISTIO = default_b('DEPLOY_ISTIO', false)
@@ -135,7 +132,6 @@ def provision_vm(vm, vm_args)
   args.push("--multi-master") if MULTI_MASTER
   args.push("--repo", YUM_REPO) unless YUM_REPO == ""
   args.push("--olcne-dev") if OLCNE_DEV
-  args.push("--registry-k8s", REGISTRY_K8S) if REGISTRY_K8S
   args.push("--with-helm") if DEPLOY_HELM
   args.push("--helm-module-name", HELM_MODULE_NAME) if DEPLOY_HELM
   args.push("--with-istio") if DEPLOY_ISTIO

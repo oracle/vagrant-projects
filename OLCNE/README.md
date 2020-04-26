@@ -107,10 +107,8 @@ hosts in your network.
 (e.g. local repo)
 - `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
 Native Environment developer channel.
-- `REGISTRY_K8S` (default: `container-registry.oracle.com/olcne`): container
-registry for the Kubernetes module images.
 - `REGISTRY_OLCNE` (default: `container-registry.oracle.com/olcne`): Container
-registry for other Oracle Linux Cloud Native Environment images (nginx, ...).
+registry for Oracle Linux Cloud Native Environment images.
 
 ### Advanced Parameters
 Danger zone!

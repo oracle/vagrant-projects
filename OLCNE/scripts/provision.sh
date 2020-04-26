@@ -68,7 +68,7 @@ msg() {
 # Exit on error.
 # Globals:
 #   OLCNE_DEV OLCNE_VERSION K8S_VERSION MASTER MASTERS WORKER WORKERS
-#   OPERATOR MULTI_MASTER REGISTRY_K8S REGISTRY_OLCNE VERBOSE EXTRA_REPO
+#   OPERATOR MULTI_MASTER REGISTRY_OLCNE VERBOSE EXTRA_REPO
 #   NGINX_IMAGE IP_ADDR
 # Arguments:
 #   Command line
@@ -78,7 +78,7 @@ msg() {
 parse_args() {
   OLCNE_CLUSTER_NAME='' OLCNE_ENV_NAME='' OLCNE_DEV=0 OLCNE_VERSION='' REGISTRY_OLCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
-  K8S_VERSION='' REGISTRY_K8S='' VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
+  K8S_VERSION='' VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
@@ -159,14 +159,6 @@ parse_args() {
         EXTRA_REPO="$2"
         shift; shift
         ;;
-      "--registry-k8s")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --registry-k8s" >&2
-	        exit 1
-        fi
-        REGISTRY_K8S="$2"
-        shift; shift
-        ;;
       "--registry-olcne")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --registry-olcne" >&2
@@ -229,7 +221,7 @@ parse_args() {
 
   readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV OLCNE_VERSION REGISTRY_OLCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
-  readonly K8S_VERSION REGISTRY_K8S VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
+  readonly K8S_VERSION VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
   readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
 }
 
@@ -504,7 +496,7 @@ bootstrap_olcne() {
 # Globals:
 #   CERT_DIR MASTERS MULTI_MASTER
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
-#   REGISTRY_K8S REGISTRY_OLCNE NGINX_IMAGE
+#   REGISTRY_OLCNE NGINX_IMAGE
 # Arguments:
 #   None
 # Returns:
@@ -530,8 +522,8 @@ deploy_kubernetes() {
     echo_do olcnectl module create \
       --environment-name "${OLCNE_ENV_NAME}" \
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
-      ${REGISTRY_K8S:+--container-registry $REGISTRY_K8S} \
-      ${REGISTRY_OLCNE:+--nginx-image $REGISTRY_OLCNE/$NGINX_IMAGE} \
+      --container-registry "${REGISTRY_OLCNE}" \
+      --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --apiserver-advertise-address "${MASTERS}" \
       --virtual-ip 192.168.99.99 \
       --master-nodes "${master_nodes}"\
@@ -541,8 +533,8 @@ deploy_kubernetes() {
     echo_do olcnectl module create \
       --environment-name "${OLCNE_ENV_NAME}" \
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
-      ${REGISTRY_K8S:+--container-registry $REGISTRY_K8S} \
-      ${REGISTRY_OLCNE:+--nginx-image $REGISTRY_OLCNE/$NGINX_IMAGE} \
+      --container-registry "${REGISTRY_OLCNE}" \
+      --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --virtual-ip 192.168.99.99 \
       --master-nodes "${master_nodes}"\
       --worker-nodes "${worker_nodes}"
@@ -582,6 +574,7 @@ deploy_kubernetes() {
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
 #   DEPLOY_HELM HELM_MODULE_NAME
 #   DEPLOY_ISTIO ISTIO_MODULE_NAME
+#   REGISTRY_OLCNE
 # Arguments:
 #   None
 # Returns:
@@ -625,7 +618,7 @@ deploy_modules() {
       --environment-name "${OLCNE_ENV_NAME}" \
       --module istio \
       --name "${ISTIO_MODULE_NAME}" \
-      ${REGISTRY_K8S:+--istio-container-registry $REGISTRY_K8S} \
+      --istio-container-registry "${REGISTRY_OLCNE}" \
       --istio-helm-module "${HELM_MODULE_NAME}"
 
 

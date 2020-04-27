@@ -20,38 +20,91 @@ VAGRANTFILE_API_VERSION = "2"
 BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
 BOX_NAME = "oraclelinux/7"
 
-# define hostname
-NAME = "oracle-12201-vagrant"
-
 unless Vagrant.has_plugin?("vagrant-proxyconf")
   puts 'Installing vagrant-proxyconf Plugin...'
   system('vagrant plugin install vagrant-proxyconf')
 end
 
-# get host time zone for setting VM time zone, if possible
-# can override in env section below
-offset_sec = Time.now.gmt_offset
-if (offset_sec % (60 * 60)) == 0
-  offset_hr = ((offset_sec / 60) / 60)
-  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
-  SYSTEM_TIMEZONE = 'Etc/GMT' + timezone_suffix
-else
-  # if host time zone isn't an integer hour offset, fall back to UTC
-  SYSTEM_TIMEZONE = 'UTC'
+# Define constants
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Use vagrant-env plugin if available
+  if Vagrant.has_plugin?("vagrant-env")
+    config.env.load(".env.local", ".env") # enable the plugin
+  end
+
+  # VM name
+  NAME = default_s('NAME', 'oracle-12201-vagrant')
+
+  # Memory for the VM (in MB, 2048 MB = 2 GB)
+  MEMORY = default_i('MEMORY', 2048)
+
+  # VM time zone
+  # If not specified, will be set to match host time zone (if possible)
+  SYSTEM_TIMEZONE = default_s('SYSTEM_TIMEZONE', host_tz)
+
+  # Oracle base directory
+  # "VM_" prefix used to avoid conflict with host environment variable
+  VM_ORACLE_BASE = default_s('VM_ORACLE_BASE', '/opt/oracle')
+
+  # Oracle home directory
+  # "VM_" prefix used to avoid conflict with host environment variable
+  VM_ORACLE_HOME = default_s('VM_ORACLE_HOME', '/opt/oracle/product/12.2.0.1/dbhome_1')
+
+  # Oracle SID
+  # "VM_" prefix used to avoid conflict with host environment variable
+  VM_ORACLE_SID = default_s('VM_ORACLE_SID', 'ORCLCDB')
+
+  # PDB name
+  ORACLE_PDB = default_s('ORACLE_PDB', 'ORCLPDB1')
+
+  # Database character set
+  ORACLE_CHARACTERSET = default_s('ORACLE_CHARACTERSET', 'AL32UTF8')
+
+  # Oracle Database edition
+  # Valid values are EE for Enterprise Edition or SE2 for Standard Edition 2
+  ORACLE_EDITION = default_s('ORACLE_EDITION', 'EE')
+
+  # Listener port
+  LISTENER_PORT = default_i('LISTENER_PORT', 1521)
+
+  # EM Express port
+  EM_EXPRESS_PORT = default_i('EM_EXPRESS_PORT', 5500)
+
+  # Oracle Database password for SYS, SYSTEM and PDBADMIN accounts
+  # If left blank, the password will be generated automatically
+  ORACLE_PWD = default_s('ORACLE_PWD', '')
 end
 
-# define listener and EM Express ports
-LISTENER_PORT = 1521
-EM_EXPRESS_PORT = 5500
+# Convenience methods
+def default_s(key, default)
+  ENV[key] && ! ENV[key].empty? ? ENV[key] : default
+end
+
+def default_i(key, default)
+  default_s(key, default).to_i
+end
+
+def host_tz
+  # get host time zone for setting VM time zone
+  # if host time zone isn't an integer hour offset from GMT, fall back to UTC
+  offset_sec = Time.now.gmt_offset
+  if (offset_sec % (60 * 60)) == 0
+    offset_hr = ((offset_sec / 60) / 60)
+    timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+    'Etc/GMT' + timezone_suffix
+  else
+    'UTC'
+  end
+end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define NAME
 
-  # change memory size
+  # Provider-specific configuration -- VirtualBox
   config.vm.provider "virtualbox" do |v|
-    v.memory = 2048
+    v.memory = MEMORY
     v.name = NAME
   end
 
@@ -81,15 +134,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
     {
-       "ORACLE_BASE"         => "/opt/oracle",
-       "ORACLE_HOME"         => "/opt/oracle/product/12.2.0.1/dbhome_1",
-       "ORACLE_SID"          => "ORCLCDB",
-       "ORACLE_PDB"          => "ORCLPDB1",
-       "ORACLE_CHARACTERSET" => "AL32UTF8",
-       "ORACLE_EDITION"      => "EE",
+       "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE,
+       "ORACLE_BASE"         => VM_ORACLE_BASE,
+       "ORACLE_HOME"         => VM_ORACLE_HOME,
+       "ORACLE_SID"          => VM_ORACLE_SID,
+       "ORACLE_PDB"          => ORACLE_PDB,
+       "ORACLE_CHARACTERSET" => ORACLE_CHARACTERSET,
+       "ORACLE_EDITION"      => ORACLE_EDITION,
        "LISTENER_PORT"       => LISTENER_PORT,
        "EM_EXPRESS_PORT"     => EM_EXPRESS_PORT,
-       "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
+       "ORACLE_PWD"          => ORACLE_PWD
     }
 
 end

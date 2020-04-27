@@ -2,35 +2,42 @@
 This Vagrantfile will provision a Kubernetes cluster with one master and _n_
 worker nodes (2 by default).
 
+__Note:__ this Vagrantfile is deprecated in favour of the [OLCNE](../OLCNE)
+one. It can still be used to provision earlier version of Kubernetes clusters
+(e.g. 1.12).
+
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 1. Install [Vagrant](https://vagrantup.com/)
-1. Sign in to [Oracle Container Registry](https://container-registry.oracle.com)
-and accept the _Oracle Standard Terms and Restrictions_ for the
-_Container Services_ Business Area.
 
 ## Quick start
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
 1. Change into the `vagrant-boxes/Kubernetes` folder
-1. Run `vagrant up master; vagrant ssh master`
-1. Within the master guest, run as `root`: <sup>[(\*)](#note-1)</sup>  
-`/vagrant/scripts/kubeadm-setup-master.sh`  
-You will be asked to log in to the Oracle Container Registry
-1. Run `vagrant up worker1; vagrant ssh worker1`
-1. Within the worker1 guest, run as `root`: <sup>[(\*)](#note-1)</sup>  
-`/vagrant/scripts/kubeadm-setup-worker.sh`  
-You will be asked to log in to the Oracle Container Registry
-1. Repeat the last 2 steps for worker2
+1. Run `vagrant up`
 
 Your cluster is ready!  
-Within the master guest you can check the status of the cluster (as the
-`vagrant` user). E.g.:
+Within the master guest (`vagrant ssh master`) you can check the status of the
+cluster (as the `vagrant` user). E.g.:
 - `kubectl cluster-info`
 - `kubectl get nodes`
 - `kubectl get pods --namespace=kube-system`
 
-<a id="note-1"></a>(\*) If you have a password-less local container registry
-skip steps 4 and 6  (see [Local Registry](#local-registry)).
+## If your Container Registry requires authentication
+_Note_: as of October 2019, the Oracle Container Registry does no longer
+require authentication for open source projects. Use these instructions if
+you mirror the container images on a registry requiring authentication.
+
+1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
+1. Change into the `vagrant-boxes/Kubernetes` folder
+1. Run `vagrant up master; vagrant ssh master`
+1. Within the master guest, run as `root`:  
+`/vagrant/scripts/kubeadm-setup-master.sh`  
+You will be asked to log in to the Oracle Container Registry
+1. Run `vagrant up worker1; vagrant ssh worker1`
+1. Within the worker1 guest, run as `root`:  
+`/vagrant/scripts/kubeadm-setup-worker.sh`  
+You will be asked to log in to the Oracle Container Registry
+1. Repeat the last 2 steps for worker2
 
 ## About the Vagrantfile
 
@@ -51,11 +58,37 @@ scripts.
 The Vagrantfile can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
+### How to configure
+There are several ways to set parameters:
+1. Update the Vagrantfile. This is straightforward; the downside is that you
+will loose changes when you update this repository.
+1. Use environment variables. Might be difficult to remember the parameters
+used when the box was instantiated.
+1. Use the `.env`/`.env.local` files (requires
+[vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
+your cluster by editing the `.env` file; or better copy `.env` to `.env.local`
+and edit the latter one, it won't be overridden when you update this repository
+and it won't mark your git tree as changed (you won't accidentally commit your
+local configuration!)
+
+Parameters are considered in the following order (first one wins):
+1. Environment variables
+1. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+is installed)
+1. `.env` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+is installed)
+1. Vagrantfile definitions
+
+### Cluster parameters
 - `NB_WORKERS` (default: 2): the number of worker nodes to provision.
-- `USE_PREVIEW` (default: `true`): when `true`, Vagrant provisioning script
-will use the _Oracle Linux 7 Preview_ and _Add-ons_ channels for both Docker
-Engine and Kubernetes (latest version is select by `yum`).  
-Otherwhise it will only use the _Add-ons_ channel.
+- Yum channel parameters. The following 2 parameters can be used to enable the
+_Preview_ and/or _Developer_ channels. These channels are disabled by default
+to install the latest supported version of the Docker Engine and Kubernetes.
+  - `USE_PREVIEW` (default: `false`): when `true`, Vagrant provisioning script
+will enable the _Oracle Linux 7 Preview_ channel.  
+  - `USE_DEV` (default: `false`): when `true`, Vagrant provisioning script
+will enable the _Oracle Linux 7 Developer_ channel.  
+See also [Installing the Developer release of Kubernetes](#installing-the-developer-release-of-kubernetes).
 - `MANAGE_FROM_HOST` (default: `false`): when `true`, Vagrant will bind port
 `6443` from the master node to the host.
 This allows you to manage the cluster from the host itself using the generated
@@ -103,8 +136,21 @@ __Note__: if you have a password-less registry (`KUBE_LOGIN = false`) the
 Vagrant provisioning script will also run the `kubeadm-setup-master.sh` / `kubeadm-setup-worker.sh` scripts. In other words, your Kubernetes
 cluster will be fully operational after a `vagrant up`!
 
+See also the [Container Registry Vagrantfile](../ContainerRegistry) to run a
+local registry in Vagrant.
+
+### Installing the Developer release of Kubernetes
+To install the latest Developer release of Kubernetes you need to enable
+the _Developer_ channel __and__ amend the `KUBE_PREFIX`:
+```ruby
+USE_DEV = true
+KUBE_PREFIX = "/kubernetes_developer"
+```
+
 ## Optional plugins
 You might want to install the following Vagrant plugins:
+- [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
+variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
 /etc/hosts for the guest VMs;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set

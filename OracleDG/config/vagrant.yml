@@ -1,0 +1,42 @@
+node1:
+  vm_name: primary
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.131
+  private_ip: 192.168.200.131
+  u01_disk: ./primary_u01.vdi
+
+node2:
+  vm_name: standby
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.132
+  private_ip: 192.168.200.132
+  u01_disk: ./standby_u01.vdi
+
+env:
+  box: oraclelinux/7
+  url: 'https://oracle.github.io/vagrant-boxes/boxes/oraclelinux/7.json'
+  # ---------------------------------------------
+  prefix_name:   ol7-dg
+  # ---------------------------------------------
+  dns_public_ip: 192.168.56.1
+  # ---------------------------------------------
+  non_rotational: 'on'
+  oradata_disk_path:
+  oradata_disk_num: 2
+  oradata_disk_size: 20
+  # ---------------------------------------------
+  db_software:     LINUX.X64_193000_db_home.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  pdb_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  db_name:         DB193H1
+  pdb_name:        PDB1
+  cdb:             false
+  # ---------------------------------------------

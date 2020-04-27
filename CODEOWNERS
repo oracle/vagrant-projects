@@ -1,4 +1,8 @@
 # The last matching pattern has the most precedence.
 *                         @gvenzl
+/OLCNE/                   @Djelibeybi
 /OracleDatabase/          @gvenzl
 /OracleLinux/             @scoter-oracle
+/OracleDG/                @rcitton
+/OracleRAC/               @rcitton
+/OracleFPP/               @rcitton

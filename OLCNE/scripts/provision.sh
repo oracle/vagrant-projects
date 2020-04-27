@@ -80,6 +80,7 @@ parse_args() {
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
   K8S_VERSION='' VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
+  INSECURE_REGISTRIES=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -167,6 +168,14 @@ parse_args() {
         REGISTRY_OLCNE="$2"
         shift; shift
         ;;
+        "--insecure-registries")
+          if [[ $# -lt 2 ]]; then
+            echo "Missing parameter for --insecure-registries" >&2
+  	        exit 1
+          fi
+          INSECURE_REGISTRIES="${2// /}"
+          shift; shift
+          ;;
       "--masters")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --masters" >&2
@@ -223,6 +232,7 @@ parse_args() {
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
   readonly K8S_VERSION VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
   readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
+  readonly INSECURE_REGISTRIES
 }
 
 #######################################
@@ -342,6 +352,9 @@ install_packages() {
     msg "Installing the Oracle Linux Cloud Native Environment Platform Agent"
     echo_do yum install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
     echo_do yum install -y kubeadm"${K8S_VERSION}" kubelet"${K8S_VERSION}" kubectl"${K8S_VERSION}"
+    if [[ -n ${INSECURE_REGISTRIES} ]]; then
+      echo_do sed -i -e "\"/^\\[registries.insecure]\$/,/^registries =/ s!registries = .*!registries = ['${INSECURE_REGISTRIES//,/', '}']!\"" /etc/containers/registries.conf
+    fi
     echo_do sysctl -p /etc/sysctl.d/k8s.conf
     echo_do systemctl enable olcne-agent.service
     if [[ -n ${HTTP_PROXY} ]]; then

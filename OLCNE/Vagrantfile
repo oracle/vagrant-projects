@@ -83,8 +83,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   OLCNE_ENV_NAME = default_s('OLCNE_ENV_NAME', 'olcne-env')
   OLCNE_CLUSTER_NAME = default_s('OLCNE_CLUSTER_NAME', 'olcne-cluster')
 
-    # Container registry for Oracle Linux Cloud Native Environment images
+  # Container registry for Oracle Linux Cloud Native Environment images
   REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', 'container-registry.oracle.com/olcne')
+
+  # Insecure registries, if any
+  INSECURE_REGISTRIES = default_s('INSECURE_REGISTRIES', '')
 
   # Deploy Istio?
   DEPLOY_ISTIO = default_b('DEPLOY_ISTIO', false)
@@ -137,6 +140,7 @@ def provision_vm(vm, vm_args)
   args.push("--with-istio") if DEPLOY_ISTIO
   args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
   args.push("--registry-olcne", REGISTRY_OLCNE) if REGISTRY_OLCNE
+  args.push("--insecure-registries", INSECURE_REGISTRIES) if INSECURE_REGISTRIES
   args.push("--olcne-version", OLCNE_VERSION) unless OLCNE_VERSION == ""
   args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
   args.push("--verbose") if VERBOSE

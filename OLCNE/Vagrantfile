@@ -41,7 +41,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.env.load(".env.local", ".env") # enable the plugin
   end
 
-  # vCPUS (2) and Memory for the VMs (2GB)
+  # vCPUS (2) and Memory for the VMs (3GB)
   CPUS = default_i('CPUS', 2)
   MEMORY = default_i("MEMORY", 3072)
 

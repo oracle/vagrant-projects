@@ -36,7 +36,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   NAME = default_s('NAME', 'oracle-12102-vagrant')
 
   # Memory for the VM (in MB, 2048 MB = 2 GB)
-  MEMORY = default_i('MEMORY', 2048)
+  VM_MEMORY = default_i('VM_MEMORY', 2048)
 
   # VM time zone
   # If not specified, will be set to match host time zone (if possible)
@@ -104,7 +104,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Provider-specific configuration -- VirtualBox
   config.vm.provider "virtualbox" do |v|
-    v.memory = MEMORY
+    v.memory = VM_MEMORY
     v.name = NAME
   end
 

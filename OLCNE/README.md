@@ -80,7 +80,7 @@ is installed)
 
 ### VM parameters
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
-- `MEMORY` (default: 2048): all VMs are provisioned with 2GB memory.
+- `MEMORY` (default: 3072): all VMs are provisioned with 3GB memory.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
 
 ### Cluster parameters

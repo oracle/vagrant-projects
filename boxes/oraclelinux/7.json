@@ -3,6 +3,36 @@
   "short_description": "Oracle Linux 7",
   "name": "oraclelinux/7",
   "versions": [{
+      "version": "7.8.131",
+      "status": "active",
+      "release_date": "06-May-2020",
+      "description_html": "<ul>\n<li>OL7 Update 8 box with libvirt provider</li>\n</ul>\n",
+      "description_markdown": "* OL7 Update 8 box with libvirt provider",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-libvirt-b131.box",
+        "checksum": "97fee1c1755209ec7dea5715fab7345fff5810818871be0665e63f142b45fa15",
+        "checksum_type": "sha256",
+        "size": 504469977,
+        "kernel": "4.14.35-1902.301.1.el7uek.x86_64"
+      }]
+    },
+    {
+      "version": "7.8.128",
+      "status": "active",
+      "release_date": "06-May-2020",
+      "description_html": "<ul>\n<li>Refresh OL7 Update 8 box</li>\n</ul>\n",
+      "description_markdown": "* Refresh OL7 Update 8 box",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-virtualbox-b128.box",
+        "checksum": "2d93a8d24a8e5432a5d6ddc434293af42c0382b17a05728a13a2a80bec205490",
+        "checksum_type": "sha256",
+        "size": 530148131,
+        "kernel": "4.14.35-1902.301.1.el7uek.x86_64"
+      }]
+    },
+    {
       "version": "7.8.103",
       "status": "active",
       "release_date": "08-Apr-2020",

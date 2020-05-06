@@ -3,6 +3,36 @@
   "short_description": "Oracle Linux 6",
   "name": "oraclelinux/6",
   "versions": [{
+      "version": "6.10.130",
+      "status": "active",
+      "release_date": "06-May-2020",
+      "description_html": "<ul>\n<li>Releasing 6.10 with libvirt provider</li>\n</ul>\n",
+      "description_markdown": "* Releasing 6.10 with libvirt provider",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u10-libvirt-b130.box",
+        "checksum": "ee42d4fad5bacc4aecfde5fbf56c1d15762ea93a06bc7f88612c153209febdb5",
+        "checksum_type": "sha256",
+        "size": 342999077,
+        "kernel": "4.1.12-124.38.1.el6uek.x86_64"
+      }]
+    },
+    {
+      "version": "6.10.127",
+      "status": "active",
+      "release_date": "06-May-2020",
+      "description_html": "<ul>\n<li>Refresh OL6.10 box</li>\n</ul>\n",
+      "description_markdown": "* Refresh OL6.10 box",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u10-virtualbox-b127.box",
+        "checksum": "e637ac58ddcf6c9b962a1ea99829acdb8bc35a6ed4a0ac88721cc3d850a46080",
+        "checksum_type": "sha256",
+        "size": 367602000,
+        "kernel": "4.1.12-124.38.1.el6uek.x86_64"
+      }]
+    },
+    {
       "version": "6.10.13",
       "status": "active",
       "release_date": "18-Apr-2019",

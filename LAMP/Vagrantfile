@@ -1,7 +1,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Since: April, 2018
 # Author: simon.coter@oracle.com
@@ -42,6 +42,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048
     v.name = NAME
+  end
+  config.vm.provider :libvirt do |v|
+    v.memory = 2048
   end
 
   # add proxy configuration from host env - optional

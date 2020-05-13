@@ -3,6 +3,21 @@
   "short_description": "Oracle Linux 7",
   "name": "oraclelinux/7",
   "versions": [{
+      "version": "7.8.135",
+      "status": "active",
+      "release_date": "12-May-2020",
+      "description_html": "<ul>\n<li>Improved libvirt support</li>\n</ul>\n",
+      "description_markdown": "* Improved libvirt support",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-libvirt-b135.box",
+        "checksum": "6417c738829d95dce7f088c34d9c560ce0a2be6cc3271fa33bc2382da63e5656",
+        "checksum_type": "sha256",
+        "size": 504788851,
+        "kernel": "4.14.35-1902.302.2.el7uek.x86_64"
+      }]
+    },
+    {
       "version": "7.8.131",
       "status": "active",
       "release_date": "06-May-2020",

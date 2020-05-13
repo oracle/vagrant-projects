@@ -3,6 +3,21 @@
   "short_description": "Oracle Linux 8",
   "name": "oraclelinux/8",
   "versions": [{
+      "version": "8.2.134",
+      "status": "active",
+      "release_date": "12-May-2020",
+      "description_html": "<ul>\n<li>Improved libvirt support</li>\n</ul>\n",
+      "description_markdown": "* Improved libvirt support",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u2-libvirt-b134.box",
+        "checksum": "b03c6a0a00c5d7855e318e6b71661032d120de82e65784f866419fd945fd908a",
+        "checksum_type": "sha256",
+        "size": 552221605,
+        "kernel": "5.4.17-2011.1.2.el8uek.x86_64"
+      }]
+    },
+    {
       "version": "8.2.126",
       "status": "active",
       "release_date": "06-May-2020",

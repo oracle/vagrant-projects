@@ -3,6 +3,21 @@
   "short_description": "Oracle Linux 6",
   "name": "oraclelinux/6",
   "versions": [{
+      "version": "6.10.132",
+      "status": "active",
+      "release_date": "12-May-2020",
+      "description_html": "<ul>\n<li>Improved libvirt support</li>\n</ul>\n",
+      "description_markdown": "* Improved libvirt support",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/ol6u10-libvirt-b132.box",
+        "checksum": "5d254ff8903ea41a65f2e420221f907211853ec24fd7fe2053b77dea2acad28b",
+        "checksum_type": "sha256",
+        "size": 343079516,
+        "kernel": "4.1.12-124.39.2.el6uek.x86_64"
+      }]
+    },
+    {
       "version": "6.10.130",
       "status": "active",
       "release_date": "06-May-2020",

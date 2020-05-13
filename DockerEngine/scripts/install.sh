@@ -3,11 +3,11 @@
 # LICENSE UPL 1.0
 #
 # Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-# 
+#
 # Since: February, 2018
 # Author: sergio.leunissen@oracle.com
 # Description: Installs Docker engine using Btrfs as storage
-# 
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 echo 'Installing and configuring Docker engine'
@@ -27,13 +27,13 @@ systemctl enable docker
 # Add vagrant user to docker group
 usermod -a -G docker vagrant
 
-# Relax /etc/docker permissions (vagrant-proxyconf maintains system-wide config)
-chmod a+x /etc/docker
+# Relax /etc/docker permissions
+chmod 0770 /etc/docker
 
 echo 'Docker engine is ready to use'
 echo 'To get started, on your host, run:'
 echo '  vagrant ssh'
-echo 
+echo
 echo 'Then, within the guest (for example):'
 echo '  docker run -it oraclelinux:6-slim'
 echo

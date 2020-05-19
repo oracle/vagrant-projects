@@ -29,6 +29,7 @@
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 # Box metadata location and box name
 BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
@@ -41,7 +42,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.env.load(".env.local", ".env") # enable the plugin
   end
 
-  # vCPUS (2) and Memory for the VMs (2GB)
+  # vCPUS (2) and Memory for the VMs (3GB)
   CPUS = default_i('CPUS', 2)
   MEMORY = default_i("MEMORY", 3072)
 
@@ -83,7 +84,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   OLCNE_ENV_NAME = default_s('OLCNE_ENV_NAME', 'olcne-env')
   OLCNE_CLUSTER_NAME = default_s('OLCNE_CLUSTER_NAME', 'olcne-cluster')
 
-    # Container registry for Oracle Linux Cloud Native Environment images
+  # Container registry for Oracle Linux Cloud Native Environment images
+  # You can use registry mirrors in a region close to you.
+  # Check the README.md file for more details.
   REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', 'container-registry.oracle.com/olcne')
 
   # Deploy Istio?
@@ -194,6 +197,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.cpus = CPUS
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+  end
+  config.vm.provider :libvirt do |lv|
+    lv.memory = MEMORY
+    lv.cpus = CPUS
+    lv.nested = true
   end
 
   # Workers provisioning

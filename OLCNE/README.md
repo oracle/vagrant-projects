@@ -80,7 +80,7 @@ is installed)
 
 ### VM parameters
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
-- `MEMORY` (default: 2048): all VMs are provisioned with 2GB memory.
+- `MEMORY` (default: 3072): all VMs are provisioned with 3GB memory.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
 
 ### Cluster parameters
@@ -108,7 +108,20 @@ hosts in your network.
 - `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
 Native Environment developer channel.
 - `REGISTRY_OLCNE` (default: `container-registry.oracle.com/olcne`): Container
-registry for Oracle Linux Cloud Native Environment images.
+registry for Oracle Linux Cloud Native Environment images. 
+
+For performance reasons, we recommend using the closest Oracle Container Registry mirror to your region. A list of available regions can be found on the [Regions and Availability Domains](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm) page of the Oracle Cloud Infrastructure documentation.
+
+To specify an Oracle Container Registry mirror, either edit the Vagrantfile or install the vagrant-env plugin and create a .env.local file that specifies the mirror.
+
+The following syntax can be used to specify a mirror: 
+
+- `container-registry-<region_name>.oracle.com`, e.g. `container-registry-sydney.oracle.com/olcne`
+- `container-registry-<region_identifier>.oracle.com`, e.g. `container-registry-ap-sydney-1.oracle.com/olcne`
+- `container-registry-<region_key>.oracle.com`, e.g. `container-registry-syd.oracle.com/olcne`
+
+ All regions are available at <https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm>
+
 
 ### Advanced Parameters
 Danger zone!

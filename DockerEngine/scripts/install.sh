@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Since: February, 2018
 # Author: sergio.leunissen@oracle.com
@@ -18,7 +18,7 @@ yum -y install docker-engine
 # Format spare device as Btrfs
 # Configure Btrfs storage driver
 
-docker-storage-config -s btrfs -d /dev/sdb
+docker-storage-config -s btrfs -d /dev/[sv]db
 
 # Start and enable Docker engine
 systemctl start docker

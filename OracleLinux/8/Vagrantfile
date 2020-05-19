@@ -70,10 +70,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh"
   if Vagrant.has_plugin?("vagrant-reload")
-    config.vm.provision "shell", inline: "echo 'Reloading you VM to activate the latest kernel'"
+    config.vm.provision "shell", inline: "echo 'Reloading your VM to activate the latest kernel'"
     config.vm.provision :reload
   else
-    config.vm.provision "shell", inline: "echo 'You need to reload you VM to activate the latest kernel'"
+    config.vm.provision "shell", inline: "echo 'You need to reload your VM to activate the latest kernel'"
   end
   config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 8 ready to use!'"
 

@@ -1,0 +1,107 @@
+# -----------------------------------------------
+# vagrant.yml for VirtualBox
+# -----------------------------------------------
+host1:
+  vm_name: fpps
+  mem_size: 16384
+  cpus: 1
+  public_ip:     192.168.56.101
+  vip_ip:        192.168.56.102
+  scan_ip1:      192.168.56.105
+  scan_ip2:      192.168.56.106
+  scan_ip3:      192.168.56.107
+  gns_ip:        192.168.56.108
+  ha_vip:        192.168.56.109
+  private_ip:    192.168.200.101
+  u01_disk: ./fpps_u01.vdi
+
+host2:
+  vm_name: fppc
+  mem_size: 8192
+  cpus: 1
+  public_ip: 192.168.56.201
+  u01_disk: ./fppc_u01.vdi
+  deploy: 'true'
+
+shared:
+  prefix_name:   vgt-ol7-fpp
+  # ---------------------------------------------
+  network:       hostonly
+  netmask:       
+  gateway:       
+  dns_public_ip: 
+  domain:        localdomain
+  # ---------------------------------------------
+  non_rotational: 'on'
+  # ---------------------------------------------
+  asm_disk_path: 
+  asm_disk_num:   8
+  asm_disk_size: 10
+  # ---------------------------------------------
+
+env:
+  provider: virtualbox
+  # ---------------------------------------------
+  gi_software: LINUX.X64_193000_grid_home.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  grid_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+
+
+## -----------------------------------------------
+## vagrant.yml for libVirt
+## -----------------------------------------------
+#host1:
+#  vm_name: fpps
+#  mem_size: 16384
+#  cpus: 1
+#  public_ip:     192.168.125.101
+#  vip_ip:        192.168.125.102
+#  scan_ip1:      192.168.125.105
+#  scan_ip2:      192.168.125.106
+#  scan_ip3:      192.168.125.107
+#  gns_ip:        192.168.125.108
+#  ha_vip:        192.168.125.109
+#  private_ip:    192.168.200.101
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#host2:
+#  vm_name: fppc
+#  mem_size: 8192
+#  cpus: 1
+#  public_ip: 192.168.125.201
+#  storage_pool_name: Vagrant_KVM_Storage
+#  deploy: 'true'
+#
+#shared:
+#  prefix_name:   vgt-ol7-fpp
+#  # ---------------------------------------------
+#  network:       hostonly
+#  bridge_nic:    
+#  netmask:       
+#  gateway:       
+#  dns_public_ip: 
+#  domain:        localdomain
+#  # ---------------------------------------------
+#  asm_disk_num:   8
+#  asm_disk_size: 10
+#  storage_pool_name: Vagrant_KVM_Storage
+#  # ---------------------------------------------
+#
+#env:
+#  provider: libvirt
+#  # ---------------------------------------------
+#  gi_software: LINUX.X64_193000_grid_home.zip
+#  # ---------------------------------------------
+#  root_password:   welcome1
+#  grid_password:   welcome1
+#  oracle_password: welcome1
+#  sys_password:    welcome1
+#  # ---------------------------------------------
+#  ora_languages:   en,en_GB
+#  # ---------------------------------------------

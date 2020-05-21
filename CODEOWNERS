@@ -2,6 +2,9 @@
 *                         @gvenzl
 /OracleDatabase/          @gvenzl
 /OracleLinux/             @scoter-oracle
-/OracleDG/                @rcitton
-/OracleRAC/               @rcitton
-/OracleFPP/               @rcitton
+/RACPack/                 @ruggero_citton
+/RACPack/OracleDB/        @ruggero_citton
+/RACPack/OracleDG/        @ruggero_citton
+/RACPack/OracleFPP/       @ruggero_citton
+/RACPack/OracleRAC/       @ruggero_citton
+/RACPack/OracleZDMlight/  @ruggero_citton

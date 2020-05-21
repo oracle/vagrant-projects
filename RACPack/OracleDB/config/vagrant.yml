@@ -1,0 +1,93 @@
+# -----------------------------------------------
+# vagrant.yml for VirtualBox
+# -----------------------------------------------
+host1:
+  vm_name: mydb
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.60
+  private_ip: 192.168.200.60
+  u01_disk: ./primary_u01.vdi
+
+env:
+  provider: virtualbox
+  # ---------------------------------------------
+  prefix_name:   vgt-ol7-db
+  # ---------------------------------------------
+  network:       hostonly
+  netmask:       
+  gateway:       
+  domain:        localdomain
+  # ---------------------------------------------
+  dns_public_ip: 
+  # ---------------------------------------------
+  non_rotational:    'on'
+  oradata_disk_path: 
+  oradata_disk_num:   2
+  oradata_disk_size: 20
+  # ---------------------------------------------
+  db_software:     LINUX.X64_122010_db_home.zip
+  # ---------------------------------------------
+  db_edition:      EE
+  # ---------------------------------------------
+  root_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  pdb_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  db_name:              DB122H1
+  pdb_name:             PDB1
+  cdb:                  false
+  sga_target:           
+  pga_aggregate_target: 
+  # ---------------------------------------------
+
+
+## -----------------------------------------------
+## vagrant.yml for libVirt
+## -----------------------------------------------
+#host1:
+#  vm_name: mydb
+#  mem_size: 8192
+#  cpus: 2
+#  public_ip:  192.168.125.60
+#  private_ip: 192.168.200.60
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#env:
+#  provider: libvirt
+#  # ---------------------------------------------
+#  prefix_name:   vgt-ol7-db
+#  # ---------------------------------------------
+#  network:       hostonly
+#  netmask:       
+#  gateway:       
+#  dns_public_ip: 
+#  domain:        localdomain
+#  bridge_nic:    
+#  # ---------------------------------------------
+#  dns_public_ip: 192.168.178.1
+#  # ---------------------------------------------
+#  storage_pool_name: Vagrant_KVM_Storage
+#  oradata_disk_num:   2
+#  oradata_disk_size: 20
+#  # ---------------------------------------------
+#  db_software:     LINUX.X64_122010_db_home.zip
+#  # ---------------------------------------------
+#  db_edition:      EE
+#  # ---------------------------------------------
+#  root_password:   welcome1
+#  oracle_password: welcome1
+#  sys_password:    welcome1
+#  pdb_password:    welcome1
+#  # ---------------------------------------------
+#  ora_languages:   en,en_GB
+#  # ---------------------------------------------
+#  db_name:              DB122H1
+#  pdb_name:             PDB1
+#  cdb:                  false
+#  sga_target:           
+#  pga_aggregate_target: 
+#  # ---------------------------------------------

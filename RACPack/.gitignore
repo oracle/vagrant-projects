@@ -1,0 +1,7 @@
+.git/
+.vagrant/
+.DS_Store
+CVS
+.vagrant
+.zip
+

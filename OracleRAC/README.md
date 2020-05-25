@@ -41,7 +41,7 @@ Using Oracle Restart, only one node it's active
 The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 
 ## Getting started
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
+1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes.git`
 2. Change into OracleRAC folder (`/repo clone path/vagrant-boxes/RACPack/OracleRAC`)
 3. Download Grid Infrastructure and Database binary from OTN into `./ORCL_software` folder (*)
 4. Run `vagrant up`

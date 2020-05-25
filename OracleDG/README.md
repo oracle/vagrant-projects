@@ -40,7 +40,7 @@ The virtualization provider can be VirtualBox or KVM/libVirt
 Running two RDBMS nodes at least 6Gb per node are required
 
 ## Getting started
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
+1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes.git`
 2. Change into OracleDG folder (`/repo clone path/vagrant-boxes/RACPack/OracleDG`)
 3. Download Database binary from OTN into `./ORCL_software` folder (*)
 4. Run `vagrant up`

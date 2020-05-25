@@ -62,7 +62,7 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 - Deploy OL7 host2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
+1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes.git`
 2. Change into OracleFPP folder (`/repo clone path/vagrant-boxes/RACPack/OracleFPP`)
 3. Download Grid Infrastructure and Database (optional) binary from OTN into `./ORCL_software` folder (*)
 4. Run `vagrant up`

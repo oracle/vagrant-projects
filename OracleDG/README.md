@@ -80,7 +80,7 @@ The following can be customized:
 - `provider`:           It's defining the provider to be used: 'libvirt' or 'virtualbox'
 - `prefix_name`:        VM Guest prefix name
 - `domain`:             VM Guest domain name
-- `db_software`:        Oracle Database 18c (18.3) for Linux x86-64 zip file
+- `db_software`:        Oracle Database for Linux x86-64 zip file
 - `root_password`:      VM Guest root password
 - `oracle_password`:    VM Guest oracle password
 - `sys_password`:       Oracled RDBMS SYS password

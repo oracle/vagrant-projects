@@ -1,10 +1,9 @@
 #!/bin/bash
-#
-# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/08_asmlib_label_disk.sh,v 2.0.1.2 2020/02/17 12:19:54 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      08_asmlib_label_disk.sh
@@ -13,26 +12,43 @@
 #      Setup ASMLib disks
 #
 #    NOTES
-#       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       ruggero.citton@oracle.com
+#      ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     10/01/19 - Creation
 #
-. /vagrant_config/setup.env
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
+BOX_DISK_NUM=$1
+PROVIDER=$2
+
+if [ "${PROVIDER}" == "libvirt" ]; then
+  DEVICE="vd"
+elif [ "${PROVIDER}" == "virtualbox" ]; then
+  DEVICE="sd"
+else
+  echo "Not supported provider: ${PROVIDER}"
+  exit 1
+fi
+
 /usr/sbin/oracleasm configure -u grid -g asmadmin -e -b -s y
 /usr/sbin/oracleasm init
 
-BOX_DISK_NUM=$1
+
 LETTER=`tr 0123456789 abcdefghij <<< $BOX_DISK_NUM`
-SDISKSNUM=$(ls -l /dev/sd[${LETTER}-z]|wc -l)
+SDISKSNUM=$(ls -l /dev/${DEVICE}[${LETTER}-z]|wc -l)
 for (( i=1; i<=$SDISKSNUM; i++ ))
 do
   DISK="ORCL_DISK${i}_P1"
-  DEVICE="/dev/sd${LETTER}1";
-  /usr/sbin/oracleasm createdisk ${DISK} ${DEVICE}
+  DEVICE_PATH="/dev/${DEVICE}${LETTER}1";
+  /usr/sbin/oracleasm createdisk ${DISK} ${DEVICE_PATH}
   LETTER=$(echo "$LETTER" | tr "0-9a-z" "1-9a-z_")
 done
 

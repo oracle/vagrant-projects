@@ -1,10 +1,9 @@
 #!/bin/bash
-#
-# $Header: /home/rcitton/CVS/vagrant_rac-2.0.1/scripts/06_setup_users.sh,v 2.0.1.2 2019/04/29 08:37:39 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      06_setup_users.sh
@@ -16,12 +15,17 @@
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       ruggero.citton@oracle.com
+#       Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
 #
-. /vagrant_config/setup.env
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup oracle and grid user"
@@ -96,38 +100,14 @@ then
   cat >> /home/grid/.bash_profile << EOF
 export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
-EOF
-  if [ "${ORESTART}" == "false" ]
-  then
-    cat >> /home/grid/.bash_profile << EOF
 export ORACLE_SID=+ASM1
 EOF
-  else
-    cat >> /home/grid/.bash_profile << EOF
-export ORACLE_SID=+ASM
-EOF
-  fi
 
   cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_HOME=${DB_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
-EOF
-  if [ "${DB_TYPE}" == "SI" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
-export ORACLE_SID=${DB_NAME}
-EOF
-  elif [ "${DB_TYPE}" == "RACONE" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
-export ORACLE_SID=${DB_NAME}_1
-EOF
-  elif [ "${DB_TYPE}" == "RAC" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_SID=${DB_NAME}1
 EOF
-  fi
 fi
 
 if [ `hostname` == ${NODE2_HOSTNAME} ]
@@ -135,39 +115,16 @@ then
   cat >> /home/grid/.bash_profile << EOF
 export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
-EOF
-  if [ "${ORESTART}" == "false" ]
-  then
-    cat >> /home/grid/.bash_profile << EOF
 export ORACLE_SID=+ASM2
 EOF
-  else
-    cat >> /home/grid/.bash_profile << EOF
-export ORACLE_SID=+ASM
-EOF
-  fi
 
   cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_HOME=${DB_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
-EOF
-  if [ "${DB_TYPE}" == "SI" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
-export ORACLE_SID=${DB_NAME}
-EOF
-  elif [ "${DB_TYPE}" == "RACONE" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
-export ORACLE_SID=${DB_NAME}_2
-EOF
-  elif [ "${DB_TYPE}" == "RAC" ]
-  then
-    cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_SID=${DB_NAME}2
 EOF
-  fi
 fi
+
 
 #----------------------------------------------------------
 # EndOfFile

@@ -1,10 +1,9 @@
 #!/bin/bash
-#
-# $Header: /home/rcitton/CVS/vagrant_fpp-2.0.1/scripts/02_install_os_packages.sh,v 2.0.1.2 2020/02/17 12:19:54 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      02_install_os_packages.sh
@@ -13,14 +12,19 @@
 #      Install and update OS packages
 #
 #    NOTES
-#       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       ruggero.citton@oracle.com
+#      ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     10/01/19 - Creation
-##
+#
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
@@ -81,6 +85,11 @@ yum install -y chrony
 #echo "-----------------------------------------------------------------"
 #yum -y update
 
+echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Disabling firewalld"
+echo "-----------------------------------------------------------------"
+systemctl stop  firewalld
+systemctl disable  firewalld
 #----------------------------------------------------------
 # EndOfFile
 #----------------------------------------------------------

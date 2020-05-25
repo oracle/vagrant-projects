@@ -1,13 +1,12 @@
 #!/bin/bash
-#
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/01_install_os_packages.sh,v 2.0.1.1 2018/12/10 11:15:27 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
-#      02_install_os_packages.sh
+#      01_install_os_packages.sh
 #
 #    DESCRIPTION
 #      Install and update OS packages
@@ -19,8 +18,13 @@
 #       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
+# 
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
 #
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
@@ -32,6 +36,11 @@ yum install -y oracle-database-preinstall-18c
 #echo "-----------------------------------------------------------------"
 #yum -y update
 
+echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Disabling firewalld"
+echo "-----------------------------------------------------------------"
+systemctl stop  firewalld
+systemctl disable  firewalld
 #----------------------------------------------------------
 # EndOfFile
 #----------------------------------------------------------

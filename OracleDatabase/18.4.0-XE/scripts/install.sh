@@ -59,6 +59,9 @@ export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -base64 8`1"}
 mv /etc/sysconfig/oracle-xe-18c.conf /etc/sysconfig/oracle-xe-18c.conf.original
 cp /vagrant/ora-response/oracle-xe-18c.conf.tmpl /etc/sysconfig/oracle-xe-18c.conf
 chmod g+w /etc/sysconfig/oracle-xe-18c.conf
+
+sed -i -e "s|###LISTENER_PORT###|$LISTENER_PORT|g" /etc/sysconfig/oracle-xe-18c.conf
+sed -i -e "s|###EM_EXPRESS_PORT###|$EM_EXPRESS_PORT|g" /etc/sysconfig/oracle-xe-18c.conf
 sed -i -e "s|###ORACLE_CHARACTERSET###|$ORACLE_CHARACTERSET|g" /etc/sysconfig/oracle-xe-18c.conf
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /etc/sysconfig/oracle-xe-18c.conf
 su -l -c '/etc/init.d/oracle-xe-18c configure'
@@ -66,15 +69,15 @@ su -l -c '/etc/init.d/oracle-xe-18c configure'
 chmod o+r /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
 
 # add tnsnames.ora entry for PDB
-echo 'XEPDB1 =
+echo "XEPDB1 =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = $LISTENER_PORT))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = XEPDB1)
     )
   )
-' >> /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
+" >> /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
 
 echo 'INSTALLER: Database created'
 

@@ -50,6 +50,8 @@ The following can be customized:
 * `ORACLE_PDB`: `ORCLPDB1`
 * `ORACLE_CHARACTERSET`: `AL32UTF8`
 * `ORACLE_EDITION`: `EE` | `SE2`
+* `LISTENER_PORT`: `1521` (edit the `LISTENER_PORT = 1521` line to customize)
+* `EM_EXPRESS_PORT`: `5500` (edit the `EM_EXPRESS_PORT = 5500` line to customize)
 * `ORACLE_PWD`: `auto generated`
 * `SYSTEM_TIMEZONE`: `automatically set (see below)`
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.

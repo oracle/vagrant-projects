@@ -13,7 +13,7 @@ A vagrant box that provisions Oracle Database XE 18.4 with Oracle Application Ex
 4. Download the Oracle APEX into this folder - first time only:
 [https://www.oracle.com/tools/downloads/apex-downloads.html](https://www.oracle.com/tools/downloads/apex-downloads.html)
 5. Download Oracle Rest Data Services (ORDS) into this folder - first time only:
-[https://www.oracle.com/technetwork/developer-tools/rest-data-services/downloads/index.html](https://www.oracle.com/technetwork/developer-tools/rest-data-services/downloads/index.html)
+[https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html](https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html)
 4. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have (a good) internet connection as the scripts will update the virtual box to the latest via `yum`.
    2. The Vagrant file allows for customization, if desired (see [Customization](#customization))

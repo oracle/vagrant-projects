@@ -52,6 +52,7 @@ export ORACLE_PWD=${ORACLE_PWD:-"`openssl rand -hex 8`"}
 
 cp /vagrant/ora-response/xe.rsp.tmpl /tmp/xe.rsp
 sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /tmp/xe.rsp
+sed -i -e "s|###LISTENER_PORT###|$LISTENER_PORT|g" /tmp/xe.rsp
 sudo /etc/init.d/oracle-xe configure responseFile=/tmp/xe.rsp
 rm /tmp/xe.rsp
 

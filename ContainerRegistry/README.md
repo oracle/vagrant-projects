@@ -82,7 +82,7 @@ cluster will be fully operational after a `vagrant up`!
 
 ## Optional plugins
 
-This Vagrantfile makes use of the following third party Vagrant plugins:
+When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set

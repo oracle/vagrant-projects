@@ -13,7 +13,7 @@ A Vagrantfile that installs and configures Docker engine on Oracle Linux 7 with 
 
 ## Optional plugins
 
-This Vagrantfile makes use of the following third party Vagrant plugin:
+When installed, this Vagrantfile will make use of the following third party Vagrant plugin:
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.

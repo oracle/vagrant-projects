@@ -132,7 +132,7 @@ Mainly used for development.
 - `NB_MASTERS` (default: none): override number of masters to deploy.
 
 ## Optional plugins
-This Vagrantfile makes use of the following third party Vagrant plugins:
+When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains

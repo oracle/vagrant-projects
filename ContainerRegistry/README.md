@@ -81,12 +81,18 @@ Vagrant provisioning script will also run the `kubeadm-setup-master.sh` /
 cluster will be fully operational after a `vagrant up`!
 
 ## Optional plugins
-You might want to install the following Vagrant plugin:
+
+This Vagrantfile makes use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
-proxies in the guest VMs if you need to access Internet through proxy. See
+proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
+
+To intall Vagrant plugins run:
+```
+vagrant plugin install <name>...
+```
 
 ## Feedback
 Please provide feedback of any kind via Github issues on this repository.

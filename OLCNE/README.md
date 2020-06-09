@@ -108,13 +108,13 @@ hosts in your network.
 - `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
 Native Environment developer channel.
 - `REGISTRY_OLCNE` (default: `container-registry.oracle.com/olcne`): Container
-registry for Oracle Linux Cloud Native Environment images. 
+registry for Oracle Linux Cloud Native Environment images.
 
 For performance reasons, we recommend using the closest Oracle Container Registry mirror to your region. A list of available regions can be found on the [Regions and Availability Domains](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm) page of the Oracle Cloud Infrastructure documentation.
 
 To specify an Oracle Container Registry mirror, either edit the Vagrantfile or install the vagrant-env plugin and create a .env.local file that specifies the mirror.
 
-The following syntax can be used to specify a mirror: 
+The following syntax can be used to specify a mirror:
 
 - `container-registry-<region_name>.oracle.com`, e.g. `container-registry-sydney.oracle.com/olcne`
 - `container-registry-<region_identifier>.oracle.com`, e.g. `container-registry-ap-sydney-1.oracle.com/olcne`
@@ -132,14 +132,19 @@ Mainly used for development.
 - `NB_MASTERS` (default: none): override number of masters to deploy.
 
 ## Optional plugins
-You might want to install the following Vagrant plugins:
+This Vagrantfile makes use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
 /etc/hosts for the guest VMs;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
-proxies in the guest VMs if you need to access Internet through proxy. See
+proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
+
+To intall Vagrant plugins run:
+```
+vagrant plugin install <name>...
+```
 
 ## Product Documentation
 * [Oracle Linux Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)

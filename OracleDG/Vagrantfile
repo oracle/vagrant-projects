@@ -1,31 +1,30 @@
-#
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/Vagrantfile,v 2.0.1.15 2019/11/19 08:42:54 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
 #
 #    DESCRIPTION
-#      Creates two nodes Vagrant virtual machines configured with Oracle Data Guard
+#      Creates two nodes Vagrant virtual machines configured with Oracle Data Guard for libVirt/KVM & VirtualBox
 #
 #    NOTES
-#       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#       ruggero.citton@oracle.com
+#      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
-#    rcitton     12/21/19 - vm2 u01 check fix
-#    rcitton     11/15/18 - Creation
-# 
+#    rcitton     03/30/20 - VBox libvirt & kvm support
+#    rcitton     11/06/18 - Creation
+#
 #    REVISION
-#    20191119 - $Revision: 2.0.1.15 $
+#    20200521 - $Revision: 2.0.2.2 $
 #
-#
-  
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+
 ### -------------------------------------------------------------------
 ### Disclaimer:
 ###
@@ -51,8 +50,8 @@
 ### DATA OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN ACTION IN
 ### CONTRACT OR TORT, ARISING FROM YOUR ACCESS TO, OR USE OF, THE SOFTWARE.
 ### -------------------------------------------------------------------
-### This script is NOT supported by Oracle World Wide Technical Support. 
-### The script has been tested and appears to work as intended. 
+### This script is NOT supported by Oracle World Wide Technical Support.
+### The script has been tested and appears to work as intended.
 ### -------------------------------------------------------------------
 
 # -*- mode: ruby -*-
@@ -63,45 +62,46 @@ require 'ipaddr'
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-# Costant (ol7_latest default disks number + u01)
-# -----------------------------------------------------------------
-box_disks_num = 2
-# -----------------------------------------------------------------
+# Vagrant Boxes Source Definition
+var_box = 'oraclelinux/7'
+var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 
+puts ""
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts " Oracle DG (Database Dataguard) Vagrant box for KVM/libVirt or VirtualBox "
+puts " Copyright (c) 1982-2020 Oracle and/or its affiliates                     "
+puts "--------------------------------------------------------------------------"
+puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                       "
+puts "         RAC Pack, Cloud Innovation and Solution Engineering Team         "
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts ""
+puts ""
+
+# -----------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------
 params = YAML.load_file 'config/vagrant.yml'
-var_box             = params['env']['box']
-var_url             = params['env']['url']
+#
+var_provider_name   = params['env']['provider']
 #
 var_prefix_name     = params['env']['prefix_name']
-var_group           = "/" + var_prefix_name
+var_domain          = params['env']['domain']
 #
-var_non_rotational  = params['env']['non_rotational']
-var_dns_public_ip   = params['env']['dns_public_ip']
-#                   
-var_vm1_name        = params['node1']['vm_name']
-var_vm1_name = var_prefix_name + "-" + var_vm1_name
+var_vm1_name        = params['host1']['vm_name']
+var_vm1_mem_size    = params['host1']['mem_size']
+var_vm1_cpus        = params['host1']['cpus']
+var_vm1_public_ip   = params['host1']['public_ip']
+var_vm1_private_ip  = params['host1']['private_ip']
 #
-var_vm1_mem_size    = params['node1']['mem_size']
-var_vm1_cpus        = params['node1']['cpus']
-var_vm1_public_ip   = params['node1']['public_ip']
-var_vm1_private_ip  = params['node1']['private_ip']
-var_vm1_u01_disk    = params['node1']['u01_disk']
-#                   
-var_vm2_name        = params['node2']['vm_name']
-var_vm2_name = var_prefix_name + "-" + var_vm2_name
+var_vm2_name        = params['host2']['vm_name']
+var_vm2_mem_size    = params['host2']['mem_size']
+var_vm2_cpus        = params['host2']['cpus']
+var_vm2_public_ip   = params['host2']['public_ip']
+var_vm2_private_ip  = params['host2']['private_ip']
 #
-var_vm2_mem_size    = params['node2']['mem_size']
-var_vm2_cpus        = params['node2']['cpus']
-var_vm2_public_ip   = params['node2']['public_ip']
-var_vm2_private_ip  = params['node2']['private_ip']
-var_vm2_u01_disk    = params['node2']['u01_disk']
-#                   
-var_oradata_disk_path  = params['env']['oradata_disk_path']
 var_oradata_disk_num   = params['env']['oradata_disk_num']
 var_oradata_disk_size  = params['env']['oradata_disk_size']
-#                   
+#
 var_db_software     = params['env']['db_software']
 var_ora_languages   = params['env']['ora_languages']
 #
@@ -113,21 +113,88 @@ var_pdb_password    = params['env']['pdb_password']
 var_db_name         = params['env']['db_name']
 var_pdb_name        = params['env']['pdb_name']
 var_cdb             = params['env']['cdb']
-# -----------------------------------------------------------------
 
+# -----------------------------------------------------------------
+# Provider Specific checks
+# -----------------------------------------------------------------
+if ( (var_provider_name != 'libvirt') and (var_provider_name != 'virtualbox') )
+  puts "ERROR: 'provider' option can be 'libvirt' or 'virtualbox'"
+  exit
+else
+  provider = (var_provider_name).to_sym
+  puts "--------------------"
+  puts "Detected #{provider}"
+  puts "--------------------"
+end
+
+# Base Settings
+if var_provider_name == 'virtualbox'
+  box_disks_num = 2
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+elsif var_provider_name == 'libvirt'
+  box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
+  ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+else
+  puts "Not supported #{provider}, exiting..."
+  exit
+end
+
+## Storage Setup
+if var_provider_name == 'libvirt'
+  var_vm1_storage     = params['host1']['storage_pool_name']
+  var_vm2_storage     = params['host2']['storage_pool_name']
+  var_oradata_storage = params['env']['storage_pool_name']
+
+  if var_vm1_storage.to_s.empty?
+    var_vm1_storage = "default"
+  end
+  if var_vm2_storage.to_s.empty?
+    var_vm2_storage = "default"
+  end
+  if var_oradata_storage.to_s.empty?
+    var_oradata_storage = "default"
+  end
+end
+if var_provider_name == 'virtualbox'
+  var_group           = "/" + var_prefix_name
+  var_vm1_u01_disk       = params['host1']['u01_disk']
+  var_vm2_u01_disk       = params['host2']['u01_disk']
+  var_non_rotational     = params['env']['non_rotational']
+  var_oradata_disk_path  = params['env']['oradata_disk_path']
+
+  if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
+    puts 'ERROR: non_rotational option can be on or off'
+    exit
+  end
+  if var_oradata_disk_path.to_s.empty?
+    var_oradata_disk_path = "./"
+  else
+    var_oradata_disk_path = var_oradata_disk_path + "/"
+  end
+  if var_vm1_u01_disk.to_s.empty?
+    var_vm1_u01_disk = "./primary_u01.vdi"
+  end
+  if var_vm2_u01_disk.to_s.empty?
+    var_vm2_u01_disk = "./standby_u01.vdi"
+  end
+end
+
+# -----------------------------------------------------------------
 # Variables check
 # -----------------------------------------------------------------
+if !var_prefix_name.match? /\A[0-9a-zA-Z-]{1,14}\z/
+  puts 'ERROR: prefix_name \'' + var_prefix_name + '\' option can be any combination'
+  puts '  {1..13 chars} of lower and uppercase alphanumeric characters (a - z, A - Z, 0 - 9), and hyphen(-)'
+  exit
+end
+
 if var_vm1_mem_size.to_i < 6144
   puts 'ERROR: vm1_mem_size option can not be less then 6 Gb'
   exit
 end
 if var_vm2_mem_size.to_i < 6144
   puts 'ERROR: vm2_mem_size option can not be less then 6 Gb'
-  exit
-end
-
-if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
-  puts 'ERROR: non_rotational option can be on or off'
   exit
 end
 
@@ -148,25 +215,20 @@ class String
 end
 
 if ! var_vm1_public_ip.is_ip?
-  puts 'ERROR: public_ip for node1 is not a valid IP address'
+  puts 'ERROR: public_ip for host1 is not a valid IP address'
   exit
 end
 if ! var_vm1_private_ip.is_ip?
-  puts 'ERROR: private_ip for node1 is not a valid IP address'
+  puts 'ERROR: private_ip for host1 is not a valid IP address'
   exit
 end
 
 if ! var_vm2_public_ip.is_ip?
-  puts 'ERROR: public_ip for node2 is not a valid IP address'
+  puts 'ERROR: public_ip for host2 is not a valid IP address'
   exit
 end
 if ! var_vm2_private_ip.is_ip?
-  puts 'ERROR: private_ip for node2 is not a valid IP address'
-  exit
-end
-
-if ! var_dns_public_ip.is_ip?
-  puts 'ERROR: dns_public_ip is not a valid IP address'
+  puts 'ERROR: private_ip for host2 is not a valid IP address'
   exit
 end
 
@@ -181,14 +243,14 @@ if var_root_password.to_s.empty?
 end
 if var_oracle_password.to_s.empty?
  puts "ERROR: oracle_password is not defined"
- exit 
+ exit
 end
 if var_sys_password.to_s.empty?
  puts "ERROR: sys_password is not defined"
  exit
 end
 
-if (var_cdb == true) 
+if (var_cdb == true)
   if var_pdb_name.to_s.empty?
    puts "ERROR: pdb_name is not defined"
    exit
@@ -205,11 +267,6 @@ if ! File.exist?(path)
   exit
 end
 
-if var_oradata_disk_path.to_s.empty?
-  var_oradata_disk_path = "./"
-else
-  var_oradata_disk_path = var_oradata_disk_path + "/"
-end
 if var_oradata_disk_num.to_i < 2
   puts 'ERROR: oradata_disk_num option can not be less then 2'
   exit
@@ -227,10 +284,18 @@ unless Vagrant.has_plugin?("vagrant-proxyconf")
   puts 'Installing vagrant-proxyconf Plugin...'
   system('vagrant plugin install vagrant-proxyconf')
 end
-#unless Vagrant.has_plugin?("vagrant-vbguest")
-#  puts 'Installing vagrant-vbguest Plugin...'
-#  system('vagrant plugin install vagrant-vbguest')
-#end
+
+if var_provider_name == 'libvirt'
+  unless Vagrant.has_plugin?("vagrant-libvirt")
+    puts 'Installing vagrant-libvirt Plugin...'
+    system('vagrant plugin install vagrant-libvirt')
+  end
+  unless Vagrant.has_plugin?("vagrant-kvm")
+    puts 'Installing vagrant-kvm Plugin...'
+    system('vagrant plugin install vagrant-kvm')
+  end
+end
+
 
 # Get host time zone for setting VM time zone
 offset_sec = Time.now.gmt_offset
@@ -269,104 +334,181 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # Share an additional folder to the guest VM. 
-  # The first argument is the path on the host to the actual folder.
-  # The second argument is the path on the guest to mount the folder. 
-  # And the optional third argument is a set of non-required options.
-  config.vm.synced_folder "config/",      "/vagrant_config"
-  config.vm.synced_folder "userscripts/", "/vagrant_userscripts"
-  config.vm.synced_folder "scripts/",     "/vagrant_scripts"
-
   config.ssh.forward_x11 = true
 
-  # vm node1
-  config.vm.define :node1 do |node1|
-    node1.vm.hostname = var_vm1_name
-    node1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
-    node1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
-    node1.vm.provider :virtualbox do |vb|
-      vb.name   = var_vm1_name
-      vb.memory = var_vm1_mem_size
-      vb.cpus   = var_vm1_cpus
-      vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+  if var_provider_name == 'libvirt'
+    # vm host1
+    config.vm.define :host1 do |host1|
+      host1.vm.hostname = var_vm1_name
+      host1.vm.network "private_network", :libvirt__network_name => "vgt-hostonly_network", ip: var_vm1_public_ip
+      host1.vm.network "private_network", :libvirt__network_name => "vgt-private_network",  ip: var_vm1_private_ip
+      host1.vm.provider :libvirt do |libvirt|
+        libvirt.default_prefix = var_prefix_name
+        libvirt.driver = "kvm"
+        libvirt.memory = var_vm1_mem_size
+        libvirt.cpus   = var_vm1_cpus
 
-      # Attach default guest vdisks
-      disk_num = 0
-      while disk_num < box_disks_num do
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
-        disk_num += 1
-      end
-
-      # Make u01 vdisk
-      unless File.exist?(var_vm1_u01_disk)
-        vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
-      end
-      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
-
-      # Making oradata disks
-      disk_num = disk_num.to_i + 1
-      num = 0
-      while num < var_oradata_disk_num do 
-        oradata_disk = var_oradata_disk_path + "primary_oradata_disk" + num.to_s + ".vdi"
-        # Making oradata disks
-        unless File.exist?(oradata_disk)
-          vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+        libvirt.storage_pool_name = var_vm1_storage
+        disk_num = 0
+        while disk_num < box_disks_num do
+          libvirt.storage :file,
+            #:path => '',       # automatically chosen if unspecified!
+            #:device => 'vdb',  # automatically chosen if unspecified!
+            #:type => 'qcow2'   # defaults to 'qcow2' if unspecified!
+            :size => '100G'      # defaults to 10G if unspecified!
+          disk_num += 1
         end
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
-         disk_num += 1
-         num += 1
+
+        # Making oradata disks
+        libvirt.storage_pool_name = var_oradata_storage
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do
+          oradata_disk_size = var_oradata_disk_size.to_s + "G"
+            libvirt.storage :file,
+              #:path => '',                 # automatically chosen if unspecified!
+              #:device => 'vdb',            # automatically chosen if unspecified!
+              :size => oradata_disk_size,  # defaults to 10G if unspecified!
+              :cache => 'none',
+              :type => 'raw'                # defaults to 'qcow2' if unspecified!
+          disk_num += 1
+          num += 1
+        end
+      end
+    end
+
+    #vm host2
+    config.vm.define :host2 do |host2|
+      host2.vm.hostname = var_vm2_name
+      host2.vm.network "private_network", :libvirt__network_name => "vgt-hostonly_network", ip: var_vm2_public_ip
+      host2.vm.network "private_network", :libvirt__network_name => "vgt-private_network",  ip: var_vm2_private_ip
+      host2.vm.provider :libvirt do |libvirt|
+        libvirt.default_prefix = var_prefix_name
+        libvirt.driver = "kvm"
+        libvirt.memory = var_vm2_mem_size
+        libvirt.cpus   = var_vm2_cpus
+
+        libvirt.storage_pool_name = var_vm2_storage
+        disk_num = 0
+        while disk_num < box_disks_num do
+          libvirt.storage :file,
+            #:path => '',       # automatically chosen if unspecified!
+            #:device => 'vdb',  # automatically chosen if unspecified!
+            #:type => 'qcow2'   # defaults to 'qcow2' if unspecified!
+            :size => '100G'      # defaults to 10G if unspecified!
+          disk_num += 1
+        end
+
+        # Making oradata disks
+        libvirt.storage_pool_name = var_oradata_storage
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do
+          oradata_disk_size = var_oradata_disk_size.to_s + "G"
+          libvirt.storage :file,
+            #:path => '',                 # automatically chosen if unspecified!
+            #:device => 'vdb',            # automatically chosen if unspecified!
+            :size => oradata_disk_size,   # defaults to 10G if unspecified!
+            :cache => 'none',
+            :type => 'raw'                # defaults to 'qcow2' if unspecified!
+          disk_num += 1
+          num += 1
+        end
       end
     end
   end
 
-  # vm node2
-  config.vm.define :node2 do |node2|
-    node2.vm.hostname = var_vm2_name
-    node2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
-    node2.vm.network :private_network, ip: var_vm2_private_ip, virtualbox__intnet: "private"
-    node2.vm.provider :virtualbox do |vb|
-      vb.name   = var_vm2_name
-      vb.memory = var_vm2_mem_size
-      vb.cpus   = var_vm2_cpus
-      vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+  if var_provider_name == 'virtualbox'
+    # vm host1
+    config.vm.define :host1 do |host1|
+      host1.vm.hostname = var_vm1_name
+      host1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+      host1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
+      host1.vm.provider :virtualbox do |vb|
+        vb.name   = var_prefix_name + "-" + var_vm1_name
+        vb.memory = var_vm1_mem_size
+        vb.cpus   = var_vm1_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
 
-      # Attach default guest vdisks
-      disk_num = 0
-      while disk_num < box_disks_num  do
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
-        disk_num += 1
-      end
-
-      # Make u01 vdisk
-      unless File.exist?(var_vm2_u01_disk)
-        vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1024]
-      end
-      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
-
-      # Making oradata disks
-      disk_num = disk_num.to_i + 1
-      num = 0
-      while num < var_oradata_disk_num do 
-        oradata_disk = var_oradata_disk_path + "standby_oradata_disk" + num.to_s + ".vdi"
-        # Making oradata disks
-        unless File.exist?(oradata_disk)
-          vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
         end
-        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
-         disk_num += 1
-         num += 1
+
+        # Make u01 vdisk
+        unless File.exist?(var_vm1_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
+
+        # Making oradata disks
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do
+          oradata_disk = var_oradata_disk_path + "primary_oradata_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(oradata_disk)
+            vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
+           disk_num += 1
+           num += 1
+        end
+      end
+    end
+
+    # vm host2
+    config.vm.define :host2 do |host2|
+      host2.vm.hostname = var_vm2_name
+      host2.vm.network :private_network, ip: var_vm2_public_ip, virtualbox__hostonly: "vboxnet0"
+      host2.vm.network :private_network, ip: var_vm2_private_ip, virtualbox__intnet: "private"
+      host2.vm.provider :virtualbox do |vb|
+        vb.name   = var_prefix_name + "-" + var_vm2_name
+        vb.memory = var_vm2_mem_size
+        vb.cpus   = var_vm2_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num  do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
+        end
+
+        # Make u01 vdisk
+        unless File.exist?(var_vm2_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1024]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
+
+        # Making oradata disks
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do
+          oradata_disk = var_oradata_disk_path + "standby_oradata_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(oradata_disk)
+            vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
+           disk_num += 1
+           num += 1
+        end
       end
     end
   end
 
   # Enable ssh password authentication
   config.vm.provision "shell", inline: <<-SHELL
-    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
     /bin/systemctl restart sshd
   SHELL
 
   # Enable provisioning with a shell script
   config.vm.provision "shell", path: "scripts/setup.sh", env: {
+      "PROVIDER"         => var_provider_name,
       "BOX_DISK_NUM"     => box_disks_num,
       "VM1_NAME"         => var_vm1_name,
       "VM2_NAME"         => var_vm2_name,
@@ -379,7 +521,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       "NODE2_PUBLIC_IP"  => var_vm2_public_ip,
       "NODE1_PRIV_IP"    => var_vm1_private_ip,
       "NODE2_PRIV_IP"    => var_vm2_private_ip,
-      "DNS_PUBLIC_IP"    => var_dns_public_ip,
+      "DOMAIN"           => var_domain,
       "ROOT_PASSWORD"    => var_root_password,
       "ORACLE_PASSWORD"  => var_oracle_password,
       "SYS_PASSWORD"     => var_sys_password,
@@ -388,8 +530,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       "PDB_NAME"         => var_pdb_name,
       "CDB"              => var_cdb
   }
+
 end
 #----------------------------------------------------------
 # EndOfFile
 #----------------------------------------------------------
-

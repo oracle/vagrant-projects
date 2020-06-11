@@ -1,13 +1,12 @@
 #!/bin/bash
-#
-# $Header: /home/rcitton/CVS/vagrant_dg-2.0.1/scripts/04_setup_hosts.sh,v 2.0.1.1 2018/12/10 11:15:28 rcitton Exp $
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
-#      03_setup_hosts.sh
+#      04_setup_hosts.sh
 #
 #    DESCRIPTION
 #      Setup for '/etc/hosts'
@@ -19,9 +18,14 @@
 #       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
+# 
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
 #
-. /vagrant_config/setup.env
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup /etc/hosts"
 echo "-----------------------------------------------------------------"
@@ -47,8 +51,7 @@ echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup /etc/resolv.conf"
 echo "-----------------------------------------------------------------"
 cat > /etc/resolv.conf <<EOF
-search localdomain
-nameserver ${DNS_PUBLIC_IP}
+search ${DOMAIN_NAME}
 EOF
 
 #----------------------------------------------------------

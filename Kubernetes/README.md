@@ -148,14 +148,20 @@ KUBE_PREFIX = "/kubernetes_developer"
 ```
 
 ## Optional plugins
-You might want to install the following Vagrant plugins:
+
+When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
 /etc/hosts for the guest VMs;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
-proxies in the guest VMs if you need to access Internet through proxy. See
+proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
+
+To intall Vagrant plugins run:
+```
+vagrant plugin install <name>...
+```
 
 ## Feedback
 Please provide feedback of any kind via Github issues on this repository.

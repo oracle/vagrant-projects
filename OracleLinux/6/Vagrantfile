@@ -6,6 +6,10 @@
 # Since: January, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle Linux virtual machine.
+# Optional plugins:
+#     vagrant-reload (allow VM reload during provisioning)
+#     vagrant-proxyconf (if you don't have direct access to the Internet)
+#         see https://github.com/tmatilai/vagrant-proxyconf for configuration
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
@@ -17,21 +21,11 @@
 VAGRANTFILE_API_VERSION = "2"
 
 # Box metadata location and box name
-BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_URL = "https://oracle.github.io/vagrant-projects/boxes"
 BOX_NAME = "oraclelinux/6"
 
 # define hostname
 NAME = "ol6-vagrant"
-
-unless Vagrant.has_plugin?("vagrant-reload")
-  puts 'Installing vagrant-reload Plugin...'
-  system('vagrant plugin install vagrant-reload')
-end
-
-unless Vagrant.has_plugin?("vagrant-proxyconf")
-  puts 'Installing vagrant-proxyconf Plugin...'
-  system('vagrant plugin install vagrant-proxyconf')
-end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME
@@ -61,6 +55,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     if ENV["no_proxy"]
       config.proxy.no_proxy = ENV["no_proxy"]
     end
+  else
+    ["http_proxy", "https_proxy"].each do |proxy_var|
+      if ENV[proxy_var]
+        puts 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
+        break
+      end
+    end
   end
 
   # VM hostname
@@ -71,7 +72,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh"
-  config.vm.provision :reload
+  if Vagrant.has_plugin?("vagrant-reload")
+    config.vm.provision "shell", inline: "echo 'Reloading your VM to activate the latest kernel'"
+    config.vm.provision :reload
+  else
+    config.vm.provision "shell", inline: "echo 'You need to reload your VM to activate the latest kernel'"
+  end
   config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 6 ready to use!'"
 
 end

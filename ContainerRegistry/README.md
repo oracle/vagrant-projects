@@ -1,5 +1,5 @@
-# Vagrantfile to run a local Container Registry on Oracle Linux 7
-This simple Vagrantfile will provision an Oracle Linux 7 box running a local
+# Vagrant project to run a local Container Registry on Oracle Linux 7
+This simple Vagrantfile will provision an Oracle Linux 7 VM running a local
 Container Registry.
 
 It can be used as cache for the Oracle Container Registry, in particular for
@@ -13,14 +13,14 @@ and accept the _Oracle Standard Terms and Restrictions_ for the
 _Container Services_ Business Area.
 
 ## Quick start
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
 1. Change into the `vagrant-boxes/ContainerRegistry` folder
 1. Run `vagrant up; vagrant ssh`
 
 Your local container registry is up and running!
 
 ## Configuration
-The Vagrantfile can be used _as-is_; there are a couple of parameters you
+The Vagrant project can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
 ### How to configure
@@ -82,7 +82,7 @@ cluster will be fully operational after a `vagrant up`!
 
 ## Optional plugins
 
-When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
+When installed, this Vagrant project will make use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set

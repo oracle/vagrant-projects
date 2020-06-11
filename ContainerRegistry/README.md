@@ -1,26 +1,25 @@
-# Vagrantfile to run a local Container Registry on Oracle Linux 7
-This simple Vagrantfile will provision an Oracle Linux 7 box running a local
+# Vagrant project to run a local Container Registry on Oracle Linux 7
+This Vagrant project will provision an Oracle Linux 7 VM running a local
 Container Registry.
 
 It can be used as cache for the Oracle Container Registry, in particular for
 the Kubernetes containers.
 
 ## Prerequisites
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-1. Install [Vagrant](https://vagrantup.com/)
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up either Vagrant with either VirtualBox or KVM
 1. Sign in to [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the _Oracle Standard Terms and Restrictions_ for the
 _Container Services_ Business Area.
 
 ## Quick start
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-1. Change into the `vagrant-boxes/ContainerRegistry` folder
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
+1. Change into the `vagrant-projects/ContainerRegistry` directory
 1. Run `vagrant up; vagrant ssh`
 
 Your local container registry is up and running!
 
 ## Configuration
-The Vagrantfile can be used _as-is_; there are a couple of parameters you
+The Vagrant project can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
 ### How to configure
@@ -28,7 +27,7 @@ There are several ways to set parameters:
 1. Update the Vagrantfile. This is straightforward; the downside is that you
 will loose changes when you update this repository.
 1. Use environment variables. Might be difficult to remember the parameters
-used when the box was instantiated.
+used when the VM was instantiated.
 1. Use the `.env`/`.env.local` files (requires
 [vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
 your Registry by editing the `.env` file; or better copy `.env` to `.env.local`
@@ -82,7 +81,7 @@ cluster will be fully operational after a `vagrant up`!
 
 ## Optional plugins
 
-When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
+When installed, this Vagrant project will make use of the following third party Vagrant plugins:
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set

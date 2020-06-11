@@ -6,7 +6,7 @@ It can be used as cache for the Oracle Container Registry, in particular for
 the Kubernetes containers.
 
 ## Prerequisites
-1. Read the [prerequisites in the top level README](/vgrant-projects#prerequisites) to set up either Vagrant with either VirtualBox or KVM
+1. Read the [prerequisites in the top level README](/vagrant-projects#prerequisites) to set up either Vagrant with either VirtualBox or KVM
 1. Sign in to [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the _Oracle Standard Terms and Restrictions_ for the
 _Container Services_ Business Area.

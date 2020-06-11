@@ -1,19 +1,19 @@
 # Vagrant project to run a local Container Registry on Oracle Linux 7
-This simple Vagrantfile will provision an Oracle Linux 7 VM running a local
+This Vagrant project will provision an Oracle Linux 7 VM running a local
 Container Registry.
 
 It can be used as cache for the Oracle Container Registry, in particular for
 the Kubernetes containers.
 
 ## Prerequisites
-1. Read the [prerequisites in the top level README](/vagrant-projects#prerequisites) to set up either Vagrant with either VirtualBox or KVM
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up either Vagrant with either VirtualBox or KVM
 1. Sign in to [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the _Oracle Standard Terms and Restrictions_ for the
 _Container Services_ Business Area.
 
 ## Quick start
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-1. Change into the `vagrant-boxes/ContainerRegistry` folder
+1. Change into the `vagrant-projects/ContainerRegistry` directory
 1. Run `vagrant up; vagrant ssh`
 
 Your local container registry is up and running!
@@ -27,7 +27,7 @@ There are several ways to set parameters:
 1. Update the Vagrantfile. This is straightforward; the downside is that you
 will loose changes when you update this repository.
 1. Use environment variables. Might be difficult to remember the parameters
-used when the box was instantiated.
+used when the VM was instantiated.
 1. Use the `.env`/`.env.local` files (requires
 [vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
 your Registry by editing the `.env` file; or better copy `.env` to `.env.local`

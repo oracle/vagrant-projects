@@ -13,7 +13,7 @@ All projects in this repository require Vagrant and either Oracle VM VirtualBox 
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-2. Change into the desired software folder
+2. Change into the desired project folder
 3. Follow the README.md instructions inside the folder
 
 ## Feedback

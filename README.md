@@ -21,7 +21,8 @@ All projects in this repository require Vagrant and either Oracle VM VirtualBox 
 2. Change into the desired project folder
 3. Follow the README.md instructions inside the folder
 
-## Know issues
+## Known issues
+
 
 ### Metadata not found when creating new VM
 

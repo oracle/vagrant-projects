@@ -11,8 +11,8 @@ makes configuration much easier
 
 ## Getting started
 
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. Change into the `vagrant-boxes/OracleDatabase/19.3.0` folder
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
+2. Change into the `vagrant-projects/OracleDatabase/19.3.0` folder
 3. Download the installation zip file (`LINUX.X64_193000_db_home.zip`) from OTN into this folder - first time only:
 [http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html)
 4. Run `vagrant up`

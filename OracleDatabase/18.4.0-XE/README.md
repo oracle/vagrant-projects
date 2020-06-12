@@ -11,8 +11,8 @@ makes configuration much easier
 
 ## Getting started
 
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-2. Change into the `vagrant-boxes/OracleDatabase/18.4.0-XE` folder
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
+2. Change into the `vagrant-projects/OracleDatabase/18.4.0-XE` folder
 3. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the virtual box to the latest via `yum`.
    2. The installation can be customized, if desired (see [Configuration](#configuration)).

@@ -7,9 +7,10 @@
 # Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle Linux virtual machine.
 # Optional plugins:
-#     vagrant-reload (allow VM reload during provisioning)
+#     vagrant-env (use .env files for configuration)
 #     vagrant-proxyconf (if you don't have direct access to the Internet)
 #         see https://github.com/tmatilai/vagrant-proxyconf for configuration
+#     vagrant-reload (allow VM reload during provisioning)
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
@@ -27,10 +28,18 @@ BOX_NAME = "oraclelinux/7"
 # define hostname
 NAME = "ol7-vagrant"
 
+# UI object for printing information
+ui = Vagrant::UI::Prefixed.new(Vagrant::UI::Colored.new, "vagrant")
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define NAME
+
+  if Vagrant.has_plugin?("vagrant-env")
+    ui.info "Loading environment from .env files"
+    config.env.load(".env.local", ".env")
+  end
 
   # change memory size
   config.vm.provider "virtualbox" do |v|
@@ -43,13 +52,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # add proxy configuration from host env - optional
   if Vagrant.has_plugin?("vagrant-proxyconf")
-    puts "getting Proxy Configuration from Host..."
+    ui.info "getting Proxy Configuration from Host..."
     if ENV["http_proxy"]
-      puts "http_proxy: " + ENV["http_proxy"]
+      ui.info "http_proxy: " + ENV["http_proxy"]
       config.proxy.http     = ENV["http_proxy"]
     end
     if ENV["https_proxy"]
-      puts "https_proxy: " + ENV["https_proxy"]
+      ui.info "https_proxy: " + ENV["https_proxy"]
       config.proxy.https    = ENV["https_proxy"]
     end
     if ENV["no_proxy"]
@@ -58,7 +67,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   else
     ["http_proxy", "https_proxy"].each do |proxy_var|
       if ENV[proxy_var]
-        puts 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
+        ui.warn 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
         break
       end
     end
@@ -78,6 +87,36 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   else
     config.vm.provision "shell", inline: "echo 'You need to reload your VM to activate the latest kernel'"
   end
+
+  # Extend provisioning
+  if ENV['EXTEND']
+    ENV['EXTEND'].split(/[ ,]+/).each do |extension|
+      found = false
+      ["scripts", "scripts.local"].each do |script_dir|
+        script = "#{script_dir}/#{extension}.sh"
+        if File.file?(script)
+          ui.info "Extension #{extension} using #{script} enabled"
+          found = true
+          config.vm.provision "shell", inline: "echo 'Running provisioner for extension #{extension}'"
+          config.vm.provision "shell", path: script
+          break
+        end
+      end
+      unless found
+        ui.error "Extension #{extension} does not exist -- ignored"
+      end
+    end
+  end
+
+  # Expose ports to the host
+  if ENV['EXPOSE']
+    ENV['EXPOSE'].split(/[ ,]+/).each do |expose|
+      host_port, guest_port = expose.split(':')
+      ui.info "Guest port #{guest_port} exposed to port #{host_port} on host"
+      config.vm.network "forwarded_port", guest: guest_port, host: host_port
+    end
+  end
+
   config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 7 ready to use!'"
 
 end

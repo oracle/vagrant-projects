@@ -1,6 +1,6 @@
 # ol7-vagrant
 
-A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
+A vagrant project that provisions Oracle Linux automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
 ## Prerequisites
 
@@ -23,6 +23,8 @@ A vagrant box that provisions Oracle Linux automatically, using Vagrant, an Orac
 
 When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
 
+- [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
+variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
@@ -34,6 +36,52 @@ To install Vagrant plugins run:
 ```shell
 vagrant plugin install <name>...
 ```
+
+## Extending the project
+
+This project can easily be extended by running additional scripts during provisioning and optionally expose guest ports on the host.
+
+Environment variables are used to pass the parameters to the Vagrantfile:
+
+- `EXTEND`: coma separated list of extensions.  
+   For each extension a script `<extension>.sh` is run. Scripts must be located in the `scripts` or `scripts.local` directory.
+- `EXPOSE`: coma separated list of ports to expose in the format: `<host port>:<guest port>`
+
+Example: to extend the project with the `lamp` extension and expose the guest port 80 to 8080 on the host:
+
+```shell
+EXTEND=lamp EXPOSE=8080:80 vagrant up
+````
+
+Alternatively, if the `vagrant-env` plugin is installed variables can be defined in the `.env` or `.env.local` files.
+
+## Sample extensions
+
+### LAMP
+
+Provisions an Oracle Linux LAMP solution.
+
+Usage:
+
+```shell
+EXTEND=lamp
+EXPOSE=8080:80
+```
+
+Guest port "80" (Apache) is redirected to Host port "8080".  
+Once ready, you can test it by opening following URL on your Host OS: http://localhost:8080/info.php
+
+### Docker engine
+
+Installs and configures Docker engine with Btrfs as storage.
+
+Usage:
+
+```shell
+EXTEND=docker-engine
+```
+
+Within the guest, run Docker commands, for example `docker run -it oraclelinux:7-slim` to run an Oracle Linux 7 container, or `docker run -ti oraclelinux:8-slim` to run an Oracle Linux 8 container
 
 ## Other info
 

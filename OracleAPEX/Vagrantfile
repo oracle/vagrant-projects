@@ -94,6 +94,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.memory = 2048
     v.name = NAME
   end
+  config.vm.provider :libvirt do |v|
+    v.memory = 2048
+  end
 
   # add proxy configuration from host env - optional
   if Vagrant.has_plugin?("vagrant-proxyconf")
@@ -112,7 +115,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # VM hostname
-  config.vm.hostname = NAME
+  # must be "localhost", or listener configuration will fail
+  config.vm.hostname = "localhost"
 
   # Oracle port forwarding
   config.vm.network "forwarded_port", guest: 1521, host: 1521

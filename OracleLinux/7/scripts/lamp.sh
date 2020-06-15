@@ -1,1 +1,0 @@
-../../../LAMP/scripts/lamp.sh

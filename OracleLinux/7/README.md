@@ -4,24 +4,23 @@ A Vagrant project to automatically build an Oracle Linux 7 virtual machine using
 
 ## Prerequisites
 
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-1. Install [Vagrant](https://vagrantup.com/)
+Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up either Vagrant with either VirtualBox or KVM
 
 ## Getting started
 
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-1. cd vagrant-boxes/OracleLinux/7
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
+1. Change into the `vagrant-projects/OracleLinux/7` directory
 1. Run `vagrant status` to check Vagrantfile status and possible plugin(s) required
 1. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection!
    1. The Vagrant file allows for customization.
 1. SSH into the VM either by using `vagrant ssh`
    If required, by Vagrantfile you can also setup ssh port forwarding.
-1. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+1. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 ## Optional plugins
 
-When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
+When installed, this Vagrant project will make use of the following third party Vagrant plugins:
 
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;

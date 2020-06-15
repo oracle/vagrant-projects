@@ -111,7 +111,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Extend provisioning
   if ENV['EXTEND']
-    ENV['EXTEND'].split(/[ ,]+/).each do |extension|
+    ENV['EXTEND'].sub(/^[ ,]+/,'').split(/[ ,]+/).each do |extension|
       found = false
       ["scripts", "scripts.local"].each do |script_dir|
         script = "#{script_dir}/#{extension}.sh"
@@ -131,7 +131,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Expose ports to the host
   if ENV['EXPOSE']
-    ENV['EXPOSE'].split(/[ ,]+/).each do |expose|
+    ENV['EXPOSE'].sub(/^[ ,]+/,'').split(/[ ,]+/).each do |expose|
       host_port, guest_port = expose.split(':')
       ui.info "Guest port #{guest_port} exposed to port #{host_port} on host"
       config.vm.network "forwarded_port", guest: guest_port, host: host_port

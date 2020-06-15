@@ -49,9 +49,10 @@ Environment variables are used to pass the parameters to the Vagrantfile:
 
 Example: to extend the project with the `lamp` extension and expose the guest port 80 to 8080 on the host:
 
-```shell
-EXTEND=lamp EXPOSE=8080:80 vagrant up
-````
+- On a Linux or macOS host:  
+   `EXTEND=lamp EXPOSE=8080:80 vagrant up`
+- On a Windows host:  
+   `set EXTEND=lamp && set EXPOSE=8080:80 && vagrant up`
 
 Alternatively, if the `vagrant-env` plugin is installed variables can be defined in the `.env` or `.env.local` files.
 
@@ -61,7 +62,7 @@ Alternatively, if the `vagrant-env` plugin is installed variables can be defined
 
 Provisions an Oracle Linux LAMP (**L**inux, **A**pache, **M**ySQL, **P**HP) stack.
 
-Usage:
+Set in your environment:
 
 ```shell
 EXTEND=lamp
@@ -75,7 +76,7 @@ Once ready, you can test it by opening following URL on your Host OS: http://loc
 
 Installs and configures [Oracle Container Runtime for Docker](https://docs.oracle.com/en/operating-systems/oracle-linux/docker/) using Btrfs as storage.
 
-Usage:
+Set in your environment:
 
 ```shell
 EXTEND=container-runtime

@@ -66,9 +66,9 @@ Parameters are considered in the following order (first one wins):
 
 ### VM parameters
 
-* `NAME` (default: `oracle18c-xe-vagrant`): VM name.
+* `VM_NAME` (default: `oracle18c-xe-vagrant`): VM name.
 * `VM_MEMORY` (default: 2048): memory for the VM (in MB, 2048 MB = 2 GB).
-* `SYSTEM_TIMEZONE` (default: host time zone (if possible)): VM time zone.
+* `VM_SYSTEM_TIMEZONE` (default: host time zone (if possible)): VM time zone.
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
   * The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
   * When the host time zone isn't a full hour offset from GMT (e.g., in India and parts of Australia), the guest time zone will be set to UTC.
@@ -76,10 +76,10 @@ Parameters are considered in the following order (first one wins):
 
 ### Oracle Database parameters
 
-* `ORACLE_CHARACTERSET` (default: `AL32UTF8`): database character set.
-* `LISTENER_PORT` (default: `1521`): Listener port.
-* `EM_EXPRESS_PORT` (default: `5500`): EM Express port.
-* `ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts.
+* `VM_ORACLE_CHARACTERSET` (default: `AL32UTF8`): database character set.
+* `VM_LISTENER_PORT` (default: `1521`): Listener port.
+* `VM_EM_EXPRESS_PORT` (default: `5500`): EM Express port.
+* `VM_ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts.
 
 ## Other info
 

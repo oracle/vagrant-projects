@@ -1,6 +1,6 @@
 # ol7-vagrant
 
-A vagrant project that provisions Oracle Linux automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
+A Vagrant project to automatically build an Oracle Linux 7 virtual machine using either VirtualBox or libvirtd with optional extras including a LAMP stack or container runtime.
 
 ## Prerequisites
 
@@ -43,9 +43,10 @@ This project can easily be extended by running additional scripts during provisi
 
 Environment variables are used to pass the parameters to the Vagrantfile:
 
-- `EXTEND`: coma separated list of extensions.  
-   For each extension a script `<extension>.sh` is run. Scripts must be located in the `scripts` or `scripts.local` directory.
-- `EXPOSE`: coma separated list of ports to expose in the format: `<host port>:<guest port>`
+- `EXTEND`: comma separated list of extensions.  
+   For each specified extension a script named `<extension>.sh` is automatically run during provisioning.  
+   Scripts must be located in the `scripts` or `scripts.local` directory.
+- `EXPOSE`: comma separated list of ports to expose in the format: `<host port>:<guest port>`
 
 Example: to extend the project with the `lamp` extension and expose the guest port 80 to 8080 on the host:
 
@@ -57,9 +58,9 @@ Alternatively, if the `vagrant-env` plugin is installed variables can be defined
 
 ## Sample extensions
 
-### LAMP
+### LAMP stack
 
-Provisions an Oracle Linux LAMP solution.
+Provisions an Oracle Linux LAMP (**L**inux, **A**pache, **M**ySQL, **P**HP) stack.
 
 Usage:
 
@@ -71,14 +72,14 @@ EXPOSE=8080:80
 Guest port "80" (Apache) is redirected to Host port "8080".  
 Once ready, you can test it by opening following URL on your Host OS: http://localhost:8080/info.php
 
-### Docker engine
+### Oracle Container Runtime for Docker
 
-Installs and configures Docker engine with Btrfs as storage.
+Installs and configures [Oracle Container Runtime for Docker](https://docs.oracle.com/en/operating-systems/oracle-linux/docker/) using Btrfs as storage.
 
 Usage:
 
 ```shell
-EXTEND=docker-engine
+EXTEND=container-runtime
 ```
 
 Within the guest, run Docker commands, for example `docker run -it oraclelinux:7-slim` to run an Oracle Linux 7 container, or `docker run -ti oraclelinux:8-slim` to run an Oracle Linux 8 container
@@ -86,4 +87,4 @@ Within the guest, run Docker commands, for example `docker run -it oraclelinux:7
 ## Other info
 
 - If you need to, you can connect to the machine via `vagrant ssh`.
-- On the guest OS, the directory `/vagrant` is a shared folder and maps to wherever you have this file checked out.
+- The directory in which the `Vagrantfile` is located is automatically mounted into the guest at `/vagrant` as a shared folder.

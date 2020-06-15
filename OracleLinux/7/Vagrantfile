@@ -52,20 +52,41 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # add proxy configuration from host env - optional
   if Vagrant.has_plugin?("vagrant-proxyconf")
-    ui.info "getting Proxy Configuration from Host..."
-    if ENV["http_proxy"]
-      ui.info "http_proxy: " + ENV["http_proxy"]
-      config.proxy.http     = ENV["http_proxy"]
+    ui.info "Getting Proxy Configuration from Host..."
+    has_proxy = false
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTP proxy: " + proxy
+        config.proxy.http = proxy
+        has_proxy = true
+        break
+      end
     end
-    if ENV["https_proxy"]
-      ui.info "https_proxy: " + ENV["https_proxy"]
-      config.proxy.https    = ENV["https_proxy"]
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTPS proxy: " + proxy
+        config.proxy.https = proxy
+        has_proxy = true
+        break
+      end
     end
-    if ENV["no_proxy"]
-      config.proxy.no_proxy = ENV["no_proxy"]
+
+    if has_proxy
+      # Only consider no_proxy if we have proxies defined.
+      no_proxy = ""
+      ["no_proxy", "NO_PROXY"].each do |proxy_var|
+        if ENV[proxy_var]
+          no_proxy = ENV[proxy_var]
+          ui.info "No proxy: " + no_proxy
+          no_proxy += ","
+          break
+        end
+      end
+      config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm"
     end
   else
-    ["http_proxy", "https_proxy"].each do |proxy_var|
+    ["http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"].each do |proxy_var|
       if ENV[proxy_var]
         ui.warn 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
         break

@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018,2020 Oracle and/or its affiliates.
 #
 # Since: January, 2018
 # Author: gerald.venzl@oracle.com
@@ -36,11 +36,11 @@ yum install mysql-community-server.x86_64 mysql-community-client.x86_64 -y
 systemctl enable mysqld
 systemctl start mysqld
 
-echo 'INSTALLER: Installing PHP 7.2 from Oracle Linux Software Collections'
+echo 'INSTALLER: Installing PHP 7.3 from Oracle Linux Software Collections'
 # get PHP 7.0
-yum install rh-php72.x86_64 rh-php72-php rh-php72-php-mysqlnd.x86_64 rh-php72-php-fpm.x86_64 -y
-systemctl enable rh-php72-php-fpm
-systemctl start rh-php72-php-fpm
+yum install rh-php73.x86_64 rh-php73-php rh-php73-php-mysqlnd.x86_64 rh-php73-php-fpm.x86_64 -y
+systemctl enable rh-php73-php-fpm
+systemctl start rh-php73-php-fpm
 
 echo 'INSTALLER: Configuring Apache Server'
 cat > /opt/rh/httpd24/root/var/www/html/info.php << EOF
@@ -53,9 +53,9 @@ systemctl restart httpd24-httpd
 
 cat > /etc/motd << EOF
 
-Welcome to Oracle Linux Server release 7.6
+Welcome to Oracle Linux Server release 7
 LAMP architecture based on Oracle Linux Software Collections:
- - Apache 2.4, MySQL Community 8 and PHP 7.2
+ - Apache 2.4, MySQL Community 8 and PHP 7.3
 
 The Oracle Linux End-User License Agreement can be viewed here:
 
@@ -70,5 +70,5 @@ http://localhost:8080/info.php
 
 Please use following commands to enable Software Collection environments:
 - Apache 2.4: # scl enable httpd24 /bin/bash
-- PHP 7.2: # scl enable rh-php72 /bin/bash
+- PHP 7.3: # scl enable rh-php73 /bin/bash
 EOF

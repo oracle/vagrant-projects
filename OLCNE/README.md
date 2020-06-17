@@ -33,8 +33,8 @@ released for Intel CPUs.
 makes configuration much easier
 
 ## Quick start
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-1. Change into the `vagrant-boxes/OLCNE` folder
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
+1. Change into the `vagrant-projects/OLCNE` folder
 1. Run `vagrant up`
 
 Your Oracle Linux Cloud Native Environment is ready!

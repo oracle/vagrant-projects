@@ -1,0 +1,85 @@
+#
+# Vagrantfile for Container Tools
+#
+# Copyright (c) 2020 Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# https://oss.oracle.com/licenses/upl.
+#
+# Description: Creates an Container Tools environment on Oracle Linux 8
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# Box metadata location and box name
+BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_NAME = "oraclelinux/8"
+
+# define hostname
+NAME = "ol8-podman"
+
+# Convenience function -- Ensure URL has a scheme
+def ensure_scheme(url)
+  (url =~ /.*:\/\// ? '' : 'http://') + url
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = BOX_NAME
+  config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
+  config.vm.define NAME
+
+  # Set proxies if vagrant-proxyconf is installed
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTP proxy: " + proxy
+        config.proxy.http = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        puts "HTTPS proxy: " + proxy
+        config.proxy.https = ensure_scheme(proxy)
+        break
+      end
+    end
+
+    # We should not proxy local IPs (Container bridges, ...)
+    # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
+    # 'blacklist' *all* IPs
+    no_proxy = ''
+    ["no_proxy", "NO_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        no_proxy = ENV[proxy_var]
+        puts "No proxy: " + no_proxy
+        no_proxy += ','
+        break
+      end
+    end
+    config.proxy.no_proxy = no_proxy + "localhost,.vagrant.vm," + (".0"..".255").to_a.join(",")
+  end
+
+  # change memory size
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.name = NAME
+  end
+  config.vm.provider :libvirt do |v|
+    v.memory = 2048
+  end
+
+
+  # VM hostname
+  config.vm.hostname = NAME + ".vagrant.vm"
+
+  # Provision everything on the first run
+  config.vm.provision "shell", path: "scripts/install.sh"
+
+  end

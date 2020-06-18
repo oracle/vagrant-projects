@@ -1,12 +1,11 @@
 # oracle12cR1-vagrant
 
-A vagrant box that provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
+This Vagrant project provisions Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
 ## Prerequisites
 
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-2. Install [Vagrant](https://vagrantup.com/)
-3. The [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
+1. Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM.
+2. The [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
 makes configuration much easier
 
 ## Getting started

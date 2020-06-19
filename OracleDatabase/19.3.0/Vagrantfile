@@ -99,7 +99,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
   config.vm.define VM_NAME
 
-  # Provider-specific configuration -- VirtualBox
+  # Provider-specific configuration
   config.vm.provider "virtualbox" do |v|
     v.memory = VM_MEMORY
     v.name = VM_NAME

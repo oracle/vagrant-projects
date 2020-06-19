@@ -1,4 +1,4 @@
-# Oracle Data Guard (DG) Vagrant boxes on VirtualBox or KVM/libVirt provider
+# Oracle Data Guard (DG) Vagrant project on VirtualBox or KVM/libVirt provider
 
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Oracle RAC Pack, Cloud Innovation and Solution Engineering Team
 
@@ -8,25 +8,13 @@ two Oracle RDBMS (18c, 19c) hosts configured with Oracle Data Guard, using Vagra
 
 The virtualization provider can be VirtualBox or KVM/libVirt
 
-## Prerequisites for VirtualBox
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-2. Install [Vagrant](https://vagrantup.com/)
-3. You need to download Database binary separately
+## Prerequisites
 
-## Prerequisites for KVM/libVirt provider
-1. Install [KVM]/[libVirt]
-2. Install [Vagrant](https://vagrantup.com/)
-3. Install extra packages such ruby-devel libvirt-devel
-  - `yum install -y ruby-devel libvirt-devel`
-4. Install vagrant-libvirt as user
-  - `vagrant plugin install vagrant-libvirt`
-5. You need to download Database binary separately
-
-#### Note: *Using KVM/libVirt provider you may need to disable or manage host firewall to permit NFS traffic with the guest VMs*
-#### Note: if you are going to use KVM on OL7/OL8 please read 'https://blogs.oracle.com/linux/getting-started-with-the-vagrant-libvirt-provider-for-oracle-linux'
-
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
+1. You need to download Database binary separately
 
 ## Free disk space requirement
+
 - Database binary zip under "./ORCL_software": ~3.2 Gb
 - Database binary on u01 vdisk (node1/node2) : ~10 Gb
 - OS guest vdisk (node1/node2): ~2 Gb
@@ -37,15 +25,17 @@ The virtualization provider can be VirtualBox or KVM/libVirt
 - Database DBFs virtual disks (dynamic size): ~80 Gb
 
 ## Memory requirement
+
 Running two RDBMS nodes at least 6Gb per node are required
 
 ## Getting started
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes.git`
-2. Change into OracleDG folder (`/repo clone path/vagrant-boxes/RACPack/OracleDG`)
+
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects.git`
+2. Change into OracleDG folder (`/repo clone path/vagrant-projects/RACPack/OracleDG`)
 3. Download Database binary from OTN into `./ORCL_software` folder (*)
 4. Run `vagrant up`
 5. Connect the hosts issuing: `vagrant ssh host1/2`.
-6. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`
+6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`
 
 (*) Download Database binary from OTN into `ORCL_software` folder
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
@@ -58,10 +48,12 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
        (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
 
 ## Customization
+
 You can customize your Oracle environment by amending the parameters in the configuration file: `./config/vagrant.yml`
 The following can be customized:
 
 #### node1/node2
+
 - `vm_name`:           VM Guest partial name. The full name will be <prefix_name>-<vm_name>
 - `mem_size`:          VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`:              VM Guest virtual cores
@@ -71,12 +63,14 @@ The following can be customized:
 - `u01_disk`:          VirtualBox Oracle binary virtual disk (u01) file path
 
 #### DB storage
+
 - `storage_pool_name`: KVM/libVirt Oradata dbf KVM storage pool name
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `oradata_disk_num` : Oradata number of disks
 - `oradata_disk_size`: oradata disk size (Gb)
 
 #### environment
+
 - `provider`:           It's defining the provider to be used: 'libvirt' or 'virtualbox'
 - `prefix_name`:        VM Guest prefix name
 - `domain`:             VM Guest domain name
@@ -91,8 +85,8 @@ The following can be customized:
 - `db_type`:            Oracle RDBMS type: RAC, RACONE, SI (single Instance)
 - `cdb`:                Oracle RDBMS database created as container (true/false)
 
-
 #### VirtualBox provider Example:
+
     host1:
       vm_name: primary
       mem_size: 8192
@@ -136,6 +130,7 @@ The following can be customized:
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
+
     host1:
       vm_name: primary
       mem_size: 8192
@@ -177,13 +172,14 @@ The following can be customized:
       cdb:             false
       # ---------------------------------------------
 
-
 ## Running scripts after setup
+
 You can have the installer run scripts after setup by putting them in the `userscripts` directory below the directory where you have this file checked out. Any shell (`.sh`) or SQL (`.sql`) scripts you put in the `userscripts` directory will be executed by the installer after the database is set up and started. Only shell and SQL scripts will be executed; all other files will be ignored. These scripts are completely optional.
 Shell scripts will be executed as the root user, which has sudo privileges. SQL scripts will be executed as SYS.
 To run scripts in a specific order, prefix the file names with a number, e.g., `01_shellscript.sh`, `02_tablespaces.sql`, `03_shellscript2.sh`, etc.
 
 ## Note
+
 - `SYSTEM_TIMEZONE`: `automatically set (see below)`
   The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
   The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
@@ -212,13 +208,10 @@ To run scripts in a specific order, prefix the file names with a number, e.g., `
           </dhcp>
         </ip>
       </network>
-- If you are behing a proxy, set the following env variables
-
-
-    #### (Linux/MacOSX)
+- If you are behind a proxy, set the following env variables
+  - (Linux/MacOSX)
     - export http_proxy=http://proxy:port
     - export https_proxy=https://proxy:port
-
-    #### (Windows)
+  - (Windows)
     - set http_proxy=http://proxy:port
     - set https_proxy=https://proxy:port

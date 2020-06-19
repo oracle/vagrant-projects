@@ -1,4 +1,4 @@
-# Oracle Fleet Patching and Provisioning (FPP) Vagrant boxes on VirtualBox or KVM/libVirt provider
+# Oracle Fleet Patching and Provisioning (FPP) Vagrant project on VirtualBox or KVM/libVirt provider
 
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
@@ -6,25 +6,13 @@ This directory contains Vagrant build files to provision automatically
 one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant, Oracle Linux 7.4 and shell scripts.
 ![](images/OracleFPP.png)
 
-## Prerequisites for VirtualBox
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-2. Install [Vagrant](https://vagrantup.com/)
-3. You need to download Database binary separately
+## Prerequisites
 
-## Prerequisites for KVM/libVirt provider
-1. Install [KVM]/[libVirt]
-2. Install [Vagrant](https://vagrantup.com/)
-3. Install extra packages such ruby-devel libvirt-devel
-  - `yum install -y ruby-devel libvirt-devel`
-4. Install vagrant-libvirt as user
-  - `vagrant plugin install vagrant-libvirt`
-5. You need to download Database binary separately
-
-#### Note: *Using KVM/libVirt provider you may need to disable or manage host firewall to permit NFS traffic with the guest VMs*
-#### Note: if you are going to use KVM on OL7/OL8 please read 'https://blogs.oracle.com/linux/getting-started-with-the-vagrant-libvirt-provider-for-oracle-linux'
-
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
+1. You need to download Database binary separately
 
 ## Free disk space requirement
+
 - Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
 - Grid Infrastructure on u01 vdisk (node1, location set by `u01_disk`): ~7 Gb
 - OS guest vdisk (node1/node2) located on default VirtualBox VM location: ~2.5 Gb
@@ -33,7 +21,6 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
     - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
 - Dynamically allocated storage for ASM shared virtual disks (node1, location set by `asm_disk_path`): ~24 Gb
-
 
 #### Extra Steps when KVM/libVirt provider is in use:
 
@@ -58,16 +45,18 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
         oraclelinux/7 (libvirt, 7.7.17)
 
 ## Memory requirement
+
 - Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
 - Deploy OL7 host2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
-1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes.git`
-2. Change into OracleFPP folder (`/repo clone path/vagrant-boxes/RACPack/OracleFPP`)
+
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects.git`
+2. Change into OracleFPP folder (`/repo clone path/vagrant-projects/RACPack/OracleFPP`)
 3. Download Grid Infrastructure and Database (optional) binary from OTN into `./ORCL_software` folder (*)
 4. Run `vagrant up`
 5. Connect to Oracle FPP Server (node1).
-6. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 (*) Download Grid Infrastructure and Database binary from OTN into `ORCL_software` folder
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
@@ -84,10 +73,12 @@ https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.h
        (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
 
 ## Customization
+
 You can customize your Oracle environment by amending the parameters in the configuration file: `./config/vagrant.yml`
 The following can be customized:
 
 #### host1
+
 - `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
 - `mem_size`         : VM Guest memory size Mb (minimum 12Gb --> 12288)
 - `cpus`             : VM Guest virtual cores
@@ -104,6 +95,7 @@ The following can be customized:
 
 
 #### host2
+
 - `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
 - `mem_size`         : VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`             : VM Guest virtual cores
@@ -113,6 +105,7 @@ The following can be customized:
 - `deploy`           : It can be 'true' or 'false'. Using false node2 deploy will be skipped.
 
 #### shared network
+
 - `prefix_name`      : VM Guest prefix name (the GI cluster name will be: <prefix_name>-c')
 - `network`          : It can be 'hostonly' or 'public'.
   - In case of 'hostonly', the guest VMs are using "host-Only" network defined as 'vboxnet0'
@@ -124,12 +117,14 @@ The following can be customized:
 - `domain`           : VM Guest domain name
 
 #### shared storage
+
 - `storage_pool_name`: KVM/libVirt Oradata dbf KVM storage pool name
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`     : Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`    : Oracle RAC Automatic Storage Manager virtual disk (max) size in Gb (at least 10)
 
 #### environment
+
 - `provider`         : It's defining the provider to be used: 'libvirt' or 'virtualbox'
 - `grid_software`    : Oracle Database 18c Grid Infrastructure (18.3) for Linux x86-64 zip file (or above)
 - `root_password`    : VM Guest root password
@@ -139,9 +134,8 @@ The following can be customized:
 - `ora_languages`    : Oracle products languages
 - `asm_lib_type`     : ASM library in use (ASMLIB/AFD)
 
-
-
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):
+
     host1:
       vm_name: fpps
       mem_size: 16384
@@ -190,6 +184,7 @@ The following can be customized:
       # ---------------------------------------------
 
 #### Virtualbox provider Example2: (Oracle FPP Server available on public network):
+
     host1:
       vm_name: fpps
       mem_size: 16384
@@ -241,6 +236,7 @@ The following can be customized:
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on private network):
+
     host1:
       vm_name: fpps
       mem_size: 16384
@@ -288,6 +284,7 @@ The following can be customized:
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on public network):
+
     host1:
       vm_name: fpps
       mem_size: 16384
@@ -339,6 +336,7 @@ The following can be customized:
       # ---------------------------------------------
 
 ## Note
+
 - `SYSTEM_TIMEZONE`: `automatically set (see below)`
   The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
   The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
@@ -367,24 +365,24 @@ The following can be customized:
           </dhcp>
         </ip>
       </network>
-- If you are behing a proxy, set the following env variables
-
-
-    #### (Linux/MacOSX)
+- If you are behind a proxy, set the following env variables
+  - (Linux/MacOSX)
     - export http_proxy=http://proxy:port
     - export https_proxy=https://proxy:port
 
-    #### (Windows)
+  - (Windows)
     - set http_proxy=http://proxy:port
     - set https_proxy=https://proxy:port
 
 ## FPP commands you could test postdeploy based on the configuration file above
-  Note1 : as you need the Database binaries zip file under "ORCL_software"
-  Note2 : having limited resource you may want setup the following JAVA env variables for grid user : `JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2"` before rhpctl commands executions
-  Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'
-  Note4 : following some fpp commands you may want to try
-  - `rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip`
-  - `rhpctl import image -image gi_19300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_grid_home.zip`
-  - `rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode fppc -root`
-  - `rhpctl add database -workingcopy wc_db_19300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root`
-  - (...)
+
+Note1 : as you need the Database binaries zip file under "ORCL_software"  
+Note2 : having limited resource you may want setup the following JAVA env variables for grid user : `JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2"` before rhpctl commands executions  
+Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'  
+Note4 : following some fpp commands you may want to try
+
+- `rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip`
+- `rhpctl import image -image gi_19300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_grid_home.zip`
+- `rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode fppc -root`
+- `rhpctl add database -workingcopy wc_db_19300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root`
+- (...)

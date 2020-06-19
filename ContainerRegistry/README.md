@@ -1,4 +1,5 @@
 # Vagrant project to run a local Container Registry on Oracle Linux 7
+
 This Vagrant project will provision an Oracle Linux 7 VM running a local
 Container Registry.
 
@@ -6,12 +7,14 @@ It can be used as cache for the Oracle Container Registry, in particular for
 the Kubernetes containers.
 
 ## Prerequisites
-1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up either Vagrant with either VirtualBox or KVM
+
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
 1. Sign in to [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the _Oracle Standard Terms and Restrictions_ for the
 _Container Services_ Business Area.
 
 ## Quick start
+
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
 1. Change into the `vagrant-projects/ContainerRegistry` directory
 1. Run `vagrant up; vagrant ssh`
@@ -19,11 +22,14 @@ _Container Services_ Business Area.
 Your local container registry is up and running!
 
 ## Configuration
+
 The Vagrant project can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
 ### How to configure
+
 There are several ways to set parameters:
+
 1. Update the Vagrantfile. This is straightforward; the downside is that you
 will loose changes when you update this repository.
 1. Use environment variables. Might be difficult to remember the parameters
@@ -36,6 +42,7 @@ and it won't mark your git tree as changed (you won't accidentally commit your
 local configuration!)
 
 Parameters are considered in the following order (first one wins):
+
 1. Environment variables
 1. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
 is installed)
@@ -44,6 +51,7 @@ is installed)
 1. Vagrantfile definitions
 
 ### Registry parameters
+
 - `REGISTRY_IP` (default: 192.168.99.253): the VM will join the VirtualBox
 private network using this IP.
 - `REGISTRY_BIND` (default: undefined): if this variable is defined, Vagrant
@@ -51,6 +59,7 @@ will bind the registry port (5000) from the VM to the specified port on the
 host, making the local registry available outside of the Vagrant environment.
 
 ### Use case: Registry Mirror for Kubernetes
+
 We can use our local container registry to mirror the Kubernetes containers
 for a faster deployment of a [Vagrant] Kubernetes cluster.  
 The `scripts` directory contains the `kubeadm-setup-registry.sh` convenience
@@ -82,16 +91,19 @@ cluster will be fully operational after a `vagrant up`!
 ## Optional plugins
 
 When installed, this Vagrant project will make use of the following third party Vagrant plugins:
+
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
 
-To intall Vagrant plugins run:
-```
+To install Vagrant plugins run:
+
+```shell
 vagrant plugin install <name>...
 ```
 
 ## Feedback
+
 Please provide feedback of any kind via Github issues on this repository.

@@ -17,10 +17,10 @@ Read the [prerequisites in the top level README](../README.md#prerequisites) to 
 1. Download Oracle Rest Data Services (ORDS) into this directory - first time only:
 [https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html](https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html)
 1. Run `vagrant up`
-   1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the virtual box to the latest via `yum`.
+   1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the VM to the latest via `yum`.
    1. The Vagrant file allows for customization, if desired (see [Customization](#customization))
 1. Connect to the database.
-1. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+1. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 ## Connecting to Oracle
 

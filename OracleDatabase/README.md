@@ -9,14 +9,14 @@ Read the [prerequisites in the top level README](../README.md#prerequisites) to 
 ## Getting started
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-2. Change into the desired version folder
-3. Download the installation zip files from OTN into this folder - first time only:
+2. Change into the desired version directory
+3. Download the installation zip file(s) from OTN into this directory - first time only:
 [http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html)
 4. Run `vagrant up`
 5. Connect to the database.
-6. You can shut down the box via the usual `vagrant halt` and the start it up again via `vagrant up`.
+6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
-**For more information please check the individual README within each folder!**
+**For more information please check the individual README within each directory!**
 
 ## Acknowledgements
 

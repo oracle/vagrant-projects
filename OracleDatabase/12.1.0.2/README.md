@@ -11,16 +11,16 @@ makes configuration much easier
 ## Getting started
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-2. Change into the `vagrant-projects/OracleDatabase/12.1.0.2` folder
-3. Download the installation zip files from OTN into this folder - first time only:
+2. Change into the `vagrant-projects/OracleDatabase/12.1.0.2` directory
+3. Download the installation zip files from OTN into this directory - first time only:
 [http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html)
 
     The zip files for Enterprise Edition (EE) are `linuxamd64_12102_database_1of2.zip` and `linuxamd64_12102_database_2of2.zip`. The zip files for Standard Edition 2 (SE2) are `linuxamd64_12102_database_se2_1of2.zip` and `linuxamd64_12102_database_se2_2of2.zip`. Make sure to download the correct files for the edition you want to use.
 4. Run `vagrant up`
-   1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the virtual box to the latest via `yum`.
+   1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the VM to the latest via `yum`.
    2. The installation can be customized, if desired (see [Configuration](#configuration)).
 5. Connect to the database (see [Connecting to Oracle](#connecting-to-oracle))
-6. You can shut down the box via the usual `vagrant halt` and then start it up again via `vagrant up`
+6. You can shut down the VM via the usual `vagrant halt` and then start it up again via `vagrant up`
 
 ## Connecting to Oracle
 
@@ -56,7 +56,7 @@ The `Vagrantfile` can be used _as-is_, without any additional configuration. How
 There are three ways to set parameters:
 
 1. Update the `Vagrantfile`. This is straightforward; the downside is that you will lose changes when you update this repository.
-2. Use environment variables. It might be difficult to remember the parameters used when the box was instantiated.
+2. Use environment variables. It might be difficult to remember the parameters used when the VM was instantiated.
 3. Use the `.env`/`.env.local` files (requires
 [vagrant-env](https://github.com/gosuri/vagrant-env) plugin). You can configure your installation by editing the `.env` file, but `.env` will be overwritten on updates, so it's better to make a copy of `.env` called `.env.local`, then make changes in `.env.local`. The `.env.local` file won't be overwritten when you update this repository and it won't mark your Git tree as changed (you won't accidentally commit your local configuration!).
 
@@ -70,7 +70,7 @@ Parameters are considered in the following order (first one wins):
 ### VM parameters
 
 * `VM_NAME` (default: `oracle-12102-vagrant`): VM name.
-* `VM_MEMORY` (default: 2048): memory for the VM (in MB, 2048 MB = 2 GB).
+* `VM_MEMORY` (default: `2048`): memory for the VM (in MB, 2048 MB = 2 GB).
 * `VM_SYSTEM_TIMEZONE` (default: host time zone (if possible)): VM time zone.
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
   * The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.

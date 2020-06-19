@@ -4,7 +4,7 @@ A Vagrant project to automatically build an Oracle Linux 7 virtual machine using
 
 ## Prerequisites
 
-Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up either Vagrant with either VirtualBox or KVM
+Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
 
 ## Getting started
 

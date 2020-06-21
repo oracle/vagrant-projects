@@ -80,6 +80,22 @@ Parameters are considered in the following order (first one wins):
 * `VM_EM_EXPRESS_PORT` (default: `5500`): EM Express port.
 * `VM_ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts.
 
+## Optional plugins
+
+When installed, this Vagrant project will make use of the following third party Vagrant plugins:
+
+* [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
+variables from .env files;
+* [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
+proxies in the guest VM if you need to access the Internet through a proxy. See
+the plugin documentation for configuration.
+
+To install Vagrant plugins run:
+
+```shell
+vagrant plugin install <name>...
+```
+
 ## Other info
 
 * If you need to, you can connect to the virtual machine via `vagrant ssh`.

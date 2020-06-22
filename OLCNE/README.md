@@ -1,5 +1,6 @@
-# Vagrantfile to setup Oracle Linux Cloud Native Environment on Oracle Linux 7
-This Vagrantfile will deploy and configure the following components:
+# Vagrant project to set up Oracle Linux Cloud Native Environment on Oracle Linux 7
+
+This Vagrant project will deploy and configure the following components:
 
 - One or more master nodes (one by default, 3 in HA mode)
 - One or more worker nodes (2 by default)
@@ -27,20 +28,22 @@ will not work in a VirtualBox guest until nested virtualization support is
 released for Intel CPUs.
 
 ## Prerequisites
-1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-1. Install [Vagrant](https://vagrantup.com/)
+
+1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
 1. [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
 makes configuration much easier
 
 ## Quick start
+
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-1. Change into the `vagrant-projects/OLCNE` folder
+1. Change into the `vagrant-projects/OLCNE` directory
 1. Run `vagrant up`
 
 Your Oracle Linux Cloud Native Environment is ready!
 
 From any master node (e.g. master1) you can check the status of the cluster (as
 the `vagrant` user). E.g.:
+
 - `kubectl cluster-info`
 - `kubectl get nodes`
 - `kubectl get pods --namespace=kube-system`
@@ -50,19 +53,22 @@ the `vagrant` user). E.g.:
 The VMs communicate via a private network:
 
 - Controller node (if any): 192.168.99.100
-- Master node i: 192.168.99.(100+i) / master<em>i</em>.vagrant.vm
-- Worker node i: 192.168.99.(110+i) / worker<em>i</em>.vagrant.vm
+- Master node i: 192.168.99.(100+i) / master*i*.vagrant.vm
+- Worker node i: 192.168.99.(110+i) / worker*i*.vagrant.vm
 
 ## Configuration
+
 The Vagrantfile can be used _as-is_; there are a couple of parameters you
 can set to tailor the installation to your needs.
 
 ### How to configure
+
 There are several ways to set parameters:
+
 1. Update the Vagrantfile. This is straightforward; the downside is that you
-will loose changes when you update this repository.
+will lose changes when you update this repository.
 1. Use environment variables. Might be difficult to remember the parameters
-used when the box was instantiated.
+used when the VM was instantiated.
 1. Use the `.env`/`.env.local` files (requires
 [vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
 your cluster by editing the `.env` file; or better copy `.env` to `.env.local`
@@ -71,6 +77,7 @@ and it won't mark your git tree as changed (you won't accidentally commit your
 local configuration!)
 
 Parameters are considered in the following order (first one wins):
+
 1. Environment variables
 1. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
 is installed)
@@ -79,11 +86,13 @@ is installed)
 1. Vagrantfile definitions
 
 ### VM parameters
+
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
 - `MEMORY` (default: 3072): all VMs are provisioned with 3GB memory.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
 
 ### Cluster parameters
+
 - `STANDALONE_OPERATOR` (default: `false`): create a separate VM for the
 operator node -- default is to install the operator components on the (first)
 master node.
@@ -103,6 +112,7 @@ __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
 
 ### Repositories
+
 - `YUM_REPO` (default: none): additional yum repository to consider
 (e.g. local repo)
 - `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
@@ -122,8 +132,8 @@ The following syntax can be used to specify a mirror:
 
  All regions are available at <https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm>
 
-
 ### Advanced Parameters
+
 Danger zone!
 Mainly used for development.
 
@@ -132,7 +142,9 @@ Mainly used for development.
 - `NB_MASTERS` (default: none): override number of masters to deploy.
 
 ## Optional plugins
+
 When installed, this Vagrantfile will make use of the following third party Vagrant plugins:
+
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
@@ -141,18 +153,22 @@ variables from .env files;
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
 
-To intall Vagrant plugins run:
-```
+To install Vagrant plugins run:
+
+```shell
 vagrant plugin install <name>...
 ```
 
 ## Product Documentation
-* [Oracle Linux Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)
-* [Oracle Linux Cloud Native Environment: Using Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/orchestration/index.html)
-* [Oracle Linux Cloud Native Environment: Using Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/runtimes/index.html)
+
+- [Oracle Linux Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)
+- [Oracle Linux Cloud Native Environment: Using Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/orchestration/index.html)
+- [Oracle Linux Cloud Native Environment: Using Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/runtimes/index.html)
 
 ## Feedback
+
 Please provide feedback of any kind via GitHub issues on this repository.
 
 ## Contributing
+
 See [CONTRIBUTING](./CONTRIBUTING.md) for details.

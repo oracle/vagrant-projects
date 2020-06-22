@@ -64,7 +64,7 @@ chmod o+r /opt/oracle/product/18c/dbhomeXE/network/admin/tnsnames.ora
 # add tnsnames.ora entry for PDB
 echo 'XEPDB1 =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = oracle-18c-apex)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = XEPDB1)

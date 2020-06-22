@@ -16,13 +16,14 @@ For pull requests to be accepted, the bottom of your commit message must have
 the following line using your name and e-mail address as it appears in the
 OCA signatories list.
 
-```
+```shell
 Signed-off-by: Your Name <you@example.org>
 ```
 
-This can be automatically added to pull requests by committing with:
+This can be automatically added to pull requests by providing the `--signoff`
+or `-s` parameter when commiting:
 
-```
+```shell
 git commit --signoff
 ```
 

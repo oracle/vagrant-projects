@@ -12,7 +12,7 @@ Read the [prerequisites in the top level README](../README.md#prerequisites) to 
 1. Change into the `vagrant-projects/OracleAPEX` directory
 1. Download the Oracle Database XE 18.4 installation rpm file from OTN into this directory - first time only:
 [https://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html](https://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html)
-1. Download the Oracle APEX into this directory - first time only:
+1. Download Oracle APEX into this directory - first time only:
 [https://www.oracle.com/tools/downloads/apex-downloads.html](https://www.oracle.com/tools/downloads/apex-downloads.html)
 1. Download Oracle Rest Data Services (ORDS) into this directory - first time only:
 [https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html](https://www.oracle.com/database/technologies/appdev/rest-data-services-downloads.html)
@@ -62,3 +62,17 @@ Oracle Application Express Access will be available on the host OS by accessing 
 * `Password: <See auto-generated password>`
 
 At the first login you'll be forced to change the default `admin` password.
+
+## Optional plugins
+
+When installed, this Vagrant project will make use of the following third party Vagrant plugin:
+
+* [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
+proxies in the guest VM if you need to access the Internet through a proxy. See
+the plugin documentation for configuration.
+
+To install Vagrant plugins run:
+
+```shell
+vagrant plugin install <name>...
+```

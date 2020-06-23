@@ -12,7 +12,7 @@
 #
 echo 'Installing Container Tools module'
 
-dnf -y module install container-tools
+dnf -y module install container-tools:ol8
 
 echo 'Container Tools are ready to use'
 echo 'To get started, on your host, run:'

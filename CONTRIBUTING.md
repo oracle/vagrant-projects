@@ -1,36 +1,36 @@
-# Contributing
+# Contributing to the Oracle Vagrant Projects repository
+
 Oracle welcomes contributions to this repository from anyone.
 
 If you want to submit a pull request to fix a bug or enhance an existing
-`Vagrantfile`, please first open an issue and link to that issue when you
-submit your pull request.
+`Vagrantfile` or associated script, please first open an issue and link to that
+issue when you submit your pull request.
 
 If you have any questions about a possible submission, feel free to open
 an issue too.
 
-## Contributing to the Oracle Vagrant Boxes repository
-
-Pull requests can be made under
-[The Oracle Contributor Agreement](https://www.oracle.com/technetwork/community/oca-486395.html) (OCA).
+All pull requests require the contributor to have agreed to and signed the
+[Oracle Contributor Agreement](https://www.oracle.com/technetwork/community/oca-486395.html) (OCA).
 
 For pull requests to be accepted, the bottom of your commit message must have
 the following line using your name and e-mail address as it appears in the
-OCA Signatories list.
+OCA signatories list.
 
-```
+```shell
 Signed-off-by: Your Name <you@example.org>
 ```
 
-This can be automatically added to pull requests by committing with:
+This can be automatically added to pull requests by providing the `--signoff`
+or `-s` parameter when commiting:
 
-```
+```shell
 git commit --signoff
 ```
 
-Only pull requests from committers that can be verified as having
-signed the OCA can be accepted.
+Only pull requests from committers that can be verified as having signed the OCA
+can be accepted.
 
-### Pull request process
+## Pull request process
 
 1. Fork this repository
 1. Create a branch in your fork to implement the changes. We recommend using
@@ -43,5 +43,4 @@ what your changes are meant to do and provide simple steps on how to validate
 your changes. Ensure that you reference the issue you created as well.
 We will assign the pull request to 2-3 people for review before it is merged.
 
-
-*Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.*
+Copyright (c) 2018, 2020 Oracle and/or its affiliates.

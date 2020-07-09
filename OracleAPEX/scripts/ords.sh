@@ -31,7 +31,13 @@ mkdir $ORACLE_BASE/ords
 export ORDS_HOME=$ORACLE_BASE/ords
 echo "export ORDS_HOME=$ORACLE_BASE/ords" >> /home/oracle/.bashrc
 cd  $ORDS_HOME
-ORDS_INSTALL=`ls /vagrant/ords[_-]1*.*.zip |tail -1`
+ORDS_INSTALL=$(find /vagrant -maxdepth 1 -name "ords[_-]*.*.zip" -type f | tail -1)
+
+if [[ -z ${ORDS_INSTALL} || ! -r "${ORDS_INSTALL}" ]]; then
+  echo 'INSTALLER: Could not find ORDS installer file. Exiting.'
+  exit 1
+fi
+
 unzip $ORDS_INSTALL
 chown -R oracle:oinstall $ORDS_HOME
 

@@ -19,6 +19,9 @@ echo 'INSTALLER: Started up'
 # get up to date
 yum upgrade -y
 
+# ensure wget is installed for downloading database installer
+yum install -y wget
+
 echo 'INSTALLER: System updated'
 
 # fix locale warning
@@ -48,7 +51,19 @@ echo "export PATH=\$PATH:\$ORACLE_HOME/bin" >> /home/oracle/.bashrc
 echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
-yum -y localinstall https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-18c-1.0-1.x86_64.rpm
+# if installer doesn't exist, download it
+db_installer='oracle-database-xe-18c-1.0-1.x86_64.rpm'
+if [[ ! -f /vagrant/"${db_installer}" ]]; then
+  echo 'INSTALLER: Downloading Oracle Database software'
+  wget -q -P /vagrant \
+    https://download.oracle.com/otn-pub/otn_software/db-express/"${db_installer}"
+fi
+
+yum -y localinstall /vagrant/"${db_installer}"
+
+if [[ "${KEEP_DB_INSTALLER,,}" == 'false' ]]; then
+  rm -f /vagrant/"${db_installer}"
+fi
 
 echo 'INSTALLER: Oracle software installed'
 

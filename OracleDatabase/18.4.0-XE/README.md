@@ -75,6 +75,7 @@ Parameters are considered in the following order (first one wins):
 
 ### Oracle Database parameters
 
+* `VM_KEEP_DB_INSTALLER` (default: `false`): save database installer RPM file for reuse when VM is rebuilt.
 * `VM_ORACLE_CHARACTERSET` (default: `AL32UTF8`): database character set.
 * `VM_LISTENER_PORT` (default: `1521`): Listener port.
 * `VM_EM_EXPRESS_PORT` (default: `5500`): EM Express port.

@@ -15,9 +15,31 @@ echo 'Installing and configuring Oracle Container Runtime for Docker'
 # install Oracle Container Runtime for Docker
 yum -y install docker-engine
 
-# Format spare device as Btrfs
-# Configure Btrfs storage driver
-docker-storage-config -s btrfs -d /dev/[sv]db
+if [[ -b /dev/sdb || -b /dev/vdb ]]; then
+    # Format spare device as Btrfs
+    # Configure Btrfs storage driver
+    docker-storage-config -s btrfs -d /dev/[sv]db
+else
+    # No spare disk, configure the appropriate driver
+    fstype=$(stat -f -c %T /var/lib/docker)
+    storage_driver=""
+    case "${fstype}" in
+        btrfs)
+            storage_driver="btrfs"
+            ;;
+        xfs)
+            storage_driver="overlay2"
+            ;;
+    esac
+    if [[ -n ${storage_driver} ]]; then
+        [ ! -d /etc/docker ] && mkdir -m 0700 /etc/docker && chown root:root /etc/docker
+        cat > /etc/docker/daemon.json <<-EOF
+			{
+			    "storage-driver": "${storage_driver}"
+			}
+			EOF
+    fi
+fi
 
 # Start and enable the container runtime
 systemctl start docker

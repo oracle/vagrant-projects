@@ -21,7 +21,7 @@ if [[ -b /dev/sdb || -b /dev/vdb ]]; then
     docker-storage-config -s btrfs -d /dev/[sv]db
 else
     # No spare disk, configure the appropriate driver
-    fstype=$(stat -f -c %T /var/lib/docker)
+    fstype=$(stat -f -c %T /var/lib/docker 2>/dev/null || stat -f -c %T /var/lib)
     storage_driver=""
     case "${fstype}" in
         btrfs)

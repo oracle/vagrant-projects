@@ -323,6 +323,7 @@ requirements() {
 # the vagrant environment.
 # Globals:
 #   OPERATOR OLCNE_VERSION MASTER WORKER K8S_VERSION MULTI_MASTER
+#   REGISTRY_OLCNE NGINX_IMAGE
 # Arguments:
 #   None
 # Returns:
@@ -390,6 +391,9 @@ install_packages() {
     # Software load balancer firewall rules
     echo_do firewall-cmd --add-port=6444/tcp --permanent
     echo_do firewall-cmd --add-protocol=vrrp --permanent
+
+    # Pull NGINX image to avoid proxy issue during module installation
+    echo_do podman pull "${REGISTRY_OLCNE}/${NGINX_IMAGE}"
   fi
 
   # Restart firewalld

@@ -238,12 +238,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         master.vm.network "forwarded_port", guest: 8001, host: 8001
       end
       # Provisioning: install stuff
-      args = ["--master", "--ip-addr", ip_addr]
+      args = ["--master", "--ip-addr", ip_addr, "--nginx-image", NGINX_IMAGE]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
         args.push("--workers", workers.chop)
         args.push("--masters", masters.chop)
-        args.push("--nginx-image", NGINX_IMAGE)
       end
       provision_vm(master.vm, args)
     end

@@ -3,10 +3,6 @@
 #
 # Copyright (c) 1982-2016 Oracle and/or its affiliates. All rights reserved.
 # 
-# Since: November, 2016
-# Author: gerald.venzl@oracle.com
-# Description: Sets the password for sys, system and pdb_admin
-#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 # 
 

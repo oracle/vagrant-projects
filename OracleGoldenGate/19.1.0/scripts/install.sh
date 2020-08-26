@@ -72,7 +72,7 @@ sudo sed -i -e 's|^#advertised\.listeners=*.*$|advertised.listeners=PLAINTEXT://
 sudo cp /vagrant/scripts/services/zookeeper.service /etc/systemd/system/
 sudo cp /vagrant/scripts/services/kafka.service /etc/systemd/system/
 
-su -l oracle -c "echo 'export PATH=$PATH:/usr/local/kafka/kafka_'$KAFKA_SCALA_VERSION'/bin/:' >> /home/oracle/.bashrc"
+su -l oracle -c "echo 'export PATH=\$PATH:/usr/local/kafka/kafka_'$KAFKA_SCALA_VERSION'/bin/:' >> /home/oracle/.bashrc"
 
 echo 'Creating Zookeeper and Kafka System Services'
 

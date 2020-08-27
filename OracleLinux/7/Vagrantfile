@@ -119,7 +119,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           ui.info "Extension #{extension} using #{script} enabled"
           found = true
           config.vm.provision "shell", inline: "echo 'Running provisioner for extension #{extension}'"
-          config.vm.provision "shell", path: script
+          config.vm.provision "shell",
+            path: script,
+            env: ENV.select { |key, value| key.to_s.match(/^#{extension.upcase.gsub('-','_')}_/) }
           break
         end
       end

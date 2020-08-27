@@ -56,6 +56,12 @@ Example: to extend the project with the `container-tools` extension:
 
 Alternatively, if the `vagrant-env` plugin is installed variables can be defined in the `.env` or `.env.local` files.
 
+Additionally, you can pass parameters to extensions using environment variables having a name starting with the extension name in uppercase followed by an underscore. E.g., for a Linux host:
+
+```shell
+EXTEND=my-extension MY_EXTENSION_PARAM=1234 vagrant up
+```
+
 ## Sample extension
 
 ### Container Tools

@@ -3,6 +3,36 @@
   "short_description": "Oracle Linux 8",
   "name": "oraclelinux/8",
   "versions": [{
+      "version": "8.2.145",
+      "status": "active",
+      "release_date": "07-Sep-2020",
+      "description_html": "<ul>\n<li>Releasing 8.2.145</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.2.145",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u2-libvirt-b145.box",
+        "checksum": "b96f9449a74116b30051a7abaf4b6e4f617883893e8d63d09c9e10ba4da5f5eb",
+        "checksum_type": "sha256",
+        "size": 554116627,
+        "kernel": "5.4.17-2011.5.3.el8uek.x86_64"
+      }]
+    },
+    {
+      "version": "8.2.144",
+      "status": "active",
+      "release_date": "07-Sep-2020",
+      "description_html": "<ul>\n<li>Releasing 8.2.144</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.2.144",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/ol8u2-virtualbox-b144.box",
+        "checksum": "882ae9f9558532895c606469b7dce9001c140e4e4ebbdb3119b95c1bb5c69389",
+        "checksum_type": "sha256",
+        "size": 610906881,
+        "kernel": "5.4.17-2011.5.3.el8uek.x86_64"
+      }]
+    },
+    {
       "version": "8.2.134",
       "status": "active",
       "release_date": "12-May-2020",

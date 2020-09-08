@@ -3,6 +3,36 @@
   "short_description": "Oracle Linux 7",
   "name": "oraclelinux/7",
   "versions": [{
+      "version": "7.8.143",
+      "status": "active",
+      "release_date": "07-Sep-2020",
+      "description_html": "<ul>\n<li>OL7U8 with UEK R5U4</li>\n</ul>\n",
+      "description_markdown": "* OL7U8 with UEK R5U4",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-libvirt-b143.box",
+        "checksum": "302236556f71bf69d494841c88251a58120ed62ccd8f0c82ce6baed3b41108c6",
+        "checksum_type": "sha256",
+        "size": 512570645,
+        "kernel": "4.14.35-2025.400.8.el7uek.x86_64"
+      }]
+    },
+    {
+      "version": "7.8.142",
+      "status": "active",
+      "release_date": "07-Sep-2020",
+      "description_html": "<ul>\n<li>OL7U8 with UEK R5U4</li>\n</ul>\n",
+      "description_markdown": "* OL7U8 with UEK R5U4",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/ol7u8-virtualbox-b142.box",
+        "checksum": "6cfa2495ddfbea7721742413242ed5c846260f958420463ff4fa7d67dcad1929",
+        "checksum_type": "sha256",
+        "size": 538946954,
+        "kernel": "4.14.35-2025.400.8.el7uek.x86_64"
+      }]
+    },
+    {
       "version": "7.8.135",
       "status": "active",
       "release_date": "12-May-2020",

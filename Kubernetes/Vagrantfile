@@ -40,6 +40,10 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# Required for the Disks feature
+Vagrant.require_version ">= 2.2.8"
+ENV['VAGRANT_EXPERIMENTAL'] = 'disks'
+
 # Box metadata location and box name
 BOX_URL = "https://oracle.github.io/vagrant-projects/boxes"
 BOX_NAME = "oraclelinux/7"
@@ -170,6 +174,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # - Manager
   config.vm.define "master", primary: true do |master|
     master.vm.hostname = "master.vagrant.vm"
+    master.vm.disk :disk, size: '16GB', name: 'k8s_master'
     master.vm.network "private_network", ip: "192.168.99.100"
     if Vagrant.has_plugin?("vagrant-hosts")
       master.vm.provision :hosts, :sync_hosts => true
@@ -211,6 +216,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   (1..NB_WORKERS).each do |i|
     config.vm.define "worker#{i}" do |worker|
       worker.vm.hostname = "worker#{i}.vagrant.vm"
+      worker.vm.disk :disk, size: '16GB', name: "k8s_worker#{i}"
       ip = 100 + i
       worker.vm.network "private_network", ip: "192.168.99.#{ip}"
       if Vagrant.has_plugin?("vagrant-hosts")

@@ -1,6 +1,6 @@
 # oracle12c-gg-vagrant
 
-A vagrant box that provisions Oracle Database along with Golden Gate automatically, using Vagrant, an Oracle Linux 7.3 box and a shell script.
+A Vagrant project that provisions Oracle Database along with Golden Gate automatically, using Vagrant, an Oracle Linux 7 box, and a shell script.
 
 ## Prerequisites
 
@@ -9,7 +9,7 @@ A vagrant box that provisions Oracle Database along with Golden Gate automatical
 
 ## Getting started
 
-1. Clone this repository `git clone https://github.com/ninadingole/vagrant-boxes`
+1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
 2. Change into the desired version folder
 3. Download the Oracle 12.2.0.1 Database (linuxx64_12201_database.zip) installation zip files from oracle edelivery into this folder - first time only: [edelivery](https://www.oracle.com/database/technologies/oracle12c-linux-12201-downloads.html)
 4. Download the installation zip for golden gate (191004_fbo_ggs_Linux_x64_shiphome.zip) & golden gate for Big Data (OGG_BigData_Linux_x64_19.1.0.0.1) into this folder - first time only: [edelivery](https://www.oracle.com/middleware/technologies/goldengate-downloads.html)

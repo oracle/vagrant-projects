@@ -1,6 +1,6 @@
 # oracle12c-gg-vagrant
 
-A vagrant box that provisions Oracle Database along with Golden Gate automatically, using Vagrant, an Oracle Linux 7.3 box and a shell script.
+A Vagrant project that provisions Oracle Database along with Golden Gate automatically, using Vagrant, an Oracle Linux 7 box, and a shell script.
 
 ## Prerequisites
 

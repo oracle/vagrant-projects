@@ -17,14 +17,15 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     03/24/20 - Creation
 #
 #    REVISION
-#    20200521 - $Revision: 2.0.2.2 $
+#    20200923 - $Revision: 2.0.2.3 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
- 
+
 ### -------------------------------------------------------------------
 ### Disclaimer:
 ###
@@ -50,8 +51,8 @@
 ### DATA OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN ACTION IN
 ### CONTRACT OR TORT, ARISING FROM YOUR ACCESS TO, OR USE OF, THE SOFTWARE.
 ### -------------------------------------------------------------------
-### This script is NOT supported by Oracle World Wide Technical Support. 
-### The script has been tested and appears to work as intended. 
+### This script is NOT supported by Oracle World Wide Technical Support.
+### The script has been tested and appears to work as intended.
 ### -------------------------------------------------------------------
 
 # -*- mode: ruby -*-
@@ -64,7 +65,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 # Vagrant Boxes Source Definition
 var_box = 'oraclelinux/7'
-var_url = 'https://oracle.github.io/vagrant-boxes/boxes/oraclelinux/7.json'
+var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 
 puts ""
 puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
@@ -91,7 +92,7 @@ var_domain          = params['shared']['domain']
 var_scan_ip1        = params['shared']['scan_ip1']
 var_scan_ip2        = params['shared']['scan_ip2']
 var_scan_ip3        = params['shared']['scan_ip3']
-#                   
+#
 var_vm1_name        = params['node1']['vm_name']
 var_vm1_mem_size    = params['node1']['mem_size']
 var_vm1_cpus        = params['node1']['cpus']
@@ -141,7 +142,7 @@ var_asm_lib_type    = 'ASMLIB'
 # Provider specific checks
 # -----------------------------------------------------------------
 if ( (var_provider_name != 'libvirt') and (var_provider_name != 'virtualbox') )
-  puts "ERROR: 'provider' option can be 'libvirt' or 'virtualbox'" 
+  puts "ERROR: 'provider' option can be 'libvirt' or 'virtualbox'"
   exit
 else
   provider = (var_provider_name).to_sym
@@ -152,13 +153,13 @@ end
 
 # Base Settings
 if var_provider_name == 'virtualbox'
-  box_disks_num = 2
   ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+  box_disks_num = 1
 elsif var_provider_name == 'libvirt'
   box_disks_num = 1
   ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
   ENV['VAGRANT_NO_PARALLEL'] = 'yes'
-else 
+else
   puts "Not supported #{provider}, exiting..."
   exit
 end
@@ -320,14 +321,14 @@ if var_grid_password.to_s.empty?
 end
 if var_oracle_password.to_s.empty?
  puts "ERROR: oracle_password is not defined"
- exit 
+ exit
 end
 if var_sys_password.to_s.empty?
  puts "ERROR: sys_password is not defined"
  exit
 end
 
-if (var_cdb == true) 
+if (var_cdb == true)
   if var_pdb_name.to_s.empty?
    puts "ERROR: pdb_name is not defined"
    exit
@@ -388,6 +389,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = var_box
   config.vm.box_url = var_url
 
+  if var_provider_name == 'virtualbox'
+    config.vm.box_version = ">= 7.8.142"
+  end
+
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -427,7 +432,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           libvirt.driver = "kvm"
           libvirt.memory = var_vm2_mem_size
           libvirt.cpus   = var_vm2_cpus
-      
+
           libvirt.storage_pool_name = var_vm2_storage
           disk_num = 0
           while disk_num < box_disks_num do
@@ -435,12 +440,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
               :size => '100G'      # defaults to 10G if unspecified!
             disk_num += 1
           end
-      
+
           # Making asm disks
           libvirt.storage_pool_name = var_asm_storage
           disk_num = disk_num.to_i + 1
           num = 0
-          while num < var_asm_disk_num do 
+          while num < var_asm_disk_num do
             asm_disk_size = var_asm_disk_size.to_s + "G"
               libvirt.storage :file,
                 :path => var_prefix_name + '_asm_' + num.to_s,
@@ -465,7 +470,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         libvirt.driver = "kvm"
         libvirt.memory = var_vm1_mem_size
         libvirt.cpus   = var_vm1_cpus
-    
+
         libvirt.storage_pool_name = var_vm1_storage
         disk_num = 0
         while disk_num < box_disks_num do
@@ -473,12 +478,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             :size => '100G'      # defaults to 10G if unspecified!
           disk_num += 1
         end
-    
+
         # Making asm disks
         libvirt.storage_pool_name = var_asm_storage
         disk_num = disk_num.to_i + 1
         num = 0
-        while num < var_asm_disk_num do 
+        while num < var_asm_disk_num do
           asm_disk_size = var_asm_disk_size.to_s + "G"
             libvirt.storage :file,
               :path => var_prefix_name + '_asm_' + num.to_s,
@@ -506,24 +511,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           vb.memory = var_vm2_mem_size
           vb.cpus   = var_vm2_cpus
           vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
-    
+
           # Attach default guest vdisks
           disk_num = 0
           while disk_num < box_disks_num do
             vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
             disk_num += 1
           end
-    
+
           # Make u01 vdisk
           unless File.exist?(var_vm2_u01_disk)
             vb.customize ['createhd', '--filename', var_vm2_u01_disk, '--size', 100 * 1024]
           end
           vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm2_u01_disk, '--nonrotational', var_non_rotational]
-    
+
           # Making asm disks
           disk_num = disk_num.to_i + 1
           num = 0
-          while num < var_asm_disk_num do 
+          while num < var_asm_disk_num do
             asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
             # Making oradata disks
             unless File.exist?(asm_disk)
@@ -537,7 +542,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
       end
     end
-    
+
     # vm node1
     config.vm.define :node1 do |node1|
       node1.vm.hostname = var_vm1_name
@@ -548,21 +553,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         vb.memory = var_vm1_mem_size
         vb.cpus   = var_vm1_cpus
         vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
-    
+
         # Attach default guest vdisks
         disk_num = 0
         while disk_num < box_disks_num do
           vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
           disk_num += 1
         end
-    
+
         # Make u01 vdisk
         unless File.exist?(var_vm1_u01_disk)
           vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
         end
         vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
         disk_num = disk_num.to_i + 1
-    
+
         if var_orestart == false
           num = 0
           while num < var_asm_disk_num do
@@ -574,7 +579,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         else
           # Making asm disks
           num = 0
-          while num < var_asm_disk_num do 
+          while num < var_asm_disk_num do
             asm_disk = var_asm_disk_path + "asm_disk" + num.to_s + ".vdi"
             # Making oradata disks
             unless File.exist?(asm_disk)
@@ -592,7 +597,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Enable ssh password authentication
   config.vm.provision "shell", inline: <<-SHELL
-    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
     /bin/systemctl restart sshd
   SHELL
 
@@ -637,4 +642,3 @@ end
 #----------------------------------------------------------
 # EndOfFile
 #----------------------------------------------------------
-

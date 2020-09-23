@@ -17,11 +17,12 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     03/24/20 - Creation
 #
 #    REVISION
-#    20200521 - $Revision: 2.0.2.2 $
+#    20200923 - $Revision: 2.0.2.3 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -152,8 +153,8 @@ end
 
 # Base Settings
 if var_provider_name == 'virtualbox'
-  box_disks_num = 2
   ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+  box_disks_num = 1
 elsif var_provider_name == 'libvirt'
   box_disks_num = 1
   ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
@@ -387,6 +388,10 @@ end
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = var_box
   config.vm.box_url = var_url
+
+  if var_provider_name == 'virtualbox'
+    config.vm.box_version = ">= 7.8.142"
+  end
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs

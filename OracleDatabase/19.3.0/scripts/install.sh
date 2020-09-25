@@ -54,7 +54,7 @@ echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
 
-unzip /vagrant/LINUX.X64_193000_db_home.zip -d $ORACLE_HOME/
+unzip -qq /vagrant/LINUX.X64_193000_db_home.zip -d $ORACLE_HOME/
 cp /vagrant/ora-response/db_install.rsp.tmpl /vagrant/ora-response/db_install.rsp
 sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /vagrant/ora-response/db_install.rsp
 sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /vagrant/ora-response/db_install.rsp

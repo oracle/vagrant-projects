@@ -94,7 +94,7 @@ export NODE1_PUBLIC_IP=$NODE1_PUBLIC_IP
 export NODE2_PUBLIC_IP=$NODE2_PUBLIC_IP
 #----------------------------------------------------------
 #----------------------------------------------------------
-export DOMAIN_NAME=${DOMAIN_NAME}
+export DOMAIN_NAME=${DOMAIN}
 
 export NODE1_HOSTNAME=${VM1_NAME}
 export NODE2_HOSTNAME=${VM2_NAME}

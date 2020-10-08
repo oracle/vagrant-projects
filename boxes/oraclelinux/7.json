@@ -2,7 +2,38 @@
   "description": "Oracle Linux 7",
   "short_description": "Oracle Linux 7",
   "name": "oraclelinux/7",
-  "versions": [{
+  "versions": [
+    {
+      "version": "7.9.151",
+      "status": "active",
+      "release_date": "08-Oct-2020",
+      "description_html": "<ul>\n<li>OL7U9 with UEK6</li>\n</ul>\n",
+      "description_markdown": "* OL7U9 with UEK6",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/OL7U9_x86_64-vagrant-libvirt-b151.box",
+        "checksum": "05b43e9fda653af0fffa960ac2e7d61c801f37c3541a974d3a230ed4ded29e66",
+        "checksum_type": "sha256",
+        "size": 539056253,
+        "kernel": "5.4.17-2011.6.2.el7uek.x86_64"
+      }]
+    },
+    {
+      "version": "7.9.150",
+      "status": "active",
+      "release_date": "08-Oct-2020",
+      "description_html": "<ul>\n<li>OL7U9 with UEK6</li>\n</ul>\n",
+      "description_markdown": "* OL7U9 with UEK6",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/OL7U9_x86_64-vagrant-virtualbox-b150.box",
+        "checksum": "b2ec32aecaa0c83a5aae4ba8cad104b74cfa6ad3e26145130499f97482fc838c",
+        "checksum_type": "sha256",
+        "size": 567581910,
+        "kernel": "5.4.17-2011.6.2.el7uek.x86_64"
+      }]
+    },
+    {
       "version": "7.8.143",
       "status": "active",
       "release_date": "07-Sep-2020",

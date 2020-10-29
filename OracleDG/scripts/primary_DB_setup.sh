@@ -76,7 +76,7 @@ echo "-----------------------------------------------------------------"
 ${DB_HOME}/bin/sqlplus / as sysdba <<EOF
 ALTER SYSTEM SET db_create_file_dest='/u02/oradata';
 ALTER SYSTEM SET db_create_online_log_dest_1='/u02/oradata';
-ALTER SYSTEM SET local_listener='LISTENER';
+ALTER SYSTEM SET local_listener='(ADDRESS=(PROTOCOL=TCP)(HOST=${NODE1_HOSTNAME})(PORT=1521))';
 ALTER SYSTEM SET db_recovery_file_dest_size=20G;
 ALTER SYSTEM SET db_recovery_file_dest='/u01/app/oracle';
 exit;

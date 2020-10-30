@@ -266,7 +266,7 @@ export HA_VIP=$HA_VIP
 export NODE2_PUBLIC_IP=$NODE2_PUBLIC_IP
 #----------------------------------------------------------
 #----------------------------------------------------------
-export DOMAIN_NAME=$DOMAIN
+export DOMAIN_NAME=${DOMAIN}
 
 export NODE1_HOSTNAME=${VM1_NAME}
 export NODE1_FQ_HOSTNAME=\${NODE1_HOSTNAME}.\${DOMAIN_NAME}

@@ -501,7 +501,7 @@ export SCAN_IP2=$SCAN_IP2
 export SCAN_IP3=$SCAN_IP3
 #----------------------------------------------------------
 #----------------------------------------------------------
-export DOMAIN_NAME=localdomain
+export DOMAIN_NAME=${DOMAIN}
 
 export NODE1_HOSTNAME=${VM1_NAME}
 export NODE2_HOSTNAME=${VM2_NAME}

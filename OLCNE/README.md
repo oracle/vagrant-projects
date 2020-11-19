@@ -48,6 +48,16 @@ the `vagrant` user). E.g.:
 - `kubectl get nodes`
 - `kubectl get pods --namespace=kube-system`
 
+## Accessing the Kubernetes Dashboard
+
+By default, the Kubernetes Dashboord does not allow non-HTTPS connections from
+any source except `localhost`/`127.0.0.1`. If you want to be able to connect
+to the Dashboard from a browser on your Vagrant host, you will need to set
+`BIND_PROXY` to `true` in your `.env.local` file.
+
+To access the Kubernetes Dashboard, remember to use `localhost` or `127.0.0.1`
+in the URL, i.e. <http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/>.
+
 ## About the Vagrantfile
 
 The VMs communicate via a private network:
@@ -107,7 +117,8 @@ running or you masters will loose Internet connectivity!
 - `NB_WORKERS` (default: 2): number of worker nodes to provision.
 At least one worker node is required.
 - `BIND_PROXY` (default: `false`): bind the kubectl proxy port (8001) from the
-(first) master to the Vagrant host.
+(first) master to the Vagrant host. This is required if you want to access the
+Kubernetes Dashboard from a browser on your host.
 __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
 

@@ -182,4 +182,4 @@ Please provide feedback of any kind via GitHub issues on this repository.
 
 ## Contributing
 
-See [CONTRIBUTING](./CONTRIBUTING.md) for details.
+See [CONTRIBUTING](../CONTRIBUTING.md) for details.

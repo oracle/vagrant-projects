@@ -41,6 +41,7 @@ env:
   db_name:         DB193H1
   pdb_name:        PDB1
   cdb:             false
+  adg:             false
   # ---------------------------------------------
 
 
@@ -86,4 +87,5 @@ env:
 #  db_name:         DB193H1
 #  pdb_name:        PDB1
 #  cdb:             false
+#  adg:             false
 #  # ---------------------------------------------

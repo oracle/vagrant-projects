@@ -86,7 +86,6 @@ ALTER SYSTEM SET ARCHIVE_LAG_TARGET=0 SCOPE=BOTH  SID='*';
 ALTER SYSTEM SET LOG_ARCHIVE_MAX_PROCESSES=4 SCOPE=BOTH SID='*';
 ALTER SYSTEM SET LOG_ARCHIVE_MIN_SUCCEED_DEST=1 SCOPE=BOTH SID='*';
 ALTER SYSTEM SET DATA_GUARD_SYNC_LATENCY=0 SCOPE=BOTH SID='*';
-ALTER SYSTEM SET local_listener='(ADDRESS=(PROTOCOL=TCP)(HOST=${NODE2_HOSTNAME})(PORT=1521))';
 exit;
 EOF
 
@@ -112,10 +111,26 @@ exit;
 EOF
 sleep 5
 
+if [ "${ADG}" == "true" ]
+then
+echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Setup standby env as ADG"
+echo "-----------------------------------------------------------------"
+${DB_HOME}/bin/sqlplus / as sysdba <<EOF
+STARTUP MOUNT FORCE;
+ALTER DATABASE OPEN READ ONLY;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+exit;
+EOF
+else
+echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Setup standby env"
+echo "-----------------------------------------------------------------"
 ${DB_HOME}/bin/sqlplus / as sysdba <<EOF
 STARTUP MOUNT FORCE;
 exit;
 EOF
+fi
 
 sleep 60
 ${DB_HOME}/bin/dgmgrl sys/${SYS_PASSWORD}@${DB_NAME} <<EOF

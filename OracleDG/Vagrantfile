@@ -17,6 +17,7 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     12/10/20 - ADG option
 #    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
@@ -70,7 +71,7 @@ var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 puts ""
 puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
 puts " Oracle DG (Database Dataguard) Vagrant box for KVM/libVirt or VirtualBox "
-puts " Copyright (c) 1982-2020 Oracle and/or its affiliates                     "
+puts " Copyright (c) 1982-2021 Oracle and/or its affiliates                     "
 puts "--------------------------------------------------------------------------"
 puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                       "
 puts "         RAC Pack, Cloud Innovation and Solution Engineering Team         "
@@ -114,6 +115,7 @@ var_pdb_password    = params['env']['pdb_password']
 var_db_name         = params['env']['db_name']
 var_pdb_name        = params['env']['pdb_name']
 var_cdb             = params['env']['cdb']
+var_adg             = params['env']['adg']
 
 # -----------------------------------------------------------------
 # Provider Specific checks
@@ -201,6 +203,11 @@ end
 
 if ( (var_cdb != true) and (var_cdb != false) )
   puts 'ERROR: cdb option can be true or false'
+  exit
+end
+
+if ( (var_adg != true) and (var_adg != false) )
+  puts 'ERROR: adg option can be true or false'
   exit
 end
 
@@ -533,7 +540,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       "PDB_PASSWORD"     => var_pdb_password,
       "DB_NAME"          => var_db_name,
       "PDB_NAME"         => var_pdb_name,
-      "CDB"              => var_cdb
+      "CDB"              => var_cdb,
+      "ADG"              => var_adg
   }
 
 end

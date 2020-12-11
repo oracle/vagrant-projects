@@ -116,6 +116,7 @@ export DB_HOME=${DB_HOME}
 export DB_NAME=${DB_NAME}
 export PDB_NAME=${PDB_NAME}
 export CDB=${CDB}
+export ADG=${ADG}
 #----------------------------------------------------------
 #----------------------------------------------------------
 export INFO='\033[0;34mINFO: \033[0m'

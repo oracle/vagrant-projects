@@ -84,6 +84,7 @@ The following can be customized:
 - `pdb_name`:           Oracle RDBMS pluggable database name
 - `db_type`:            Oracle RDBMS type: RAC, RACONE, SI (single Instance)
 - `cdb`:                Oracle RDBMS database created as container (true/false)
+- `adg`:                Oracle Standby created as Active Standby (ADG) (true/false)
 
 #### VirtualBox provider Example:
 
@@ -127,6 +128,7 @@ The following can be customized:
       db_name:         DB193H1
       pdb_name:        PDB1
       cdb:             false
+      adg:             false
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
@@ -170,6 +172,7 @@ The following can be customized:
       db_name:         DB193H1
       pdb_name:        PDB1
       cdb:             false
+      adg:             false
       # ---------------------------------------------
 
 ## Running scripts after setup

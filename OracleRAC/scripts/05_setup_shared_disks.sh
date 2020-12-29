@@ -60,9 +60,9 @@ LETTER=`tr 0123456789 abcdefghij <<< $BOX_DISK_NUM`
 SDISKSNUM=$(ls -l /dev/${DEVICE}[${LETTER}-z]|wc -l)
 for (( i=1; i<=$SDISKSNUM; i++ ))
 do
-  echo "KERNEL==\"/dev/${DEVICE}${LETTER}\",  SUBSYSTEM==\"block\", SYMLINK+=\"ORCL_DISK${i}\"    OWNER:=\"grid\", GROUP:=\"asmadmin\", MODE:=\"660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
-  echo "KERNEL==\"/dev/${DEVICE}${LETTER}1\", SUBSYSTEM==\"block\", SYMLINK+=\"ORCL_DISK${i}_p1\" OWNER:=\"grid\", GROUP:=\"asmadmin\", MODE:=\"660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
-  echo "KERNEL==\"/dev/${DEVICE}${LETTER}2\", SUBSYSTEM==\"block\", SYMLINK+=\"ORCL_DISK${i}_p2\" OWNER:=\"grid\", GROUP:=\"asmadmin\", MODE:=\"660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
+  echo "KERNEL==\"sd?\",  ENV{ID_SERIAL}==\"`udevadm info --query=all --name=/dev/${DEVICE}${LETTER} | grep ID_SERIAL= | awk -F "=" '{print $2}'`\", SYMLINK+=\"ORCL_DISK${i}\", OWNER=\"grid\", GROUP=\"asmadmin\", MODE=\"0660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
+  echo "KERNEL==\"sd?1\", ENV{ID_SERIAL}==\"`udevadm info --query=all --name=/dev/${DEVICE}${LETTER} | grep ID_SERIAL= | awk -F "=" '{print $2}'`\", SYMLINK+=\"ORCL_DISK${i}_p1\", OWNER=\"grid\", GROUP=\"asmadmin\", MODE=\"0660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
+  echo "KERNEL==\"sd?2\", ENV{ID_SERIAL}==\"`udevadm info --query=all --name=/dev/${DEVICE}${LETTER} | grep ID_SERIAL= | awk -F "=" '{print $2}'`\", SYMLINK+=\"ORCL_DISK${i}_p2\", OWNER=\"grid\", GROUP=\"asmadmin\", MODE=\"0660\"" >> /etc/udev/rules.d/70-persistent-disk.rules
   LETTER=$(echo "$LETTER" | tr "0-9a-z" "1-9a-z_")
 done
 

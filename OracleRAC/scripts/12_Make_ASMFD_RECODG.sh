@@ -35,14 +35,13 @@ else
   export ORACLE_SID=+ASM
 fi
 
-DISKS_STRING=""
-declare -a DEVICES
-for device in /dev/ORCL_DISK*_p2
-do
-  DEVICES=("${dev[@]}" "$device")
-  DISK=$(basename "$DEVICES")
-  DISKS_STRING=${DISKS_STRING}"DISK '"${DEVICES}"' NAME "${DISK}" "
-done
+  DISKS_STRING="DISK "
+  for device in `(cd /dev/oracleafd/disks; ls ORCL_DISK*_P2)`
+  do
+    AFDDISK="AFD:${device}"
+    DISKS_STRING=${DISKS_STRING}"'$AFDDISK',"
+  done
+    DISKS_STRING="${DISKS_STRING::-1}"
 
 ${GI_HOME}/bin/sqlplus / as sysasm <<EOF
 CREATE DISKGROUP RECO NORMAL REDUNDANCY 

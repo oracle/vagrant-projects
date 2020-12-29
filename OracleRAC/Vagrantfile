@@ -113,6 +113,7 @@ var_asm_storage     = params['shared']['storage_pool_name']
 var_asm_disk_num    = params['shared']['asm_disk_num']
 var_asm_disk_size   = params['shared']['asm_disk_size']
 var_p1_ratio        = params['shared']['p1_ratio']
+var_asm_lib_type    = params['shared']['asm_lib_type']
 #
 var_gi_software     = params['env']['gi_software']
 var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
@@ -136,7 +137,6 @@ var_pdb_name        = params['env']['pdb_name']
 var_db_type         = params['env']['db_type']
 var_cdb             = params['env']['cdb']
 
-var_asm_lib_type    = 'ASMLIB'
 
 # -----------------------------------------------------------------
 # Provider specific checks
@@ -387,11 +387,11 @@ end
 # VMs definition
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = var_box
-  config.vm.box_url = var_url
+  #config.vm.box_url = var_url
 
-  if var_provider_name == 'virtualbox'
-    config.vm.box_version = ">= 7.8.142"
-  end
+  #if var_provider_name == 'virtualbox'
+  #  config.vm.box_version = ">= 7.8.142"
+  #end
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -594,6 +594,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
     end
   end
+
+  # If var_asmlib_type is 'ASMFD', then the running kernel must be UEK4, otherwise ASMFD is not supported due to Grid Infrastructure being version 19.3
+  # It is worth noting that some GI RU later than 19.3 makes UEK5 supported as well, but not UEK6.
+   if var_asm_lib_type == 'ASMFD'
+     config.vm.provision :shell do |shell|
+       shell.privileged = true
+       shell.inline = <<-SHELL
+       echo "Installing UEK4 kernel (via yum)"
+       sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol7.repo; yum install -y kernel-uek-4.1.12 kernel-uek-devel-4.1.12
+       echo "Rebooting to make UEK4 the running kernel, a prerequisite for ASMFD"
+       SHELL
+       shell.reboot = true
+     end
+   end
 
   # Enable ssh password authentication
   config.vm.provision "shell", inline: <<-SHELL

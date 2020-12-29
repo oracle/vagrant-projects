@@ -31,6 +31,7 @@ shared:
   asm_disk_path:
   asm_disk_num:   4
   asm_disk_size: 20
+  asm_lib_type:  'ASMLIB'
   p1_ratio:      80
   # ---------------------------------------------
 

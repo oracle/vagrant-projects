@@ -105,7 +105,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Use specific component version (mainly used for development)
   OLCNE_VERSION = default_s('OLCNE_VERSION', '')
   K8S_VERSION = default_s('K8S_VERSION', '')
-  NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.12.2')
+  NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
 
   # Verbose console
   VERBOSE = default_b('VERBOSE', false)

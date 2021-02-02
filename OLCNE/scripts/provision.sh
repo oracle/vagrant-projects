@@ -247,7 +247,7 @@ setup_repos() {
   # Add OLCNE 1.1 channel
   echo_do yum install -y oracle-olcne-release-el7
   echo_do yum-config-manager --disable ol7_olcne
-  echo_do yum-config-manager --enable ol7_olcne11
+  echo_do yum-config-manager --enable ol7_olcne12
 
   # Disable Developer channels
   echo_do yum-config-manager --disable ol7_developer\*
@@ -355,6 +355,7 @@ install_packages() {
 	Environment="NO_PROXY=${NO_PROXY}"
 	EOF
     fi
+    echo_do firewall-cmd --add-masquerade --permanent
     echo_do firewall-cmd --zone=trusted --add-interface=cni0 --permanent
     echo_do firewall-cmd --add-port=8090/tcp --permanent
     echo_do firewall-cmd --add-port=10250/tcp --permanent
@@ -549,23 +550,6 @@ deploy_kubernetes() {
     --environment-name "${OLCNE_ENV_NAME}" \
     --name "${OLCNE_CLUSTER_NAME}"
 
-  if [[ ${MULTI_MASTER} == 1 ]]; then
-    # Force the routing through eth1 during setup (Workaround for OLCNE-1028)
-    msg "Set masters default route on eth1 via the operator node"
-    gateway="192.168.99.100"
-
-    for node in ${MASTERS//,/ }; do
-      echo_do ssh "${node}" "\"\
-        ip route list 0/0 | grep -q default && ip route del default; \
-        ip route add default via ${gateway} dev eth1; \
-        grep -q DEFROUTE /etc/sysconfig/network-scripts/ifcfg-eth0 || \
-        echo 'DEFROUTE=no' >> /etc/sysconfig/network-scripts/ifcfg-eth0; \
-        grep -q GATEWAY /etc/sysconfig/network-scripts/ifcfg-eth1 || \
-        echo 'GATEWAY=${gateway}' >> /etc/sysconfig/network-scripts/ifcfg-eth1; \
-       \""
-    done
-  fi
-
   msg "Deploy the Kubernetes module into ${OLCNE_ENV_NAME} (Be patient!)"
   echo_do olcnectl module install \
     --environment-name "${OLCNE_ENV_NAME}" \
@@ -664,19 +648,6 @@ fixups() {
       echo 'complete -F __start_kubectl k' >> ~vagrant/.bashrc; \
       \""
   done
-
-  msg "Updating Flannel DaemonSet for Vagrant"
-  # This needs to be done on a master node, just pick one from the list
-  # (Workaround for OLCNE-1079)
-  node=${MASTERS//,*/}
-  echo_do ssh vagrant@"${node}" "\"\
-    kubectl --namespace kube-system get ds/kube-flannel-ds -o yaml > /tmp/kube-flannel-ds.yaml;\
-    kubectl delete -f /tmp/kube-flannel-ds.yaml;\
-    sed -i 's/\(- --kube-subnet-mgr\)/\1\n        - --iface=eth1/' /tmp/kube-flannel-ds.yaml;\
-    sleep 60;\
-    kubectl apply -f /tmp/kube-flannel-ds.yaml;\
-    rm /tmp/kube-flannel-ds.yaml;\
-    \""
 
   msg "Starting kubectl proxy service on master nodes"
   for node in ${MASTERS//,/ }; do

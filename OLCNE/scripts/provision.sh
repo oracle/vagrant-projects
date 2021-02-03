@@ -252,8 +252,8 @@ setup_repos() {
 setup_networking() {
   msg "Configure private network"
 
-  echo_do nmcli con del "Wired connection 1"
-  echo_do nmcli con add con-name "System eth1" type ethernet ifname eth1 ipv4.method manual ipv4.address "${IP_ADDR}/24" ipv4.never-default yes
+  nmcli con del "Wired connection 1"
+  nmcli con add con-name "System eth1" type ethernet ifname eth1 ipv4.method manual ipv4.address "${IP_ADDR}/24" ipv4.never-default yes
 
 }
 

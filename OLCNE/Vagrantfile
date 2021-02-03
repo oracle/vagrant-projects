@@ -33,7 +33,7 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 # Box metadata location and box name
 BOX_URL = "https://oracle.github.io/vagrant-projects/boxes"
-BOX_NAME = "oraclelinux/7"
+BOX_NAME = "oraclelinux/8"
 
 # Define constants
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

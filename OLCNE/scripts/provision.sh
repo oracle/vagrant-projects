@@ -345,7 +345,7 @@ install_packages() {
   fi
 
   # Reload firewalld
-  echo_do firewalld --reload
+  echo_do firewall-cmd --reload
 }
 
 #######################################

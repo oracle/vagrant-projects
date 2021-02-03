@@ -119,14 +119,6 @@ parse_args() {
         OLCNE_CLUSTER_NAME="$2"
         shift; shift;
         ;;
-      "--olcne-version")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --olcne-version" >&2
-          exit 1
-        fi
-        OLCNE_VERSION="-$2"
-        shift; shift
-        ;;
       "--nginx-image")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --nginx-image" >&2
@@ -211,7 +203,7 @@ parse_args() {
     esac
   done
 
-  readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV OLCNE_VERSION REGISTRY_OLCNE
+  readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV REGISTRY_OLCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
   readonly VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
   readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
@@ -241,19 +233,18 @@ setup_repos() {
 }
 
 #######################################
-# Configure private network interface
+# Clean up private network interface
 # Globals:
-#   IP_ADDR
+#   None
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
-setup_networking() {
-  msg "Configure private network"
+clean_networking() {
+  msg "Removing extra NetworkManager connection"
 
   nmcli con del "Wired connection 1"
-  nmcli con add con-name "System eth1" type ethernet ifname eth1 ipv4.method manual ipv4.address "${IP_ADDR}/24" ipv4.never-default yes
 
 }
 
@@ -627,7 +618,7 @@ ready() {
 #######################################
 main () {
   parse_args "$@"
-  setup_networking
+  clean_networking
   setup_repos
   requirements
   install_packages

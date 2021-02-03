@@ -103,8 +103,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'olcne-istio')
 
   # Use specific component version (mainly used for development)
-  OLCNE_VERSION = default_s('OLCNE_VERSION', '')
-  K8S_VERSION = default_s('K8S_VERSION', '')
   NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
 
   # Verbose console
@@ -140,8 +138,6 @@ def provision_vm(vm, vm_args)
   args.push("--with-istio") if DEPLOY_ISTIO
   args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
   args.push("--registry-olcne", REGISTRY_OLCNE) if REGISTRY_OLCNE
-  args.push("--olcne-version", OLCNE_VERSION) unless OLCNE_VERSION == ""
-  args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
   args.push("--verbose") if VERBOSE
   vm.provision "shell",
     path: "scripts/provision.sh",
@@ -212,7 +208,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 110 + i
       ip_addr = "192.168.99.#{ip}"
       workers += "#{ip_addr},"
-      worker.vm.network "private_network", ip: ip_addr, auto_config: false
+      worker.vm.network "private_network", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -229,7 +225,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 100 + i
       ip_addr = "192.168.99.#{ip}"
       masters += "#{ip_addr},"
-      master.vm.network "private_network", ip: ip_addr, auto_config: false
+      master.vm.network "private_network", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end

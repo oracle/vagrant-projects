@@ -1,4 +1,4 @@
-# Vagrant project to set up Oracle Linux Cloud Native Environment on Oracle Linux 7
+# Vagrant project to set up Oracle Linux Cloud Native Environment on Oracle Linux 8
 
 This Vagrant project will deploy and configure the following components:
 
@@ -16,7 +16,7 @@ Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Linux Cloud
-Native Environment which deploys Kubernetes 1.17.4 configured to use
+Native Environment which deploys Kubernetes 1.18.10 configured to use
 the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
 
@@ -108,12 +108,6 @@ operator node -- default is to install the operator components on the (first)
 master node.
 - `MULTI_MASTER` (default: `false`): multi-master setup. Deploy 3 masters in
 HA mode.
-__Note__: in multi-master mode, to circumvent a networking limitation, the
-default route on master nodes needs to be on the private network interface
-(`eth1`). To achieve this we use a non-master node as default gateway.
-When `STANDALONE_OPERATOR` is `true`, we use the operator as gateway,
-otherwise we take the first worker node (`worker1`). The gateway node must be
-running or you masters will loose Internet connectivity!
 - `NB_WORKERS` (default: 2): number of worker nodes to provision.
 At least one worker node is required.
 - `BIND_PROXY` (default: `false`): bind the kubectl proxy port (8001) from the
@@ -149,7 +143,7 @@ Danger zone!
 Mainly used for development.
 
 - The following parameters can be set to use specific component version:
-`OLCNE_VERSION`, `K8S_VERSION`, `NGINX_IMAGE`.
+`OLCNE_VERSION`, `NGINX_IMAGE`.
 - `NB_MASTERS` (default: none): override number of masters to deploy.
 
 ## Optional plugins

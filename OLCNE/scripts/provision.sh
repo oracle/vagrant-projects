@@ -320,9 +320,6 @@ install_packages() {
   if [[ ${MASTER} == 1 ]]; then
     echo_do dnf install -y bash-completion
     echo_do firewall-cmd --add-port=6443/tcp --permanent
-    # Expose the kubectl proxy to the host
-    #sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' \
-    #  /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf
     echo_do firewall-cmd --add-port=8001/tcp --permanent
     # OLCNE 1.0.1 requires these ports for single master as well
     echo_do firewall-cmd --add-port=10251/tcp --permanent
@@ -591,7 +588,12 @@ fixups() {
 
   msg "Starting kubectl proxy service on master nodes"
   for node in ${MASTERS//,/ }; do
-    echo_do ssh "${node}" systemctl start kubectl-proxy.service
+    # Expose the kubectl proxy to the host
+    echo_do ssh "${node}" "\"\
+      sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' \
+        /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf; \
+      systemctl start kubectl-proxy.service; \
+      \""
   done
 
 }

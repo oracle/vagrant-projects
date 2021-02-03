@@ -485,6 +485,7 @@ deploy_kubernetes() {
     # HA Multi-master
     echo_do olcnectl module create \
       --environment-name "${OLCNE_ENV_NAME}" \
+      --selinux enforcing \
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \

@@ -1,7 +1,7 @@
 #
 # Vagrantfile for Oracle Linux Cloud Native Environment
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -33,7 +33,7 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 # Box metadata location and box name
 BOX_URL = "https://oracle.github.io/vagrant-projects/boxes"
-BOX_NAME = "oraclelinux/7"
+BOX_NAME = "oraclelinux/8"
 
 # Define constants
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -103,9 +103,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'olcne-istio')
 
   # Use specific component version (mainly used for development)
-  OLCNE_VERSION = default_s('OLCNE_VERSION', '')
-  K8S_VERSION = default_s('K8S_VERSION', '')
-  NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.12.2')
+  NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
 
   # Verbose console
   VERBOSE = default_b('VERBOSE', false)
@@ -140,8 +138,6 @@ def provision_vm(vm, vm_args)
   args.push("--with-istio") if DEPLOY_ISTIO
   args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
   args.push("--registry-olcne", REGISTRY_OLCNE) if REGISTRY_OLCNE
-  args.push("--olcne-version", OLCNE_VERSION) unless OLCNE_VERSION == ""
-  args.push("--k8s-version", K8S_VERSION) unless K8S_VERSION == ""
   args.push("--verbose") if VERBOSE
   vm.provision "shell",
     path: "scripts/provision.sh",
@@ -212,12 +208,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 110 + i
       ip_addr = "192.168.99.#{ip}"
       workers += "#{ip_addr},"
-      worker.vm.network "private_network", ip: ip_addr, auto_config: false
+      worker.vm.network "private_network", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
       # Provisioning: install stuff
-      provision_vm(worker.vm, ["--worker", "--ip-addr", ip_addr])
+      provision_vm(worker.vm, ["--worker"])
     end
   end
 
@@ -229,7 +225,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 100 + i
       ip_addr = "192.168.99.#{ip}"
       masters += "#{ip_addr},"
-      master.vm.network "private_network", ip: ip_addr, auto_config: false
+      master.vm.network "private_network", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -238,7 +234,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         master.vm.network "forwarded_port", guest: 8001, host: 8001
       end
       # Provisioning: install stuff
-      args = ["--master", "--ip-addr", ip_addr, "--nginx-image", NGINX_IMAGE]
+      args = ["--master", "--nginx-image", NGINX_IMAGE]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
         args.push("--workers", workers.chop)
@@ -256,7 +252,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      args = ["--operator", "--ip-addr", "192.168.99.100"]
+      args = ["--operator"]
       args.push("--workers", workers.chop)
       args.push("--masters", masters.chop)
       args.push("--nginx-image", NGINX_IMAGE)

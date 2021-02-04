@@ -2,7 +2,7 @@
 #
 # Provision Oracle Linux Cloud Native Environment nodes
 #
-# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -69,7 +69,7 @@ msg() {
 # Globals:
 #   OLCNE_DEV OLCNE_VERSION K8S_VERSION MASTER MASTERS WORKER WORKERS
 #   OPERATOR MULTI_MASTER REGISTRY_OLCNE VERBOSE EXTRA_REPO
-#   NGINX_IMAGE IP_ADDR
+#   NGINX_IMAGE
 # Arguments:
 #   Command line
 # Returns:
@@ -78,7 +78,7 @@ msg() {
 parse_args() {
   OLCNE_CLUSTER_NAME='' OLCNE_ENV_NAME='' OLCNE_DEV=0 OLCNE_VERSION='' REGISTRY_OLCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
-  K8S_VERSION='' VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
+  VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
@@ -119,36 +119,12 @@ parse_args() {
         OLCNE_CLUSTER_NAME="$2"
         shift; shift;
         ;;
-      "--olcne-version")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --olcne-version" >&2
-          exit 1
-        fi
-        OLCNE_VERSION="-$2"
-        shift; shift
-        ;;
-      "--k8s-version")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --k8s-version" >&2
-          exit 1
-        fi
-        K8S_VERSION="-$2"
-        shift; shift
-        ;;
       "--nginx-image")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --nginx-image" >&2
           exit 1
         fi
         NGINX_IMAGE="$2"
-        shift; shift
-        ;;
-      "--ip-addr")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --ip-addr" >&2
-          exit 1
-        fi
-        IP_ADDR="$2"
         shift; shift
         ;;
       "--repo")
@@ -219,14 +195,14 @@ parse_args() {
     esac
   done
 
-  readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV OLCNE_VERSION REGISTRY_OLCNE
+  readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV REGISTRY_OLCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
-  readonly K8S_VERSION VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
+  readonly VERBOSE EXTRA_REPO NGINX_IMAGE
   readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
 }
 
 #######################################
-# Configure yum repos for the installation
+# Configure repos for the installation
 # Globals:
 #   EXTRA_REPO
 #   OLCNE_DEV
@@ -236,56 +212,32 @@ parse_args() {
 #   None
 #######################################
 setup_repos() {
-  msg "Configure YUM repos for Oracle Linux Cloud Native Environment"
+  msg "Configure repos for Oracle Linux Cloud Native Environment"
 
-  # Install jq (OCI requirement)
-  echo_do yum install -y jq
-
-  # Install the yum-utils package for repo selection
-  echo_do yum install -y yum-utils
-
-  # Add OLCNE 1.1 channel
-  echo_do yum install -y oracle-olcne-release-el7
-  echo_do yum-config-manager --disable ol7_olcne
-  echo_do yum-config-manager --enable ol7_olcne11
-
-  # Disable Developer channels
-  echo_do yum-config-manager --disable ol7_developer\*
-
-  # Enable kvm_utils
-  echo_do yum-config-manager --enable ol7_kvm_utils
+  # Add OLCNE release package
+  echo_do dnf install -y oracle-olcne-release-el8
 
   # Optional extra repo
-  if [[ -n ${EXTRA_REPO} ]]; then echo_do yum-config-manager --add-repo "${EXTRA_REPO}"; fi
+  if [[ -n ${EXTRA_REPO} ]]; then echo_do dnf config-manager --add-repo "${EXTRA_REPO}"; fi
 
   # Enable OLCNE developer channel
-  if [[ ${OLCNE_DEV} == 1 ]]; then echo_do yum-config-manager --enable ol7_developer_olcne; fi
+  if [[ ${OLCNE_DEV} == 1 ]]; then echo_do dnf config-manager --enable ol8_developer_olcne; fi
 }
 
 #######################################
-# Configure private network interface
+# Clean up private network interface
 # Globals:
-#   IP_ADDR
+#   None
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
-setup_networking() {
-  msg "Configure private network"
+clean_networking() {
+  msg "Removing extra NetworkManager connection"
 
-  cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<-EOF
-	NM_CONTROLLED=n
-	BOOTPROTO=none
-	ONBOOT=yes
-	IPADDR=${IP_ADDR}
-	NETMASK=255.255.255.0
-	DEVICE=eth1
-	PEERDNS=no
-	IPV6INIT=no
-	EOF
+  nmcli con del "Wired connection 1"
 
-  echo_do ifup eth1
 }
 
 #######################################
@@ -307,10 +259,6 @@ requirements() {
   echo_do modprobe br_netfilter
   echo_do eval "echo 'br_netfilter' > /etc/modules-load.d/br_netfilter.conf"
 
-  # SeLinux to Permissive
-  echo_do /usr/sbin/setenforce 0
-  echo_do sed -i "'s/^SELINUX=.*/SELINUX=permissive/g'" /etc/selinux/config
-
   # Enable & start firewalld; add eth0 to the public zone
   echo_do systemctl enable --now firewalld
   echo_do firewall-cmd --permanent --zone=public --add-interface=eth0
@@ -330,20 +278,17 @@ requirements() {
 #   None
 #######################################
 install_packages() {
-  local ip_addr kubelet_node ExecStart
 
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
-    echo_do yum install -y olcnectl"${OLCNE_VERSION}" olcne-api-server"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
+    echo_do dnf install -y olcnectl"${OLCNE_VERSION}" olcne-api-server"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
     echo_do systemctl enable olcne-api-server.service
     echo_do firewall-cmd --add-port=8091/tcp --permanent
     echo_do firewall-cmd --add-masquerade --permanent
   fi
   if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform Agent"
-    echo_do yum install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
-    echo_do yum install -y kubeadm"${K8S_VERSION}" kubelet"${K8S_VERSION}" kubectl"${K8S_VERSION}"
-    echo_do sysctl -p /etc/sysctl.d/k8s.conf
+    echo_do dnf install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
     echo_do systemctl enable olcne-agent.service
     if [[ -n ${HTTP_PROXY} ]]; then
       # CRI-O proxies
@@ -355,34 +300,19 @@ install_packages() {
 	Environment="NO_PROXY=${NO_PROXY}"
 	EOF
     fi
+    echo_do firewall-cmd --add-masquerade --permanent
     echo_do firewall-cmd --zone=trusted --add-interface=cni0 --permanent
     echo_do firewall-cmd --add-port=8090/tcp --permanent
     echo_do firewall-cmd --add-port=10250/tcp --permanent
     echo_do firewall-cmd --add-port=10255/tcp --permanent
     echo_do firewall-cmd --add-port=8472/udp --permanent
     echo_do firewall-cmd --add-port=30000-32767/tcp --permanent
-    # Ensure kubelet uses the right interface
-    ip_addr=$(ip addr | awk -F'[ /]+' '/192.168.99.255/ {print $3}')
-    kubelet_node="/etc/systemd/system/kubelet.service.d/90-node-ip.conf"
-    # shellcheck disable=SC2016
-    ExecStart=$(grep ExecStart=/ /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed -e 's/\$KUBELET_EXTRA_ARGS/\$KUBELET_EXTRA_ARGS \$KUBELET_NODE_IP_ADDR_ARGS/')
-    cat <<-EOF >${kubelet_node}
-	[Service]
-	Environment="KUBELET_NODE_IP_ADDR_ARGS=--node-ip=${ip_addr}"
-	ExecStart=
-	${ExecStart}
-	EOF
-    chmod 644 ${kubelet_node}
-    systemctl daemon-reload
   fi
+
   if [[ ${MASTER} == 1 ]]; then
-    echo_do yum install -y bash-completion
+    echo_do dnf install -y bash-completion
     echo_do firewall-cmd --add-port=6443/tcp --permanent
-    # Expose the kubectl proxy to the host
-    sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' \
-      /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf
     echo_do firewall-cmd --add-port=8001/tcp --permanent
-    echo_do systemctl enable kubectl-proxy.service
     # OLCNE 1.0.1 requires these ports for single master as well
     echo_do firewall-cmd --add-port=10251/tcp --permanent
     echo_do firewall-cmd --add-port=10252/tcp --permanent
@@ -392,12 +322,10 @@ install_packages() {
     echo_do firewall-cmd --add-port=6444/tcp --permanent
     echo_do firewall-cmd --add-protocol=vrrp --permanent
 
-    # Pull NGINX image to avoid proxy issue during module installation
-    echo_do podman pull "${REGISTRY_OLCNE}/${NGINX_IMAGE}"
   fi
 
-  # Restart firewalld
-  echo_do systemctl restart firewalld
+  # Reload firewalld
+  echo_do firewall-cmd --reload
 }
 
 #######################################
@@ -507,7 +435,7 @@ bootstrap_olcne() {
 #   None
 #######################################
 deploy_kubernetes() {
-  local node gateway master_nodes worker_nodes
+  local node master_nodes worker_nodes
   master_nodes="${MASTERS//,/:8090,}:8090"
   worker_nodes="${WORKERS//,/:8090,}:8090"
 
@@ -525,6 +453,7 @@ deploy_kubernetes() {
     # Single master
     echo_do olcnectl module create \
       --environment-name "${OLCNE_ENV_NAME}" \
+      --selinux enforcing \
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
@@ -536,6 +465,7 @@ deploy_kubernetes() {
     # HA Multi-master
     echo_do olcnectl module create \
       --environment-name "${OLCNE_ENV_NAME}" \
+      --selinux enforcing \
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
@@ -548,23 +478,6 @@ deploy_kubernetes() {
   echo_do olcnectl module validate \
     --environment-name "${OLCNE_ENV_NAME}" \
     --name "${OLCNE_CLUSTER_NAME}"
-
-  if [[ ${MULTI_MASTER} == 1 ]]; then
-    # Force the routing through eth1 during setup (Workaround for OLCNE-1028)
-    msg "Set masters default route on eth1 via the operator node"
-    gateway="192.168.99.100"
-
-    for node in ${MASTERS//,/ }; do
-      echo_do ssh "${node}" "\"\
-        ip route list 0/0 | grep -q default && ip route del default; \
-        ip route add default via ${gateway} dev eth1; \
-        grep -q DEFROUTE /etc/sysconfig/network-scripts/ifcfg-eth0 || \
-        echo 'DEFROUTE=no' >> /etc/sysconfig/network-scripts/ifcfg-eth0; \
-        grep -q GATEWAY /etc/sysconfig/network-scripts/ifcfg-eth1 || \
-        echo 'GATEWAY=${gateway}' >> /etc/sysconfig/network-scripts/ifcfg-eth1; \
-       \""
-    done
-  fi
 
   msg "Deploy the Kubernetes module into ${OLCNE_ENV_NAME} (Be patient!)"
   echo_do olcnectl module install \
@@ -665,22 +578,15 @@ fixups() {
       \""
   done
 
-  msg "Updating Flannel DaemonSet for Vagrant"
-  # This needs to be done on a master node, just pick one from the list
-  # (Workaround for OLCNE-1079)
-  node=${MASTERS//,*/}
-  echo_do ssh vagrant@"${node}" "\"\
-    kubectl --namespace kube-system get ds/kube-flannel-ds -o yaml > /tmp/kube-flannel-ds.yaml;\
-    kubectl delete -f /tmp/kube-flannel-ds.yaml;\
-    sed -i 's/\(- --kube-subnet-mgr\)/\1\n        - --iface=eth1/' /tmp/kube-flannel-ds.yaml;\
-    sleep 60;\
-    kubectl apply -f /tmp/kube-flannel-ds.yaml;\
-    rm /tmp/kube-flannel-ds.yaml;\
-    \""
-
   msg "Starting kubectl proxy service on master nodes"
   for node in ${MASTERS//,/ }; do
-    echo_do ssh "${node}" systemctl start kubectl-proxy.service
+    # Expose the kubectl proxy to the host
+    echo_do ssh "${node}" "\"\
+        sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
+            /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf \
+        && systemctl daemon-reload \
+        && systemctl enable --now kubectl-proxy.service \
+    \""
   done
 
 }
@@ -707,7 +613,7 @@ ready() {
 #######################################
 main () {
   parse_args "$@"
-  setup_networking
+  clean_networking
   setup_repos
   requirements
   install_packages

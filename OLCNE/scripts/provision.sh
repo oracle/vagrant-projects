@@ -78,7 +78,7 @@ msg() {
 parse_args() {
   OLCNE_CLUSTER_NAME='' OLCNE_ENV_NAME='' OLCNE_DEV=0 OLCNE_VERSION='' REGISTRY_OLCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
-  VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE='' IP_ADDR=''
+  VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
@@ -125,14 +125,6 @@ parse_args() {
           exit 1
         fi
         NGINX_IMAGE="$2"
-        shift; shift
-        ;;
-      "--ip-addr")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --ip-addr" >&2
-          exit 1
-        fi
-        IP_ADDR="$2"
         shift; shift
         ;;
       "--repo")
@@ -205,7 +197,7 @@ parse_args() {
 
   readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV REGISTRY_OLCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
-  readonly VERBOSE EXTRA_REPO NGINX_IMAGE IP_ADDR
+  readonly VERBOSE EXTRA_REPO NGINX_IMAGE
   readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
 }
 
@@ -590,10 +582,11 @@ fixups() {
   for node in ${MASTERS//,/ }; do
     # Expose the kubectl proxy to the host
     echo_do ssh "${node}" "\"\
-      sed -i 's/"KUBECTL_PROXY_ARGS=.*"/"KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts='.*' --address=0.0.0.0"/' \
-        /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf; \
-      systemctl start kubectl-proxy.service; \
-      \""
+        sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
+            /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf \
+        && systemctl daemon-reload \
+        && systemctl enable --now kubectl-proxy.service \
+    \""
   done
 
 }

@@ -213,7 +213,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
       # Provisioning: install stuff
-      provision_vm(worker.vm, ["--worker", "--ip-addr", ip_addr])
+      provision_vm(worker.vm, ["--worker"])
     end
   end
 
@@ -234,7 +234,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         master.vm.network "forwarded_port", guest: 8001, host: 8001
       end
       # Provisioning: install stuff
-      args = ["--master", "--ip-addr", ip_addr, "--nginx-image", NGINX_IMAGE]
+      args = ["--master", "--nginx-image", NGINX_IMAGE]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
         args.push("--workers", workers.chop)
@@ -252,7 +252,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      args = ["--operator", "--ip-addr", "192.168.99.100"]
+      args = ["--operator"]
       args.push("--workers", workers.chop)
       args.push("--masters", masters.chop)
       args.push("--nginx-image", NGINX_IMAGE)

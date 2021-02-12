@@ -2,7 +2,38 @@
   "description": "Oracle Linux 6",
   "short_description": "Oracle Linux 6",
   "name": "oraclelinux/6",
-  "versions": [{
+  "versions": [
+    {
+      "version": "6.10.193",
+      "status": "active",
+      "release_date": "08-Feb-2021",
+      "description_html": "<ul>\n<li>Packages refresh</li>\n</ul>\n",
+      "description_markdown": "* Packages refresh",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/OL6U10_x86_64-vagrant-virtualbox-b193.box",
+        "checksum": "3bee477a723bb0e4d7f2f0afa0a66ebfc7cba4272c427ba220075d895e65d6d8",
+        "checksum_type": "sha256",
+        "size": 368241023,
+        "kernel": "4.1.12-124.47.3.el6uek.x86_64"
+      }]
+    },
+    {
+      "version": "6.10.196",
+      "status": "active",
+      "release_date": "08-Feb-2021",
+      "description_html": "<ul>\n<li>Packages refresh</li>\n</ul>\n",
+      "description_markdown": "* Packages refresh",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol6/OL6U10_x86_64-vagrant-libvirt-b196.box",
+        "checksum": "49261ac3b551f68834d1cc5ac9dabf9d4bb787467f283aaabff982dc6c1aff17",
+        "checksum_type": "sha256",
+        "size": 342903916,
+        "kernel": "4.1.12-124.47.3.el6uek.x86_64"
+      }]
+    },
+    {
       "version": "6.10.132",
       "status": "active",
       "release_date": "12-May-2020",

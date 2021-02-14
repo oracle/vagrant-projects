@@ -459,8 +459,11 @@ deploy_kubernetes() {
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --apiserver-advertise-address "${MASTERS}" \
       --virtual-ip 192.168.99.99 \
-      --master-nodes "${master_nodes}"\
-      --worker-nodes "${worker_nodes}"
+      --master-nodes "${master_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip-ca-cert=${CERT_DIR}/production/ca.cert \
+      --restrict-service-externalip-tls-cert=${CERT_DIR}/production/node.cert \
+      --restrict-service-externalip-tls-key=${CERT_DIR}/production/node.key
   else
     # HA Multi-master
     echo_do olcnectl module create \
@@ -470,8 +473,11 @@ deploy_kubernetes() {
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --virtual-ip 192.168.99.99 \
-      --master-nodes "${master_nodes}"\
-      --worker-nodes "${worker_nodes}"
+      --master-nodes "${master_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip-ca-cert=${CERT_DIR}/production/ca.cert \
+      --restrict-service-externalip-tls-cert=${CERT_DIR}/production/node.cert \
+      --restrict-service-externalip-tls-key=${CERT_DIR}/production/node.key
   fi
 
   msg "Validate all required prerequisites are met for the Kubernetes module"

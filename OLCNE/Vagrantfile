@@ -27,6 +27,10 @@
 #         see https://github.com/tmatilai/vagrant-proxyconf for configuration
 #
 
+# Required for the Disks feature
+Vagrant.require_version ">= 2.2.8"
+ENV['VAGRANT_EXPERIMENTAL'] = 'disks'
+
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 ENV['VAGRANT_NO_PARALLEL'] = 'yes'
@@ -63,6 +67,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   else
     STANDALONE_OPERATOR = default_b('STANDALONE_OPERATOR', false)
   end
+
+  # Creates and extra disk (/dev/sdb) so it can be used as a
+  # Gluster Storage for Kubernetes Persistent Volumes
+  EXTRA_DISK = default_b('EXTRA_DISK', true)
 
   # Override number of masters to deploy
   # This should not be changed -- for development purpose
@@ -188,16 +196,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # Provider-specific configuration -- VirtualBox
-  config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb, override|
     vb.memory = MEMORY
     vb.cpus = CPUS
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    if EXTRA_DISK
+      override.vm.disk :disk, size: '16GB', name: 'extra_disk'
+    end
   end
   config.vm.provider :libvirt do |lv|
     lv.memory = MEMORY
     lv.cpus = CPUS
     lv.nested = true
+    if EXTRA_DISK
+      lv.storage :file, :size => '16G', :type => 'qcow2'
+    end
   end
 
   # Workers provisioning

@@ -100,6 +100,7 @@ is installed)
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
 - `MEMORY` (default: 3072): all VMs are provisioned with 3GB memory.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
+- `EXTRA_DISK` (default: `false`): Creates an extra disk (/dev/sdb) that can be used for GlusterFS for Kubernetes Persistent Volumes
 
 ### Cluster parameters
 

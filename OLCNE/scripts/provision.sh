@@ -14,6 +14,7 @@
 
 # Constants
 readonly CERT_DIR=/etc/olcne/pki
+readonly EXTERNALIP_VALIDATION_CERT_DIR=/etc/olcne/pki-externalip-validation-webhook
 
 #######################################
 # Convenience function used to limit output during provisioning
@@ -391,6 +392,9 @@ certificates() {
   echo_do sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
 
   echo_do bash -e ${CERT_DIR}/olcne-tranfer-certs.sh
+
+  echo_do /etc/olcne/gen-certs-helper.sh --one-cert --nodes "externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local" --cert-dir "${EXTERNALIP_VALIDATION_CERT_DIR}"
+
 }
 
 #######################################
@@ -459,8 +463,11 @@ deploy_kubernetes() {
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --apiserver-advertise-address "${MASTERS}" \
       --virtual-ip 192.168.99.99 \
-      --master-nodes "${master_nodes}"\
-      --worker-nodes "${worker_nodes}"
+      --master-nodes "${master_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
+      --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
+      --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
   else
     # HA Multi-master
     echo_do olcnectl module create \
@@ -470,8 +477,11 @@ deploy_kubernetes() {
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --virtual-ip 192.168.99.99 \
-      --master-nodes "${master_nodes}"\
-      --worker-nodes "${worker_nodes}"
+      --master-nodes "${master_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
+      --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
+      --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
   fi
 
   msg "Validate all required prerequisites are met for the Kubernetes module"

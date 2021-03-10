@@ -14,7 +14,7 @@
 
 # Constants
 readonly CERT_DIR=/etc/olcne/pki
-readonly EXTERNALIP_VALIDATION_CERT_DIR=/etc/olcne/pki/externalip-validation-webhook
+readonly EXTERNALIP_VALIDATION_CERT_DIR=/etc/olcne/pki-externalip-validation-webhook
 
 #######################################
 # Convenience function used to limit output during provisioning
@@ -394,12 +394,6 @@ certificates() {
   echo_do bash -e ${CERT_DIR}/olcne-tranfer-certs.sh
 
   echo_do /etc/olcne/gen-certs-helper.sh --one-cert --nodes "externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local" --cert-dir "${EXTERNALIP_VALIDATION_CERT_DIR}"
-
-  echo_do sed -i -e "'s/externalip-validation-webhook-service.externalip-validation-system.svc externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local/${nodes//,/ }/'" ${EXTERNALIP_VALIDATION_CERT_DIR}/olcne-tranfer-certs.sh
-
-  echo_do sed -i -e "'s/^USER=.*/USER=vagrant/'" ${EXTERNALIP_VALIDATION_CERT_DIR}/olcne-tranfer-certs.sh
-
-  echo_do bash -e ${EXTERNALIP_VALIDATION_CERT_DIR}/olcne-tranfer-certs.sh
 
 }
 

@@ -70,7 +70,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Creates and extra disk (/dev/sdb) so it can be used as a
   # Gluster Storage for Kubernetes Persistent Volumes
-  EXTRA_DISK = default_b('EXTRA_DISK', true)
+  EXTRA_DISK = default_b('EXTRA_DISK', false)
 
   # Override number of masters to deploy
   # This should not be changed -- for development purpose

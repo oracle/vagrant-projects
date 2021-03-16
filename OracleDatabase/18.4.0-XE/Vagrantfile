@@ -44,6 +44,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # If not specified, will be set to match host time zone (if possible)
   VM_SYSTEM_TIMEZONE = default_s('VM_SYSTEM_TIMEZONE', host_tz)
 
+  # Save database installer RPM file for reuse when VM is rebuilt
+  VM_KEEP_DB_INSTALLER = default_b('VM_KEEP_DB_INSTALLER', false)
+
   # Database character set
   VM_ORACLE_CHARACTERSET = default_s('VM_ORACLE_CHARACTERSET', 'AL32UTF8')
 
@@ -65,6 +68,10 @@ end
 
 def default_i(key, default)
   default_s(key, default).to_i
+end
+
+def default_b(key, default)
+  default_s(key, default).to_s.downcase == "true"
 end
 
 def host_tz
@@ -150,6 +157,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", path: "scripts/install.sh", env:
     {
        "SYSTEM_TIMEZONE"     => VM_SYSTEM_TIMEZONE,
+       "KEEP_DB_INSTALLER"   => VM_KEEP_DB_INSTALLER,
        "ORACLE_CHARACTERSET" => VM_ORACLE_CHARACTERSET,
        "LISTENER_PORT"       => VM_LISTENER_PORT,
        "EM_EXPRESS_PORT"     => VM_EM_EXPRESS_PORT,

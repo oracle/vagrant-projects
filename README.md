@@ -55,6 +55,20 @@ Windows features that enable Hyper-V include Application Guard, Containers, Cred
 
 To completely disable all Hyper-V features, it may be necessary to run the command `bcdedit /set hypervisorlaunchtype Off` from an Administrator Command Prompt. After running this command, reboot the computer.
 
+## Contributing
+
+> If your project has specific contribution requirements, update the
+  `CONTRIBUTING.md` file to ensure those requirements are clearly explained.
+
+This project welcomes contributions from the community. Before submitting a pull
+request, please [review our contribution guide](./CONTRIBUTING.md).
+
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security
+vulnerability disclosure process.
+
+
 ## Feedback
 
 Please provide feedback of any kind via Github issues on this repository.

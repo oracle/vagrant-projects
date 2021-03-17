@@ -13,7 +13,7 @@ vulnerability, do not raise a GitHub issue and follow the instructions in our
 ## Contributing code
 
 We welcome your code contributions. Before submitting code via a pull request,
-you will need to haved signed the [Oracle Contributor Agreement][OCA] (OCA) and
+you will need to have signed the [Oracle Contributor Agreement][OCA] (OCA) and
 your commits need to include the following line using the name and e-mail
 address you used to sign the OCA:
 

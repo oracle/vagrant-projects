@@ -53,6 +53,8 @@ The projects in this repository are unlikely to work correctly on Windows hosts 
 
 Windows features that enable Hyper-V include Application Guard, Containers, Credential Guard, Device Guard, Hyper-V, Virtual Machine Platform, Windows Hypervisor Platform, Windows Sandbox, and Windows Subsystem for Linux (WSL2 only; WSL1 does _not_ use Hyper-V). If you encounter problems with the projects on a Windows host, please try disabling these features.
 
+To completely disable all Hyper-V features, it may be necessary to run the command `bcdedit /set hypervisorlaunchtype Off` from an Administrator Command Prompt. After running this command, reboot the computer.
+
 ## Feedback
 
 Please provide feedback of any kind via Github issues on this repository.

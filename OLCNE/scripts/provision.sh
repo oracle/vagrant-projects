@@ -346,7 +346,7 @@ passwordless_ssh() {
     echo_do ssh-keygen -t rsa -f /vagrant/id_rsa -q -N "''"
   fi
   # Install private key
-  echo_do mkdir /root/.ssh
+  echo_do mkdir -p /root/.ssh
   echo_do cp /vagrant/id_rsa /root/.ssh/
   # Authorise passwordless ssh
   echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys

@@ -2,6 +2,11 @@
 
 A Vagrant project that provisions Oracle Linux LAMP solution automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
 
+__Note:__ This Vagrant project is deprecated. However, the same functionality is
+available as an extension to the OracleLinux/7 project. For more information,
+see the [LAMP stack](../OracleLinux/7/README.md#lamp-stack) section of the
+OracleLinux/7 [README.md](../OracleLinux/7/README.md) file.
+
 ## Prerequisites
 
 Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM

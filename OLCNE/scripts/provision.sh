@@ -592,6 +592,12 @@ fixups() {
   for node in ${MASTERS//,/ }; do
     # Expose the kubectl proxy to the host
     echo_do ssh "${node}" "\"\
+        kubectl --namespace kube-system get ds/kube-flannel-ds -o yaml > /tmp/kube-flannel-ds.yaml;\
+        kubectl delete -f /tmp/kube-flannel-ds.yaml;\
+        sed -i 's/\(- --kube-subnet-mgr\)/\1\n        - --iface=eth1/' /tmp/kube-flannel-ds.yaml;\
+        sleep 60;\
+        kubectl apply -f /tmp/kube-flannel-ds.yaml;\
+        rm /tmp/kube-flannel-ds.yaml;\
         sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
             /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf \
         && systemctl daemon-reload \

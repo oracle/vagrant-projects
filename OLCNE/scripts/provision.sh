@@ -461,8 +461,7 @@ deploy_kubernetes() {
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
-      --apiserver-advertise-address "${MASTERS}" \
-      --virtual-ip 192.168.99.99 \
+      --pod-network-iface eth1 \
       --master-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
@@ -476,6 +475,7 @@ deploy_kubernetes() {
       --module kubernetes --name "${OLCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
+      --pod-network-iface eth1 \
       --virtual-ip 192.168.99.99 \
       --master-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \

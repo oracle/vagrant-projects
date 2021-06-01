@@ -1,0 +1,37 @@
+{
+  "description": "Oracle Linux 8 with BTRFS root filesystem",
+  "short_description": "Oracle Linux 8 with BTRFS root fs",
+  "name": "oraclelinux/8-btrfs",
+  "versions": [
+    {
+      "version": "8.4.222",
+      "status": "active",
+      "release_date": "30-May-2021",
+      "description_html": "<ul>\n<li>Releasing 8.4.222</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.4.222",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/OL8U4_x86_64-vagrant-btrfs-virtualbox-b222.box",
+        "checksum": "a7c0fc600ee0e7ac1d01e4e6f0af3960a082fdadd9efbc91a1277cb6b33f18d2",
+        "checksum_type": "sha256",
+        "size": 702734822,
+        "kernel": "5.4.17-2102.201.3.el8uek.x86_64"
+      }]
+    },
+    {
+      "version": "8.4.223",
+      "status": "active",
+      "release_date": "30-May-2021",
+      "description_html": "<ul>\n<li>Releasing 8.4.223</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.4.223",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/OL8U4_x86_64-vagrant-btrfs-libvirt-b223.box",
+        "checksum": "a6149554b1eaf605cd511d8d4bf9a99dde7a2d85e9eb2f9b33a9196be61b5a8f",
+        "checksum_type": "sha256",
+        "size": 673297435,
+        "kernel": "5.4.17-2102.201.3.el8uek.x86_64"
+      }]
+    }
+  ]
+}

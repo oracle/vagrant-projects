@@ -1,0 +1,37 @@
+{
+  "description": "Oracle Linux 7 with BTRFS root filesystem",
+  "short_description": "Oracle Linux 7 with BTRFS root fs",
+  "name": "oraclelinux/7-btrfs",
+  "versions": [
+    {
+      "version": "7.9.226",
+      "status": "active",
+      "release_date": "30-May-2021",
+      "description_html": "<ul>\n<li>Releasing 7.9.226</li>\n</ul>\n",
+      "description_markdown": "* Releasing 7.9.226",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/OL7U9_x86_64-vagrant-btrfs-virtualbox-b226.box",
+        "checksum": "1fe17919f2a011d0cbab94b417e1436dbb97f2ceaf470d0b671ef2a18d3ba81b",
+        "checksum_type": "sha256",
+        "size": 712614718,
+        "kernel": "5.4.17-2102.201.3.el7uek.x86_64"
+      }]
+    },
+    {
+      "version": "7.9.227",
+      "status": "active",
+      "release_date": "30-May-2021",
+      "description_html": "<ul>\n<li>Releasing 7.9.227</li>\n</ul>\n",
+      "description_markdown": "* Releasing 7.9.227",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol7/OL7U9_x86_64-vagrant-btrfs-libvirt-b227.box",
+        "checksum": "5317f780fbc2dcf5e7c64d13cbc342cfb3fde8a824a7de2cad0b575fe89ca81e",
+        "checksum_type": "sha256",
+        "size": 685513295,
+        "kernel": "5.4.17-2102.201.3.el7uek.x86_64"
+      }]
+    }
+  ]
+}

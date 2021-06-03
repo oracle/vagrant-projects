@@ -128,7 +128,7 @@ rm /vagrant/ora-response/dbca.rsp
 
 echo 'INSTALLER: Database created'
 
-sed '$s/N/Y/' /etc/oratab | sudo tee /etc/oratab > /dev/null
+sed -i -e "\$s|${ORACLE_SID}:${ORACLE_HOME}:N|${ORACLE_SID}:${ORACLE_HOME}:Y|" /etc/oratab
 echo 'INSTALLER: Oratab configured'
 
 # configure systemd to start oracle instance on startup

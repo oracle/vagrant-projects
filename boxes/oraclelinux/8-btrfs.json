@@ -1,6 +1,6 @@
 {
-  "description": "Oracle Linux 8 with BTRFS root filesystem",
-  "short_description": "Oracle Linux 8 with BTRFS root fs",
+  "description": "Oracle Linux 8 (Btrfs)",
+  "short_description": "Oracle Linux 8 (Btrfs)",
   "name": "oraclelinux/8-btrfs",
   "versions": [
     {

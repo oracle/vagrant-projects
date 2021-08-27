@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RAC nodes (12.2, 18c, 19c), using Vagrant, Oracle Linux 7 and shell scripts.
+two Oracle RAC nodes (12.2, 18c, 19c, 21c), using Vagrant, Oracle Linux 7 and shell scripts.
 ![](images/OracleRAC.png)
 
 ## Prerequisites
@@ -44,15 +44,15 @@ The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to version (12.2, 18c, 19c) for Linux x86-64 you need -> "See All", example
+    go to version (12.2, 18c, 19c, 21c) for Linux x86-64 you need -> "See All", example
 
-    * Oracle Database 19c Grid Infrastructure (19.3) for Linux x86-64
-        LINUX.X64_193000_grid_home.zip (3,059,705,302 bytes)
-        (sha256sum - d668002664d9399cf61eb03c0d1e3687121fc890b1ddd50b35dcbe13c5307d2e)
+    * Oracle Database 21c Grid Infrastructure (21.3) for Linux x86-64
+        LINUX.X64_213000_grid_home.zip (2,422,217,613 bytes)
+        (sha256sum - 070d4471bc067b1290bdcee6b1c1fff2f21329d2839301e334bcb2a3d12353a3)
 
-    * Oracle Database 19c (19.3) for Linux x86-64
-       LINUX.X64_193000_db_home.zip (4,564,649,047 bytes)
-       (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
+    * Oracle Database 21c (21.3) for Linux x86-64
+       LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
+       (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
 
 ## Customization
 
@@ -84,13 +84,14 @@ The following can be customized:
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`:      Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`:     Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
+- `asm_lib_type`:      Oracle ASM filter driver (asmfd) or Oracle ASMlib (asmlib)
 - `p1_ratio`:          ASM disks partiton ration (%). Min 10%, Max 80%
 
 #### environment
 
 - `provider`:         It's defining the provider to be used: 'libvirt' or 'virtualbox'
-- `grid_software`:    Oracle Database 18c Grid Infrastructure (18.3) for Linux x86-64 zip file
-- `db_software`:      Oracle Database 18c (18.3) for Linux x86-64 zip file
+- `grid_software`:    Oracle Database XXc Grid Infrastructure for Linux x86-64 zip file
+- `db_software`:      Oracle Database XXc for Linux x86-64 zip file
 - `root_password`:    VM Guest root password
 - `grid_password`:    VM Guest grid password
 - `oracle_password`:  VM Guest oracle password
@@ -137,14 +138,15 @@ The following can be customized:
       asm_disk_path:
       asm_disk_num:   4
       asm_disk_size: 20
+      asm_lib_type: asmlib
       p1_ratio:      80
       # ---------------------------------------------
 
     env:
       provider: virtualbox
       # ---------------------------------------------
-      gi_software:     LINUX.X64_193000_grid_home.zip
-      db_software:     LINUX.X64_193000_db_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -157,7 +159,7 @@ The following can be customized:
       nomgmtdb:        true
       orestart:        false
       # ---------------------------------------------
-      db_name:         DB193H1
+      db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
       cdb:             false
@@ -193,6 +195,7 @@ The following can be customized:
       # ---------------------------------------------
       asm_disk_num:   4
       asm_disk_size: 20
+      asm_lib_type: asmlib
       p1_ratio:      80
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
@@ -200,8 +203,8 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      gi_software:     LINUX.X64_193000_grid_home.zip
-      db_software:     LINUX.X64_193000_db_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -214,7 +217,7 @@ The following can be customized:
       nomgmtdb:        true
       orestart:        false
       # ---------------------------------------------
-      db_name:         DB193H1
+      db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
       cdb:             false

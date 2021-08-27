@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2021 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
@@ -17,12 +17,13 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     08/27/21 - ASMFD support added #335 + ASMFD with libvirt 
 #    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     03/24/20 - Creation
 #
 #    REVISION
-#    20200923 - $Revision: 2.0.2.3 $
+#    20210827 - $Revision: 2.0.2.4 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -113,6 +114,7 @@ var_asm_storage     = params['shared']['storage_pool_name']
 var_asm_disk_num    = params['shared']['asm_disk_num']
 var_asm_disk_size   = params['shared']['asm_disk_size']
 var_p1_ratio        = params['shared']['p1_ratio']
+var_asm_lib_type    = params['shared']['asm_lib_type']
 #
 var_gi_software     = params['env']['gi_software']
 var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
@@ -136,7 +138,6 @@ var_pdb_name        = params['env']['pdb_name']
 var_db_type         = params['env']['db_type']
 var_cdb             = params['env']['cdb']
 
-var_asm_lib_type    = 'ASMLIB'
 
 # -----------------------------------------------------------------
 # Provider specific checks
@@ -387,11 +388,11 @@ end
 # VMs definition
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = var_box
-  config.vm.box_url = var_url
+  #config.vm.box_url = var_url
 
-  if var_provider_name == 'virtualbox'
-    config.vm.box_version = ">= 7.8.142"
-  end
+  #if var_provider_name == 'virtualbox'
+  #  config.vm.box_version = ">= 7.8.142"
+  #end
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -445,16 +446,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           libvirt.storage_pool_name = var_asm_storage
           disk_num = disk_num.to_i + 1
           num = 0
+          asm_disk = 1
           while num < var_asm_disk_num do
             asm_disk_size = var_asm_disk_size.to_s + "G"
               libvirt.storage :file,
                 :path => var_prefix_name + '_asm_' + num.to_s,
-                :size => asm_disk_size,  # defaults to 10G if unspecified!
+                :size => asm_disk_size,                             # defaults to 10G if unspecified!
                 :cache => 'none',
-                :type => 'raw',               # defaults to 'qcow2' if unspecified!
+                :type => 'raw',                                     # defaults to 'qcow2' if unspecified!
+                :serial => 'asm_disk_' + asm_disk.to_s,
                 :shareable => 'true'
             disk_num += 1
             num += 1
+            asm_disk += 1
           end
         end
       end
@@ -483,17 +487,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         libvirt.storage_pool_name = var_asm_storage
         disk_num = disk_num.to_i + 1
         num = 0
+        asm_disk = 1
         while num < var_asm_disk_num do
           asm_disk_size = var_asm_disk_size.to_s + "G"
             libvirt.storage :file,
               :path => var_prefix_name + '_asm_' + num.to_s,
-              :size => asm_disk_size,  # defaults to 10G if unspecified!
+              :size => asm_disk_size,                           # defaults to 10G if unspecified!
               :cache => 'none',
-              :type => 'raw',                # defaults to 'qcow2' if unspecified!
+              :type => 'raw',                                   # defaults to 'qcow2' if unspecified!
               :allow_existing => 'true',
+              :serial => 'asm_disk_' + asm_disk.to_s,
               :shareable => 'true'
           disk_num += 1
           num += 1
+          asm_disk += 1
         end
       end
     end
@@ -594,6 +601,23 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
     end
   end
+
+  # If var_asmlib_type is 'ASMFD', then the running kernel must be UEK4, otherwise ASMFD is not supported due to Grid Infrastructure being version 19.3
+  # It is worth noting that some GI RU later than 19.3 makes UEK5 supported as well, but not UEK6.
+   if var_asm_lib_type == 'ASMFD'
+     config.vm.provision :shell do |shell|
+       shell.privileged = true
+       shell.inline = <<-SHELL
+       echo "Installing UEK4 kernel (via yum)"
+       sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol7.repo; yum install -y kernel-uek-4.1.12 kernel-uek-devel-4.1.12
+       echo "Rebooting to make UEK4 the running kernel, a prerequisite for ASMFD"
+       SHELL
+       shell.reboot = true
+     end
+     if var_provider_name == 'libvirt'
+       config.vm.provision :reload
+     end
+   end
 
   # Enable ssh password authentication
   config.vm.provision "shell", inline: <<-SHELL

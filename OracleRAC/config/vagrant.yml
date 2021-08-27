@@ -32,6 +32,7 @@ shared:
   asm_disk_num:   4
   asm_disk_size: 20
   p1_ratio:      80
+  asm_lib_type: 'ASMLIB'
   # ---------------------------------------------
 
 env:
@@ -90,6 +91,7 @@ env:
 #  asm_disk_num:   4
 #  asm_disk_size: 20
 #  p1_ratio:      80
+#  asm_lib_type: 'ASMLIB'
 #  storage_pool_name: Vagrant_KVM_Storage
 #  # ---------------------------------------------
 #

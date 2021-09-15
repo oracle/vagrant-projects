@@ -98,9 +98,8 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
-    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
 else
@@ -109,7 +108,6 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
 EOF
@@ -144,7 +142,26 @@ ${GI_HOME}/gridSetup.sh -silent -executeConfigTools \\
     oracle.install.crs.config.clusterName=${CLUSTER_NAME} \\
     oracle.install.crs.config.ClusterConfiguration=STANDALONE \\
     oracle.install.crs.config.configureAsExtendedCluster=false \\
+EOF
+
+if [ "${GI_MAJOR}" -eq "19" ]
+then
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
+    oracle.install.crs.configureGIMR=true \\
+EOF
+elif [ "${GI_MAJOR}" -ge "21" ]
+then
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
+    oracle.install.crs.configureGIMR=false \\
+EOF
+elif [ "${GI_MAJOR}" -lt "19" ]
+then
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle_install_crs_ConfigureMgmtDB=true \\
+EOF
+fi
+
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.crs.config.clusterNodes=${NODE1_FQ_HOSTNAME}:${NODE1_FQ_VIPNAME}:HUB \\
     oracle.install.crs.config.networkInterfaceList=${NET_DEVICE1}:${PUBLIC_SUBNET}:1,${NET_DEVICE2}:${PRIVATE_SUBNET}:5 \\
     oracle.install.crs.config.gpnp.configureGNS=false \\
@@ -166,9 +183,8 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/11_gi_config.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
-    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
 else
@@ -177,7 +193,6 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/11_gi_config.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
 EOF
@@ -191,6 +206,68 @@ cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.config.managementOption=NONE \\
     oracle.install.config.omsPort=0 \\
     oracle.install.crs.rootconfig.executeRootScript=false
+EOF
+}
+
+make_RDBMS_software_installation() {
+cat > /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+. /vagrant/config/setup.env
+EOF
+
+DB_MAJOR=$(echo "${DB_SOFTWARE_VER}" | cut -c1-2)
+if [ "${DB_MAJOR}" == "12" ]
+then
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+${DB_HOME}/database/runInstaller -ignorePrereq -waitforcompletion -silent \\
+        -responseFile ${DB_HOME}/database/response/db_install.rsp \\
+EOF
+else
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+${DB_HOME}/runInstaller -ignorePrereq -waitforcompletion -silent \\
+        -responseFile ${DB_HOME}/install/response/db_install.rsp \\
+EOF
+fi
+
+cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+        oracle.install.option=INSTALL_DB_SWONLY \\
+        ORACLE_HOSTNAME=${ORACLE_HOSTNAME} \\
+        UNIX_GROUP_NAME=oinstall \\
+        INVENTORY_LOCATION=${ORA_INVENTORY} \\
+        SELECTED_LANGUAGES=${ORA_LANGUAGES} \\
+        ORACLE_HOME=${DB_HOME} \\
+        ORACLE_BASE=${DB_BASE} \\
+        oracle.install.db.InstallEdition=EE \\
+        oracle.install.db.OSDBA_GROUP=dba \\
+        oracle.install.db.OSBACKUPDBA_GROUP=dba \\
+        oracle.install.db.OSDGDBA_GROUP=dba \\
+        oracle.install.db.OSKMDBA_GROUP=dba \\
+        oracle.install.db.OSRACDBA_GROUP=dba \\
+EOF
+
+if [ "${ORESTART}" == "false" ]
+then
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+        oracle.install.db.CLUSTER_NODES=${NODE1_HOSTNAME},${NODE2_HOSTNAME} \\
+EOF
+fi
+
+if [ "${DB_TYPE}" == "RACONE" ]
+then
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+        oracle.install.db.isRACOneInstall=true \\
+EOF
+else
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+        oracle.install.db.isRACOneInstall=false \\
+EOF
+fi
+
+cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+        oracle.install.db.rac.serverpoolCardinality=0 \\
+        oracle.install.db.config.starterdb.type=GENERAL_PURPOSE \\
+        oracle.install.db.ConfigureAsContainerDB=true \\
+        SECURITY_UPDATES_VIA_MYORACLESUPPORT=false \\
+        DECLINE_SECURITY_UPDATES=true
 EOF
 }
 
@@ -209,6 +286,13 @@ GI_APP=$(echo "${GI_SOFTWARE_VER}" | cut -c4)
 GI_COMP=$(echo "${GI_SOFTWARE_VER}" | cut -c5)
 GI_VERSION=${GI_MAJOR}"."${GI_MAINTENANCE}"."${GI_APP}"."${GI_COMP}
 GI_HOME="/u01/app/"$GI_VERSION"/grid"
+
+DB_MAJOR=$(echo "${DB_SOFTWARE_VER}" | cut -c1-2)
+DB_MAINTENANCE=$(echo "${DB_SOFTWARE_VER}" | cut -c3)
+DB_APP=$(echo "${DB_SOFTWARE_VER}" | cut -c4)
+DB_COMP=$(echo "${DB_SOFTWARE_VER}" | cut -c5)
+DB_VERSION=${DB_MAJOR}"."${DB_MAINTENANCE}"."${DB_APP}"."${DB_COMP}
+DB_HOME="/u01/app/oracle/product/"$DB_VERSION"/dbhome_1"
 
 node1_public_ipoct1=$(echo ${NODE1_PUBLIC_IP} | tr "." " " | awk '{ print $1 }')
 node1_public_ipoct2=$(echo ${NODE1_PUBLIC_IP} | tr "." " " | awk '{ print $2 }')
@@ -240,9 +324,11 @@ export PREFIX_NAME=$PREFIX_NAME
 #----------------------------------------------------------
 #----------------------------------------------------------
 export GI_SOFTWARE=$GI_SOFTWARE
+export DB_SOFTWARE=$DB_SOFTWARE
 #----------------------------------------------------------
 #----------------------------------------------------------
 export GI_VERSION=$GI_VERSION
+export DB_VERSION=$DB_VERSION
 #----------------------------------------------------------
 #----------------------------------------------------------
 export ASM_LIB_TYPE=$ASM_LIB_TYPE
@@ -294,6 +380,7 @@ export GRID_BASE=/u01/app/grid
 export DB_BASE=/u01/app/oracle
 
 export GI_HOME=${GI_HOME}
+export DB_HOME=${DB_HOME}
 #----------------------------------------------------------
 #----------------------------------------------------------
 export NET_DEVICE1=${NET_DEVICE1}
@@ -347,10 +434,16 @@ sudo timedatectl set-timezone $SYSTEM_TIMEZONE
 if [ `hostname` == "${VM1_NAME}" ]
 then
   # Setting-up /u01 disk
-  sh /vagrant/scripts/01_setup_u01.sh $BOX_DISK_NUM virtualbox
+  sh /vagrant/scripts/01_setup_u01.sh $BOX_DISK_NUM $PROVIDER
 
   # Install OS Pachages
   sh /vagrant/scripts/02_install_os_packages.sh
+
+  if [ "${GI_MAJOR}" -gt "19" ]
+  then
+    yum update -y
+    /usr/bin/ol_yum_configure.sh
+  fi
 
   # Setup /etc/hosts & /etc/resolv.conf
   sh /vagrant/scripts/03_setup_hosts.sh
@@ -360,7 +453,7 @@ then
 
   # Setup shared disks
   BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
-  sh /vagrant/scripts/05_setup_shared_disks.sh $BOX_DISK_NUM virtualbox
+  sh /vagrant/scripts/05_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
 
   # Setup users
   sh /vagrant/scripts/06_setup_users.sh
@@ -402,13 +495,13 @@ then
     echo "-----------------------------------------------------------------"
     echo -e "${INFO}`date +%F' '%T`: ASMFD disks label setup"
     echo "-----------------------------------------------------------------"
-    sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM virtualbox
+    sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM $PROVIDER
   else
     # Setting-up asmfd disks label
     echo "-----------------------------------------------------------------"
     echo -e "${INFO}`date +%F' '%T`: ASMLib disks label setup"
     echo "-----------------------------------------------------------------"
-    sh /vagrant/scripts/08_asmlib_label_disk.sh $BOX_DISK_NUM virtualbox
+    sh /vagrant/scripts/08_asmlib_label_disk.sh $BOX_DISK_NUM $PROVIDER
   fi
   # ---------------------------------------------------------------------
   # ---------------------------------------------------------------------
@@ -448,6 +541,42 @@ then
   su - grid -c 'sh /vagrant/scripts/11_gi_config.sh'
   #-------------------------------------------------------
 
+  if [ "${GI_MAJOR}" -ge "21" ]
+  then
+    # unzip rdbms software 
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: Unzip RDBMS software"
+    echo "-----------------------------------------------------------------"
+    cd ${DB_HOME}
+    unzip -oq /vagrant/ORCL_software/${DB_SOFTWARE}
+    chown -R grid:oinstall ${DB_HOME}
+  
+    # Make make_RDBMS_software_installation.sh
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: Make RDBMS software install command"
+    echo "-----------------------------------------------------------------"
+    make_RDBMS_software_installation;
+  
+    # install rdbms software 
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: RDBMS software installation"
+    echo "-----------------------------------------------------------------"
+    su - grid -c 'sh /vagrant/scripts/13_RDBMS_software_installation.sh'
+    sh ${DB_HOME}/root.sh
+    ssh root@${NODE1_HOSTNAME} sh ${DB_HOME}/root.sh
+  
+    if [ "${DB_MAJOR}" == "12" ]
+    then
+      rm -fr ${DB_HOME}/database
+    fi
+  
+    # Making GIMR
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: Making GIMR"
+    echo "-----------------------------------------------------------------"
+    su - grid -c 'sh /vagrant/scripts/14_Setup_GIMR.sh'
+  fi
+
   # Setup RHP Server
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Setup FPP Server"
@@ -458,7 +587,7 @@ fi
 if [ `hostname` == "${VM2_NAME}" ]
 then
   # Setting-up /u01 disk
-  sh /vagrant/scripts/01_setup_u01.sh $BOX_DISK_NUM virtualbox
+  sh /vagrant/scripts/01_setup_u01.sh $BOX_DISK_NUM $PROVIDER
   
   # Install OS Pachages
   sh /vagrant/scripts/02_install_os_packages.sh

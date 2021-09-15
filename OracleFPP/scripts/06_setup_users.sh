@@ -79,14 +79,17 @@ oracle hard stack 32768
 EOL
 
 echo "-----------------------------------------------------------------"
-echo -e "${INFO}`date +%F' '%T`: Create GI_HOME directory"
+echo -e "${INFO}`date +%F' '%T`: Create GI_HOME and DB_HOME directories"
 echo "-----------------------------------------------------------------"
 mkdir -p ${GRID_BASE}
 mkdir -p ${DB_BASE}
 mkdir -p ${GI_HOME}
+mkdir -p ${DB_HOME}
 chown -R grid:oinstall /u01
 chown -R grid:oinstall ${GRID_BASE}
 chown -R grid:oinstall ${GI_HOME}
+chown -R oracle:oinstall ${DB_BASE}
+chown -R oracle:oinstall ${DB_HOME}
 chmod -R ug+rw /u01
 
 echo "-----------------------------------------------------------------"

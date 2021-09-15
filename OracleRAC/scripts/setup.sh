@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2021 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      setup.sh - 
@@ -18,11 +18,12 @@
 #       Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     08/27/21 - ASMFD support added #335 + ASMFD with libvirt 
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20210827 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -138,9 +139,8 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
-    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
 else
@@ -149,7 +149,6 @@ DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
 DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
-    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
 EOF
@@ -249,7 +248,7 @@ DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
-    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleafd/disks/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
 else
@@ -643,6 +642,7 @@ sh /vagrant/scripts/04_setup_chrony.sh
 BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
 sh /vagrant/scripts/05_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
 
+
 # Setup users
 sh /vagrant/scripts/06_setup_users.sh
 
@@ -699,13 +699,16 @@ fi
 # ---------------------------------------------------------------------
 if [ "${ASM_LIB_TYPE}" == "ASMFD" ]
 then
-  # Setting-up asmfd disks label
-  echo "-----------------------------------------------------------------"
-  echo -e "${INFO}`date +%F' '%T`: ASMFD disks label setup"
-  echo "-----------------------------------------------------------------"
-  sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM $PROVIDER
+  if [ `hostname` == ${VM1_NAME} ]
+    then
+    # Setting-up asmfd disks label
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: ASMFD disks label setup"
+    echo "-----------------------------------------------------------------"
+    sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM $PROVIDER
+  fi
 else
-  # Setting-up asmfd disks label
+  # Setting-up asmlib disks label
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: ASMLib disks label setup"
   echo "-----------------------------------------------------------------"

@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant, Oracle Linux 7.4 and shell scripts.
+one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant, Oracle Linux 7 and shell scripts.
 ![](images/OracleFPP.png)
 
 ## Prerequisites
@@ -13,36 +13,14 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 
 ## Free disk space requirement
 
-- Grid Infrastructure and Database binary zip under "./ORCL_software": ~9.3 Gb
-- Grid Infrastructure on u01 vdisk (node1, location set by `u01_disk`): ~7 Gb
+- Grid Infrastructure and Database binary zip under "./ORCL_software": ~5.5 Gb
+- Grid Infrastructure + RDBMS for GIMR on u01 vdisk (node1, location set by `u01_disk`): ~14 Gb
 - OS guest vdisk (node1/node2) located on default VirtualBox VM location: ~2.5 Gb
   - In case of KVM/libVirt provider, the disk is created under `storage pool = "storage_pool_name"`
   - In case of VirtualBox
     - Use `VBoxManage list systemproperties |grep folder` to find out the current VM default location
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
 - Dynamically allocated storage for ASM shared virtual disks (node1, location set by `asm_disk_path`): ~24 Gb
-
-#### Extra Steps when KVM/libVirt provider is in use:
-
-1. Install Vagrant plugin `vagrant-mutate`:
-        vagrant plugin install vagrant-mutate
-2. If not done, add ol7.4 vagrant box for virtualbox:
-        vagrant box add --provider virtualbox https://yum.oracle.com/boxes/oraclelinux/ol74/ol74.box --name ol74
-3. Check for the new  vagrant box availability:
-        vagrant box list
-        ol7-latest    (libvirt, 0)
-        ol7-latest    (virtualbox, 0)
-        ol74          (virtualbox, 0)    <<<---- (!)
-        oraclelinux/7 (libvirt, 7.7.17)
-4. Convert ol7.4 box to libvirt
-        vagrant mutate ol74 libvirt
-5. Check for the new  vagrant box availability:
-        vagrant box list
-        ol7-latest    (libvirt, 0)
-        ol7-latest    (virtualbox, 0)
-        ol74          (libvirt, 0)      <<<---- (!)
-        ol74          (virtualbox, 0)
-        oraclelinux/7 (libvirt, 7.7.17)
 
 ## Memory requirement
 
@@ -59,18 +37,18 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
 (*) Download Grid Infrastructure and Database binary from OTN into `ORCL_software` folder
-https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
+https://www.oracle.com/database/technologies/oracle-database-software-downloads.html
 
     Accept License Agreement
-    go to version (19c) for Linux x86-64 you need -> "See All", example
+    go to version (21c) for Linux x86-64 you need -> "See All", example
 
-    * Oracle Database 19c Grid Infrastructure (19.3) for Linux x86-64
-        LINUX.X64_193000_grid_home.zip (3,059,705,302 bytes)
-        (sha256sum - d668002664d9399cf61eb03c0d1e3687121fc890b1ddd50b35dcbe13c5307d2e)
+    * Oracle Database 21c Grid Infrastructure (21.3) for Linux x86-64
+        LINUX.X64_213000_grid_home.zip (2,422,217,613 bytes)
+        (sha256sum - 070d4471bc067b1290bdcee6b1c1fff2f21329d2839301e334bcb2a3d12353a3)
 
-    * Oracle Database 19c (19.3) for Linux x86-64 (optional)
-       LINUX.X64_193000_db_home.zip (4,564,649,047 bytes)
-       (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
+    * Oracle Database 21c (21.3) for Linux x86-64 (required with 21c FPP)
+       LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
+       (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
 
 ## Customization
 
@@ -173,7 +151,8 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      gi_software: LINUX.X64_193000_grid_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -225,7 +204,8 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------  
-      gi_software: LINUX.X64_193000_grid_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -273,7 +253,8 @@ The following can be customized:
       env:
       provider: libvirt
       # ---------------------------------------------
-      gi_software: LINUX.X64_193000_grid_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -325,7 +306,8 @@ The following can be customized:
       env:
       provider: libvirt
       # ---------------------------------------------
-      gi_software: LINUX.X64_193000_grid_home.zip
+      gi_software:     LINUX.X64_213000_grid_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -381,8 +363,8 @@ Note2 : having limited resource you may want setup the following JAVA env variab
 Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'  
 Note4 : following some fpp commands you may want to try
 
-- `rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip`
-- `rhpctl import image -image gi_19300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_grid_home.zip`
-- `rhpctl add workingcopy -workingcopy wc_db_19300 -image db_19300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/193000/dbhome_1 -targetnode fppc -root`
-- `rhpctl add database -workingcopy wc_db_19300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root`
+- `rhpctl import image -image db_21300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_213000_db_home.zip`
+- `rhpctl import image -image gi_21300 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_213000_grid_home.zip`
+- `rhpctl add workingcopy -workingcopy wc_db_21300 -image db_21300 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/213000/dbhome_1 -targetnode fppc -root`
+- `rhpctl add database -workingcopy wc_db_21300 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root`
 - (...)

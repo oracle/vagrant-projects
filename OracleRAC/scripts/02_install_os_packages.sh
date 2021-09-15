@@ -29,7 +29,7 @@ echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 yum install -y deltarpm expect tree unzip zip 
-yum install -y oracle-database-preinstall-18c
+yum install -y oracle-database-preinstall-19c
 yum install -y oracleasm-support
 
 echo "-----------------------------------------------------------------"
@@ -79,6 +79,8 @@ yum install -y sysstat
 yum install -y targetcli
 yum install -y unixODBC
 yum install -y chrony
+yum install -y policycoreutils-python
+
 
 #echo "-----------------------------------------------------------------"
 #echo -e "${INFO}`date +%F' '%T`: Perform yum update"

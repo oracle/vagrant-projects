@@ -17,11 +17,12 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     08/27/21 - latest uek4
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20200521 - $Revision: 2.0.2.2 $
+#    20210828 - $Revision: 2.0.2.3 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
  
@@ -62,10 +63,14 @@ require 'ipaddr'
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# Vagrant Boxes Source Definition
+var_box = 'oraclelinux/7'
+var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
+
 puts ""
 puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
 puts " Oracle FPP (Fleet Patching and Provisioning) Vagrant box for KVM/libVirt or VirtualBox  "
-puts " Copyright (c) 1982-2020 Oracle and/or its affiliates                                    "
+puts " Copyright (c) 1982-2021 Oracle and/or its affiliates                                    "
 puts "-----------------------------------------------------------------------------------------"
 puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                                      "
 puts "         RAC Pack, Cloud Innovation and Solution Engineering Team                        "
@@ -111,7 +116,10 @@ var_asm_disk_num    = params['shared']['asm_disk_num']
 var_asm_disk_size   = params['shared']['asm_disk_size']
 # 
 var_gi_software     = params['env']['gi_software']
-var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
+var_gi_software_ver = (var_gi_software.to_s.split("_"))[1].to_i
+#
+var_db_software     = params['env']['db_software']
+var_db_software_ver = (var_db_software.to_s.split("_"))[1].to_i
 #
 var_ora_languages   = params['env']['ora_languages']
 #
@@ -138,20 +146,16 @@ end
 
 # Base Settings
 if var_provider_name == 'virtualbox'
-  box_disks_num = 2
-  var_box = 'ol74'
-  var_url = 'https://yum.oracle.com/boxes/oraclelinux/ol74/ol74.box'
   ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+  box_disks_num = 1
+  #var_box = 'ol74'
+  #var_url = 'https://yum.oracle.com/boxes/oraclelinux/ol74/ol74.box'
 elsif var_provider_name == 'libvirt'
-  #-------------------------
-  # Special case
-  #-------------------------
-  box_disks_num = 2
-  var_box = 'ol74'
-  #box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
+  box_disks_num = 1
+  #var_box = 'ol74'
   #var_box = 'oraclelinux/7'
   #var_url = 'http://ca-at-170.ie.oracle.com:8080/boxes/oraclelinux-7.json'
-  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
 else 
   puts "Not supported #{provider}, exiting..."
   exit
@@ -305,6 +309,15 @@ if ! File.exist?(path)
   exit
 end
 
+var_gi_software_ver_major = var_gi_software_ver.digits.to_a[5].to_s + var_gi_software_ver.digits.to_a[4].to_s
+if var_gi_software_ver_major.to_i > 19
+  path = "./ORCL_software/" + var_db_software
+  if ! File.exist?(path)
+    puts "ERROR: db_software is required but it does not exist"
+    exit
+  end
+end
+
 if ( (var_network != 'hostonly') and (var_network != 'public') )
   puts "ERROR: network option can be 'public' or 'hostonly'"
   exit
@@ -433,7 +446,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         disk_num = 0
         while disk_num < box_disks_num do
           libvirt.storage :file,
-            :bus => 'sata',
             :size => '100G'
           disk_num += 1
         end
@@ -442,15 +454,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         libvirt.storage_pool_name = var_asm_storage
         disk_num = disk_num.to_i + 1
         num = 0
+        asm_disk = 1
         while num < var_asm_disk_num do 
           asm_disk_size = var_asm_disk_size.to_s + "G"
             libvirt.storage :file,
               :size => asm_disk_size,
-              :bus => 'sata',
               :cache => 'none',
-              :type => 'raw'
+              :type => 'raw',
+              :serial => 'asm_disk_' + asm_disk.to_s
           disk_num += 1
           num += 1
+          asm_disk += 1
         end
       end
     end
@@ -479,7 +493,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           disk_num = 0
           while disk_num < box_disks_num do
             libvirt.storage :file,
-              :bus => 'sata',
               :size => '100G'
             disk_num += 1
           end
@@ -585,6 +598,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
+  # ACFS
+  config.vm.provision :shell do |shell|
+    shell.privileged = true
+    shell.inline = <<-SHELL
+    echo "Installing UEK4 kernel (via yum)"
+    sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol7.repo; yum install -y kernel-uek-4.1.12 kernel-uek-devel-4.1.12
+    echo "Rebooting to make UEK4 the running kernel, a prerequisite for ASMFD"
+    SHELL
+    shell.reboot = true
+  end
+  if var_provider_name == 'libvirt'
+    config.vm.provision :reload
+  end
+
+
   # Enable ssh password authentication
   config.vm.provision "shell", inline: <<-SHELL
     sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
@@ -593,11 +621,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Enable provisioning with a shell script
   config.vm.provision "shell", path: "scripts/setup.sh", env: {
+      "PROVIDER"           => var_provider_name,
       "BOX_DISK_NUM"       => box_disks_num,
       "SYSTEM_TIMEZONE"    => var_system_timezone,
       "PREFIX_NAME"        => var_prefix_name,
       "GI_SOFTWARE"        => var_gi_software,
       "GI_SOFTWARE_VER"    => var_gi_software_ver,
+      "DB_SOFTWARE"        => var_db_software,
+      "DB_SOFTWARE_VER"    => var_db_software_ver,
       "ORA_LANGUAGES"      => var_ora_languages,
       "VM1_NAME"           => var_vm1_name,
       "NODE1_PUBLIC_IP"    => var_vm1_public_ip,

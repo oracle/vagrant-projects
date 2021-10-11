@@ -1,1 +1,0 @@
-../../OracleLinux/7/scripts/container-runtime.sh

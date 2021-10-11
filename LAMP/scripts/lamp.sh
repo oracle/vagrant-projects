@@ -1,1 +1,0 @@
-../../OracleLinux/7/scripts/lamp.sh

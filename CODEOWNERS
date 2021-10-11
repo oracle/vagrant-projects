@@ -1,9 +1,0 @@
-# The last matching pattern has the most precedence.
-*                         @gvenzl
-/ContainerTools/          @AmedeeBulle
-/OLCNE/                   @rafabene
-/OracleDatabase/          @gvenzl
-/OracleLinux/             @scoter-oracle
-/OracleDG/                @rcitton
-/OracleRAC/               @rcitton
-/OracleFPP/               @rcitton

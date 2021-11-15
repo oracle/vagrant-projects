@@ -18,6 +18,7 @@
 #      ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
+#    pfierens    11/15/21 - VBOX: due to UEK4 install and reboot, vagrant mount is required
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     10/01/19 - Creation
 #
@@ -315,6 +316,9 @@ then
   NET_DEVICE2=`ip a | grep "4: " | awk '{print $2}'`
   NET_DEVICE2=${NET_DEVICE2:0:-1}
 fi
+
+# due to UEK4 install and reboot, mount is required
+mount -t vboxsf vagrant /vagrant
 
 cat <<EOL > /vagrant/config/setup.env
 #----------------------------------------------------------

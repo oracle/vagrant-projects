@@ -419,6 +419,9 @@ EOF
 # ---------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------
+# due to UEK4 install and reboot, mount is required
+mount -t vboxsf vagrant /vagrant
+
 if [[ `hostname` == ${VM2_NAME} || (`hostname` == ${VM1_NAME} && "${ORESTART}" == "true") ]]
 then
   # build the setup.env
@@ -549,7 +552,6 @@ export SUCCESS='\033[1;32mSUCCESS: \033[0m'
 #----------------------------------------------------------
 EOL
 fi
-
 
 # Setup the env
 echo "-----------------------------------------------------------------"

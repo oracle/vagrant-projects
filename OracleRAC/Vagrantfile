@@ -388,7 +388,7 @@ end
 # VMs definition
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = var_box
-  #config.vm.box_url = var_url
+  config.vm.box_url = var_url
 
   #if var_provider_name == 'virtualbox'
   #  config.vm.box_version = ">= 7.8.142"

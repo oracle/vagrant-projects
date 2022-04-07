@@ -16,7 +16,7 @@ Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Linux Cloud
-Native Environment which deploys Kubernetes 1.18.10 configured to use
+Native Environment which deploys Kubernetes 1.21.6 configured to use
 the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
 
@@ -98,7 +98,12 @@ is installed)
 ### VM parameters
 
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
-- `MEMORY` (default: 3072): all VMs are provisioned with 3GB memory.
+- `WORKER_CPUS` (default: 1):  Provision Worker Node with 1 vCPU.
+- `WORKER_MEMORY` (default: 1024): Provision Worker Node with 1GB memory.
+- `MASTER_CPUS` (default: 2): At least 2 vCPUS are required for Master Nodes.
+- `MASTER_MEMORY` (default: 2048): At least 1700MB are required for Master Nodes.
+- `OPERATOR_CPUS` (default: 1): Only applicable if `STANDALONE_OPERATOR=true`.
+- `OPERATOR_MEMORY` (default: 1024): Only applicable if `STANDALONE_OPERATOR=true`.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
 - `EXTRA_DISK` (default: `false`): Creates an extra disk (/dev/sdb) that can be used for GlusterFS for Kubernetes Persistent Volumes
 

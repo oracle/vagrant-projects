@@ -46,9 +46,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.env.load(".env.local", ".env") # enable the plugin
   end
 
-  # vCPUS (2) and Memory for the VMs (3GB)
-  CPUS = default_i('CPUS', 2)
-  MEMORY = default_i("MEMORY", 3072)
+  # vCPUS and Memory for the VMs
+  OPERATOR_CPUS = default_i('OPERATOR_CPUS', 1)
+  OPERATOR_MEMORY = default_i("OPERATOR_MEMORY", 1024)
+  MASTER_CPUS = default_i('MASTER_CPUS', 2)
+  MASTER_MEMORY = default_i("MASTER_MEMORY", 2048)
+  WORKER_CPUS = default_i('WORKER_CPUS', 1)
+  WORKER_MEMORY = default_i("WORKER_MEMORY", 1024)
 
   # Group VirtualBox containers
   VB_GROUP = default_s("VB_GROUP", "OLCNE")
@@ -113,6 +117,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Use specific component version (mainly used for development)
   NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
 
+  # Update OS and Reboot
+  UPDATE_OS = default_b('UPDATE_OS', false)
+  
   # Verbose console
   VERBOSE = default_b('VERBOSE', false)
 end
@@ -132,6 +139,15 @@ end
 
 def ensure_scheme(url)
   (url =~ /.*:\/\// ? "" : "http://") + url
+end
+
+def update_os(vm)
+  if UPDATE_OS
+    vm.provision :shell,
+                 inline: "dnf -y update",
+                 privileged: true,
+                 reboot: true
+  end
 end
 
 def provision_vm(vm, vm_args)
@@ -197,8 +213,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Provider-specific configuration -- VirtualBox
   config.vm.provider "virtualbox" do |vb, override|
-    vb.memory = MEMORY
-    vb.cpus = CPUS
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
     if EXTRA_DISK
@@ -206,8 +220,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
   config.vm.provider :libvirt do |lv|
-    lv.memory = MEMORY
-    lv.cpus = CPUS
     lv.nested = true
     if EXTRA_DISK
       lv.storage :file, :size => '16G', :type => 'qcow2'
@@ -226,7 +238,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      # Provisioning: install stuff
+      worker.vm.provider "virtualbox" do |vb, override|
+        vb.memory = WORKER_MEMORY
+        vb.cpus = WORKER_CPUS
+      end
+      config.vm.provider :libvirt do |lv|
+        lv.memory = WORKER_MEMORY
+        lv.cpus = WORKER_CPUS
+      end
+      # Update OS if UPDATE_OS=true
+      update_os(worker.vm)
+      # Provisioning: Worker Node
       provision_vm(worker.vm, ["--worker"])
     end
   end
@@ -243,11 +265,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
+      master.vm.provider "virtualbox" do |vb, override|
+        vb.memory = MASTER_MEMORY
+        vb.cpus = MASTER_CPUS
+      end
+      config.vm.provider :libvirt do |lv|
+        lv.memory = MASTER_MEMORY
+        lv.cpus = MASTER_CPUS
+      end
       if BIND_PROXY && i == 1
         # Bind kubectl proxy proxy port
         master.vm.network "forwarded_port", guest: 8001, host: 8001
       end
-      # Provisioning: install stuff
+      # Update OS if UPDATE_OS=true
+      update_os(master.vm)
+      # Provisioning: Master Node
       args = ["--master", "--nginx-image", NGINX_IMAGE]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
@@ -266,6 +298,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
+      operator.vm.provider "virtualbox" do |vb, override|
+        vb.memory = OPERATOR_MEMORY
+        vb.cpus = OPERATOR_CPUS
+      end
+      config.vm.provider :libvirt do |lv|
+        lv.memory = OPERATOR_MEMORY
+        lv.cpus = OPERATOR_CPUS
+      end
+      # Update OS if UPDATE_OS=true
+      update_os(operator.vm)
+      # Provisioning: Operator Node
       args = ["--operator"]
       args.push("--workers", workers.chop)
       args.push("--masters", masters.chop)

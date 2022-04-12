@@ -217,8 +217,8 @@ setup_repos() {
 
   # Add OLCNE release package
   echo_do dnf install -y oracle-olcne-release-el8
-  echo_do dnf config-manager --enable ol8_olcne13 ol8_addons ol8_baseos_latest ol8_UEKR6
-  echo_do dnf config-manager --disable ol8_olcne12
+  echo_do dnf config-manager --enable ol8_olcne14 ol8_addons ol8_baseos_latest ol8_UEKR6
+  echo_do dnf config-manager --disable ol8_olcne12 ol8_olcne13
 
   # Optional extra repo
   if [[ -n ${EXTRA_REPO} ]]; then echo_do dnf config-manager --add-repo "${EXTRA_REPO}"; fi

@@ -165,7 +165,8 @@ def provision_vm(vm, vm_args)
   args.push("--verbose") if VERBOSE
   vm.provision "shell",
     path: "scripts/provision.sh",
-    args: args
+    args: args,
+    privileged: false
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -234,7 +235,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 110 + i
       ip_addr = "192.168.99.#{ip}"
       workers += "#{ip_addr},"
-      worker.vm.network "private_network", ip: ip_addr
+      worker.vm.network :private_network, ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -261,7 +262,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 100 + i
       ip_addr = "192.168.99.#{ip}"
       masters += "#{ip_addr},"
-      master.vm.network "private_network", ip: ip_addr
+      master.vm.network :private_network, ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -275,7 +276,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
       if BIND_PROXY && i == 1
         # Bind kubectl proxy proxy port
-        master.vm.network "forwarded_port", guest: 8001, host: 8001
+        master.vm.network :forwarded_port, guest: 8001, host: 8001
       end
       # Update OS if UPDATE_OS=true
       update_os(master.vm)
@@ -290,11 +291,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # Operator node, if standalone
+  # Operator node, if STANDALONE_OPERATOR=true
   if STANDALONE_OPERATOR
     config.vm.define "operator" do |operator|
       operator.vm.hostname = "operator.vagrant.vm"
-      operator.vm.network "private_network", ip: "192.168.99.100"
+      operator.vm.network :private_network, ip: "192.168.99.100"
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end

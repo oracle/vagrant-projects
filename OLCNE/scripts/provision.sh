@@ -216,15 +216,15 @@ setup_repos() {
   msg "Configure repos for Oracle Linux Cloud Native Environment"
 
   # Add OLCNE release package
-  echo_do dnf install -y oracle-olcne-release-el8
-  echo_do dnf config-manager --enable ol8_olcne14 ol8_addons ol8_baseos_latest ol8_UEKR6
-  echo_do dnf config-manager --disable ol8_olcne12 ol8_olcne13
+  echo_do sudo dnf install -y oracle-olcne-release-el8
+  echo_do sudo dnf config-manager --enable ol8_olcne14 ol8_addons ol8_baseos_latest ol8_UEKR6
+  echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13
 
   # Optional extra repo
-  if [[ -n ${EXTRA_REPO} ]]; then echo_do dnf config-manager --add-repo "${EXTRA_REPO}"; fi
+  if [[ -n ${EXTRA_REPO} ]]; then echo_do sudo dnf config-manager --add-repo "${EXTRA_REPO}"; fi
 
   # Enable OLCNE developer channel
-  if [[ ${OLCNE_DEV} == 1 ]]; then echo_do dnf config-manager --enable ol8_developer_olcne; fi
+  if [[ ${OLCNE_DEV} == 1 ]]; then echo_do sudo dnf config-manager --enable ol8_developer_olcne; fi
 }
 
 #######################################
@@ -239,7 +239,7 @@ setup_repos() {
 clean_networking() {
   msg "Removing extra NetworkManager connection"
 
-  nmcli con del "Wired connection 1"
+  sudo nmcli con del "Wired connection 1"
 
 }
 
@@ -255,16 +255,16 @@ clean_networking() {
 requirements() {
   msg "Fulfil requirements"
   # Swap
-  echo_do swapoff -a
-  echo_do sed -i "'/ swap /d'" /etc/fstab
+  echo_do sudo swapoff -a
+  echo_do sudo sed -i "'/ swap /d'" /etc/fstab
 
   # Bridge filtering
-  echo_do modprobe br_netfilter
-  echo_do eval "echo 'br_netfilter' > /etc/modules-load.d/br_netfilter.conf"
+  echo_do sudo modprobe br_netfilter
+  echo_do sudo sh -c "'echo br_netfilter > /etc/modules-load.d/br_netfilter.conf'"
 
   # Enable & start firewalld; add eth0 to the public zone
-  echo_do systemctl enable --now firewalld
-  echo_do firewall-cmd --permanent --zone=public --add-interface=eth0
+  echo_do sudo systemctl enable --now firewalld
+  echo_do sudo firewall-cmd --permanent --zone=public --add-interface=eth0
 }
 
 #######################################
@@ -284,51 +284,51 @@ install_packages() {
 
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
-    echo_do dnf install -y olcnectl"${OLCNE_VERSION}" olcne-api-server"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
-    echo_do systemctl enable olcne-api-server.service
-    echo_do firewall-cmd --add-port=8091/tcp --permanent
-    echo_do firewall-cmd --add-masquerade --permanent
+    echo_do sudo dnf install -y olcnectl"${OLCNE_VERSION}" olcne-api-server"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
+    echo_do sudo systemctl enable olcne-api-server.service
+    echo_do sudo firewall-cmd --add-port=8091/tcp --permanent
+    echo_do sudo firewall-cmd --add-masquerade --permanent
   fi
   if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
     msg "Installing the Oracle Linux Cloud Native Environment Platform Agent"
-    echo_do dnf install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
-    echo_do systemctl enable olcne-agent.service
+    echo_do sudo dnf install -y olcne-agent"${OLCNE_VERSION}" olcne-utils"${OLCNE_VERSION}"
+    echo_do sudo systemctl enable olcne-agent.service
     if [[ -n ${HTTP_PROXY} ]]; then
       # CRI-O proxies
-      mkdir -p /etc/systemd/system/crio.service.d
-      cat > /etc/systemd/system/crio.service.d/crio-proxy.conf <<-EOF
+      sudo mkdir -p /etc/systemd/system/crio.service.d
+      cat <<-EOF | sudo tee /etc/systemd/system/crio.service.d/crio-proxy.conf
 	[Service]
 	Environment="HTTP_PROXY=${HTTP_PROXY}"
 	Environment="HTTPS_PROXY=${HTTPS_PROXY}"
 	Environment="NO_PROXY=${NO_PROXY}"
 	EOF
     fi
-    echo_do firewall-cmd --add-masquerade --permanent
-    echo_do firewall-cmd --zone=trusted --add-interface=cni0 --permanent
-    echo_do firewall-cmd --add-port=8090/tcp --permanent
-    echo_do firewall-cmd --add-port=10250/tcp --permanent
-    echo_do firewall-cmd --add-port=10255/tcp --permanent
-    echo_do firewall-cmd --add-port=8472/udp --permanent
-    echo_do firewall-cmd --add-port=30000-32767/tcp --permanent
+    echo_do sudo firewall-cmd --add-masquerade --permanent
+    echo_do sudo firewall-cmd --zone=trusted --add-interface=cni0 --permanent
+    echo_do sudo firewall-cmd --add-port=8090/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=10250/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=10255/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=8472/udp --permanent
+    echo_do sudo firewall-cmd --add-port=30000-32767/tcp --permanent
   fi
 
   if [[ ${MASTER} == 1 ]]; then
-    echo_do dnf install -y bash-completion
-    echo_do firewall-cmd --add-port=6443/tcp --permanent
-    echo_do firewall-cmd --add-port=8001/tcp --permanent
+    echo_do sudo dnf install -y bash-completion
+    echo_do sudo firewall-cmd --add-port=6443/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=8001/tcp --permanent
     # OLCNE 1.0.1 requires these ports for single master as well
-    echo_do firewall-cmd --add-port=10251/tcp --permanent
-    echo_do firewall-cmd --add-port=10252/tcp --permanent
-    echo_do firewall-cmd --add-port=2379/tcp --permanent
-    echo_do firewall-cmd --add-port=2380/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=10251/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=10252/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=2379/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=2380/tcp --permanent
     # Software load balancer firewall rules
-    echo_do firewall-cmd --add-port=6444/tcp --permanent
-    echo_do firewall-cmd --add-protocol=vrrp --permanent
+    echo_do sudo firewall-cmd --add-port=6444/tcp --permanent
+    echo_do sudo firewall-cmd --add-protocol=vrrp --permanent
 
   fi
 
   # Reload firewalld
-  echo_do firewall-cmd --reload
+  echo_do sudo firewall-cmd --reload
 }
 
 #######################################
@@ -345,24 +345,27 @@ passwordless_ssh() {
   # Generate common key
   if [[ ! -f /vagrant/id_rsa ]]; then
     msg "Generating shared SSH keypair"
-    echo_do ssh-keygen -t rsa -f /vagrant/id_rsa -q -N "''"
+    echo_do ssh-keygen -t rsa -f /vagrant/id_rsa -q -N "''" -C 'vagrant@olcne'
   fi
   # Install private key
-  echo_do mkdir -p /root/.ssh
-  echo_do cp /vagrant/id_rsa /root/.ssh/
+  #echo_do mkdir -p /root/.ssh
+  echo_do cp /vagrant/id_rsa ~/.ssh
+  echo_do cp /vagrant/id_rsa.pub ~/.ssh
   # Authorise passwordless ssh
-  echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
-  echo_do eval "cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys"
+  #echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
+  echo_do sh -c "'cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys'"
   # Don't do host checking
   cat > ~/.ssh/config <<-EOF
 	Host operator* master* worker* 192.168.99.*
 	  StrictHostKeyChecking no
 	  UserKnownHostsFile /dev/null
-	  LogLevel QUIET
+	  LogLevel FATAL
 	EOF
   # Set permissions
-  echo_do chmod 0700 /root/.ssh
-  echo_do chmod 0600 /root/.ssh/authorized_keys /root/.ssh/id_rsa
+  echo_do chmod 0700 ~/.ssh
+  echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa
+  echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub
+  echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/config
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Removing the shared SSH keypair"
@@ -389,14 +392,18 @@ certificates() {
     # Standalone operator
     nodes="192.168.99.100,${nodes}"
   fi
-  echo_do /etc/olcne/gen-certs-helper.sh --nodes "${nodes}"  --cert-dir "${CERT_DIR}"
+  echo_do sudo /etc/olcne/gen-certs-helper.sh --nodes "${nodes}"  --cert-dir "${CERT_DIR}"
 
-  echo_do sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
+  echo_do sudo sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
 
-  echo_do bash -e ${CERT_DIR}/olcne-tranfer-certs.sh
+  echo_do sh -c "'find ${CERT_DIR} -type f -name node.key -exec sudo chmod 0644 {} \;'"
 
-  echo_do /etc/olcne/gen-certs-helper.sh --one-cert --nodes "externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local" --cert-dir "${EXTERNALIP_VALIDATION_CERT_DIR}"
+  echo_do bash -ex ${CERT_DIR}/olcne-tranfer-certs.sh
 
+  echo_do sudo /etc/olcne/gen-certs-helper.sh --one-cert --nodes "externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local" --cert-dir "${EXTERNALIP_VALIDATION_CERT_DIR}"
+
+   echo_do sudo chown -R vagrant: ${EXTERNALIP_VALIDATION_CERT_DIR}
+  
 }
 
 #######################################
@@ -412,7 +419,7 @@ bootstrap_olcne() {
   local node
 
   msg "Bootstrap the Oracle Linux Cloud Native Environment Platform Agent on all nodes"
-  echo_do /etc/olcne/bootstrap-olcne.sh \
+  echo_do sudo /etc/olcne/bootstrap-olcne.sh \
     --secret-manager-type file \
     --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
     --olcne-ca-path ${CERT_DIR}/production/ca.cert \
@@ -420,7 +427,7 @@ bootstrap_olcne() {
     --olcne-component api-server
 
   for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
-    echo_do ssh "${node}" /etc/olcne/bootstrap-olcne.sh \
+    echo_do ssh "${node}" sudo /etc/olcne/bootstrap-olcne.sh \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
       --olcne-ca-path ${CERT_DIR}/production/ca.cert \
@@ -446,7 +453,8 @@ deploy_kubernetes() {
   worker_nodes="${WORKERS//,/:8090,}:8090"
 
   msg "Create the Oracle Linux Cloud Native Environment: ${OLCNE_ENV_NAME}"
-  echo_do olcnectl --api-server 127.0.0.1:8091 environment create \
+  echo_do olcnectl environment create \
+      --api-server 127.0.0.1:8091 \
       --environment-name "${OLCNE_ENV_NAME}" \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
@@ -581,12 +589,12 @@ fixups() {
   msg "Copying admin.conf for vagrant user on master node(s)"
   for node in ${MASTERS//,/ }; do
     echo_do ssh "${node}" "\"\
-      mkdir -p ~vagrant/.kube; \
-      cp /etc/kubernetes/admin.conf ~vagrant/.kube/config; \
-      chown -R vagrant: ~vagrant/.kube; \
-      echo 'source <(kubectl completion bash)' >> ~vagrant/.bashrc; \
-      echo 'alias k=kubectl' >> ~vagrant/.bashrc; \
-      echo 'complete -F __start_kubectl k' >> ~vagrant/.bashrc; \
+      mkdir -p ~/.kube; \
+      sudo cp /etc/kubernetes/admin.conf ~/.kube/config; \
+      sudo chown $(id -u):$(id -g) ~/.kube/config; \
+      echo 'source <(kubectl completion bash)' >> ~/.bashrc; \
+      echo 'alias k=kubectl' >> ~/.bashrc; \
+      echo 'complete -F __start_kubectl k' >> ~/.bashrc; \
       \""
   done
 
@@ -594,13 +602,60 @@ fixups() {
   for node in ${MASTERS//,/ }; do
     # Expose the kubectl proxy to the host
     echo_do ssh "${node}" "\"\
-        sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
+        sudo sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
             /etc/systemd/system/kubectl-proxy.service.d/10-kubectl-proxy.conf \
-        && systemctl daemon-reload \
-        && systemctl enable --now kubectl-proxy.service \
+        && sudo systemctl daemon-reload \
+        && sudo systemctl enable --now kubectl-proxy.service \
     \""
   done
 
+  # Fix: kubelet: "Unable to read config path" err="path does not exist, ignoring" path="/etc/kubernetes/manifests"
+  msg "Creating empty /etc/kubernetes/manifests directory on worker nodes"
+  for node in ${WORKERS//,/ }; do
+    echo_do ssh "${node}" "\"\
+      [ -d /etc/kubernetes/manifests ] || sudo mkdir /etc/kubernetes/manifests
+    \""
+  done
+  
+  # Fix: kubelet: summary_sys_containers.go: "Failed to get system container stats"
+  #               err='failed to get cgroup stats for "/system.slice/kubelet.service":
+  #                    failed to get container info for "/system.slice/kubelet.service":
+  #                    unknown container "/system.slice/kubelet.service"'
+  #               containerName="/system.slice/kubelet.service"
+  msg "Creating /etc/systemd/system/kubelet.service.d/11-cgroups.conf on K8s nodes"
+  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+    echo_do ssh "${node}" "\"\
+      sh -c 'cat <<EOF | sudo tee /etc/systemd/system/kubelet.service.d/11-cgroups.conf
+[Service]
+CPUAccounting=true
+MemoryAccounting=true
+EOF' \
+      && sudo systemctl daemon-reload \
+      && sudo systemctl restart kubelet \
+    \""
+  done  
+
+  # Fix: audit: type=1400 avc:  denied  { ioctl } for  comm="iptables" path="/sys/fs/cgroup" dev="tmpfs"
+  msg "Fix AVC Denial on iptables"
+  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+    echo_do ssh "${node}" "\"\
+      echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /tmp/local_iptables.cil \
+      && sudo semodule -i /tmp/local_iptables.cil \
+      && rm -f /tmp/local_iptables.cil
+    \""
+  done
+  
+  # Fix: Keepalived_vrrp: (VI_1) WARNING - equal priority advert received from remote host with our IP address.
+  if [[ ${MULTI_MASTER} == 1 ]]; then
+    msg "Fix Keepalived: remove unicast_src_ip from unicast_peers"
+    for node in ${MASTERS//,/ }; do
+      echo_do ssh "${node}" "\"\
+        sudo perl -i -ne 'print unless /^\s*$node\s*$/' /etc/keepalived/keepalived.conf \
+	&& sudo systemctl restart keepalived.service
+      \""
+    done
+  fi
+  
 }
 
 #######################################

@@ -438,13 +438,6 @@ passwordless_ssh() {
   #echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
   #echo_do sh -c "'cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys'"
   echo_do "cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys"
-  # Don't do host checking
-  # cat > ~/.ssh/config <<-EOF
-  # 	Host operator* master* worker* 192.168.99.*
-  # 	  StrictHostKeyChecking no
-  # 	  UserKnownHostsFile /dev/null
-  # 	  LogLevel FATAL
-  # 	EOF
   # Set permissions
   echo_do chmod 0700 ~/.ssh
   echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa

@@ -431,18 +431,14 @@ passwordless_ssh() {
     echo_do touch /vagrant/known_hosts
   fi  
   # Install private key
-  #echo_do mkdir -p /root/.ssh
   echo_do cp /vagrant/id_rsa ~/.ssh
   echo_do cp /vagrant/id_rsa.pub ~/.ssh
   # Authorise passwordless ssh
-  #echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
-  #echo_do sh -c "'cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys'"
   echo_do "cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys"
   # Set permissions
   echo_do chmod 0700 ~/.ssh
   echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa
   echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub
-  #echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/config
   # SSH Host Keys. Should really use ssh-keyscan -t ecdsa,ed25519
   echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -i` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
   # Last node removes the key
@@ -786,6 +782,7 @@ EOF' \
       \""
     done
 
+    # Check if number of Gluster servers (Worker nodes) is less than 3, and patch K8s StorageClass. Default is 3 replicas.
     NB_WORKERS=$(echo ${WORKERS} | awk -F',' '{print NF}')
     if [[ ${NB_WORKERS} -lt "3" ]]; then
       # https://kubernetes.io/docs/concepts/storage/storage-classes/#glusterfs

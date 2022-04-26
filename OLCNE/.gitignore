@@ -2,4 +2,9 @@
 admin.conf
 local
 id_rsa*
+known_hosts*
 *.swp
+heketi.json*
+topology-olcne.json*
+hyperconverged.yaml*
+ignore-systemd-session-slice.conf*

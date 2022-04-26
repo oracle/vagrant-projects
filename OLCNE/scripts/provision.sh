@@ -79,8 +79,8 @@ msg() {
 parse_args() {
   OLCNE_CLUSTER_NAME='' OLCNE_ENV_NAME='' OLCNE_DEV=0 OLCNE_VERSION='' REGISTRY_OLCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
-  VERBOSE=0 EXTRA_REPO='' NGINX_IMAGE=''
-  DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
+  VERBOSE=0 SUBNET='' EXTRA_REPO='' NGINX_IMAGE=''
+  DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -185,6 +185,27 @@ parse_args() {
         ISTIO_MODULE_NAME="$2"
         shift; shift
         ;;
+      "--with-gluster")
+        DEPLOY_HELM=1
+        DEPLOY_GLUSTER=1
+        shift
+        ;;
+      "--gluster-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --gluster-module-name" >&2
+	        exit 1
+        fi
+        GLUSTER_MODULE_NAME="$2"
+        shift; shift
+        ;;
+      "--subnet")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --subnet" >&2
+          exit 1
+        fi
+        SUBNET="$2"
+        shift; shift;
+        ;;
       "--verbose")
         VERBOSE=1
         shift
@@ -199,7 +220,7 @@ parse_args() {
   readonly OLCNE_CLUSTER_NAME OLCNE_ENV_NAME OLCNE_DEV REGISTRY_OLCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
   readonly VERBOSE EXTRA_REPO NGINX_IMAGE
-  readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME
+  readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME DEPLOY_GLUSTER GLUSTER_MODULE_NAME
 }
 
 #######################################
@@ -217,7 +238,7 @@ setup_repos() {
 
   # Add OLCNE release package
   echo_do sudo dnf install -y oracle-olcne-release-el8
-  echo_do sudo dnf config-manager --enable ol8_olcne14 ol8_addons ol8_baseos_latest ol8_UEKR6
+  echo_do sudo dnf config-manager --enable ol8_olcne14 ol8_baseos_latest ol8_appstream ol8_addons ol8_UEKR6
   echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13
 
   # Optional extra repo
@@ -238,8 +259,7 @@ setup_repos() {
 #######################################
 clean_networking() {
   msg "Removing extra NetworkManager connection"
-
-  sudo nmcli con del "Wired connection 1"
+  nmcli -f GENERAL.STATE con show "Wired connection 1" && sudo nmcli con del "Wired connection 1"
 
 }
 
@@ -254,17 +274,25 @@ clean_networking() {
 #######################################
 requirements() {
   msg "Fulfil requirements"
-  # Swap
+  # Disable Swap
   echo_do sudo swapoff -a
   echo_do sudo sed -i "'/ swap /d'" /etc/fstab
 
-  # Bridge filtering
+  # Enable transparent masquerading VxLAN
   echo_do sudo modprobe br_netfilter
   echo_do sudo sh -c "'echo br_netfilter > /etc/modules-load.d/br_netfilter.conf'"
 
+  # Bridge Tunable Parameters
+  cat <<-EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+  echo_do sudo /sbin/sysctl -p /etc/sysctl.d/k8s.conf
+  
   # Enable & start firewalld; add eth0 to the public zone
   echo_do sudo systemctl enable --now firewalld
-  echo_do sudo firewall-cmd --permanent --zone=public --add-interface=eth0
+  echo_do sudo firewall-cmd --zone=public --add-interface=eth0 --permanent
 }
 
 #######################################
@@ -324,9 +352,59 @@ install_packages() {
     # Software load balancer firewall rules
     echo_do sudo firewall-cmd --add-port=6444/tcp --permanent
     echo_do sudo firewall-cmd --add-protocol=vrrp --permanent
-
   fi
 
+  if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
+    if [[ ${WORKER} == 1 ]]; then
+      msg "Installing the GlusterFS Server on Worker node"
+      echo_do sudo dnf install -y oracle-gluster-release-el8
+      echo_do sudo dnf config-manager --enable ol8_gluster_appstream
+      echo_do sudo dnf module enable -y glusterfs
+      echo_do sudo dnf install -y @glusterfs/server
+      # Enable TLS...
+      echo_do sudo systemctl enable --now glusterd.service
+      echo_do sudo firewall-cmd --permanent --add-service=glusterfs
+    fi
+
+    if [[ ${OPERATOR} == 1 ]]; then
+      msg "Installing the Heketi Server & CLI on Operator node"
+      echo_do sudo dnf install -y oracle-gluster-release-el8
+      echo_do sudo dnf config-manager --enable ol8_gluster_appstream
+      echo_do sudo dnf module enable -y glusterfs
+      echo_do sudo dnf install -y heketi heketi-client
+      if [[ ${MASTER} == 0 ]]; then
+	# Standalone operator
+	echo_do sudo firewall-cmd --add-port=8080/tcp --permanent
+      fi
+      msg "Modifying the default /etc/heketi/heketi.json onto /vagrant/heketi.json"
+      echo_do sudo dnf install -y jq
+      contents="$(jq '.use_auth=true|.jwt.admin.key="secret"|.glusterfs.executor="ssh"|.glusterfs.sshexec.keyfile="/etc/heketi/vagrant_key"|.glusterfs.sshexec.user="vagrant"|.glusterfs.sshexec.sudo=true|del(.glusterfs.sshexec.port)|del(.glusterfs.sshexec.fstab)|.glusterfs.loglevel="info"' /etc/heketi/heketi.json)" && echo -E "${contents}" > /vagrant/heketi.json
+      echo_do sudo cp /vagrant/heketi.json /etc/heketi/heketi.json
+      echo_do rm -f /vagrant/heketi.json
+      # SSH Key *MUST* be in PEM format! Heketi would reject it otherwise.
+      msg "Copying the Vagrant SSH Key. Must be in PEM format!"
+      echo_do sudo cp /vagrant/id_rsa /etc/heketi/vagrant_key
+      # Fix default permission which exposes the secret /etc/heketi/heketi.json
+      echo_do sudo chmod 0600 /etc/heketi/vagrant_key /etc/heketi/heketi.json
+      echo_do sudo chown -R heketi: /etc/heketi
+      # Enable Heketi
+      echo_do sudo systemctl enable --now heketi.service
+      # Test Heketi
+      msg "Waiting to Heketi service to become ready"
+      echo_do curl --retry-connrefused --retry 10 --retry-delay 5 127.0.0.1:8080/hello
+      # Heketi ready
+      msg "Creating Gluster Topology file /etc/heketi/topology-olcne.json"
+      # https://github.com/heketi/heketi/blob/master/docs/admin/topology.md
+      jq -R '{clusters:[{nodes:(./","|map({node:{hostnames:{manage:[.],storage:[.]},zone:1},devices:[{name:"/dev/sdb",destroydata:false}]}))}]}' <<< "${WORKERS}" > /vagrant/topology-olcne.json
+      echo_do sudo cp /vagrant/topology-olcne.json /etc/heketi/topology-olcne.json
+      echo_do sudo chown heketi: /etc/heketi/topology-olcne.json
+      msg "Loading Gluster Cluster Topology with Heketi"
+      # export HEKETI_CLI_USER=admin; export HEKTI_CLI_KEY=secret
+      echo_do heketi-cli --user=admin --secret=secret topology load --json=/etc/heketi/topology-olcne.json
+      echo_do rm -f /vagrant/topology-olcne.json
+    fi
+  fi
+  
   # Reload firewalld
   echo_do sudo firewall-cmd --reload
 }
@@ -344,32 +422,37 @@ passwordless_ssh() {
   msg "Allow passwordless ssh between VMs"
   # Generate common key
   if [[ ! -f /vagrant/id_rsa ]]; then
-    msg "Generating shared SSH keypair"
-    echo_do ssh-keygen -t rsa -f /vagrant/id_rsa -q -N "''" -C 'vagrant@olcne'
+    msg "Generating shared SSH keypair in PEM format"
+    echo_do ssh-keygen -m PEM -t rsa -f /vagrant/id_rsa -q -N "''" -C "'vagrant@olcne'"
   fi
+  # Generate known_hosts
+  if [[ ! -f /vagrant/known_hosts ]]; then
+    msg "Generating shared SSH Known Hosts file"
+    echo_do touch /vagrant/known_hosts
+  fi  
   # Install private key
-  #echo_do mkdir -p /root/.ssh
   echo_do cp /vagrant/id_rsa ~/.ssh
   echo_do cp /vagrant/id_rsa.pub ~/.ssh
   # Authorise passwordless ssh
-  #echo_do cp /vagrant/id_rsa.pub /root/.ssh/authorized_keys
-  echo_do sh -c "'cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys'"
-  # Don't do host checking
-  cat > ~/.ssh/config <<-EOF
-	Host operator* master* worker* 192.168.99.*
-	  StrictHostKeyChecking no
-	  UserKnownHostsFile /dev/null
-	  LogLevel FATAL
-	EOF
+  echo_do "cat /vagrant/id_rsa.pub >> ~/.ssh/authorized_keys"
   # Set permissions
   echo_do chmod 0700 ~/.ssh
   echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa
   echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub
-  echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/config
+  # SSH Host Keys. Should really use ssh-keyscan -t ecdsa,ed25519
+  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -i` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Removing the shared SSH keypair"
     echo_do rm /vagrant/id_rsa /vagrant/id_rsa.pub
+
+    msg "Copying SSH Host Keys"
+    echo_do sudo cp /vagrant/known_hosts /etc/ssh/ssh_known_hosts
+    for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+	echo_do ssh "${node}" "sudo cp /vagrant/known_hosts /etc/ssh/ssh_known_hosts"
+    done
+    msg "Removing the shared SSH Known Hosts file"
+    echo_do rm /vagrant/known_hosts
   fi
 }
 
@@ -390,7 +473,7 @@ certificates() {
 
   if [[ ${MASTER} == 0 ]]; then
     # Standalone operator
-    nodes="192.168.99.100,${nodes}"
+    nodes="${SUBNET}.100,${nodes}"
   fi
   echo_do sudo /etc/olcne/gen-certs-helper.sh --nodes "${nodes}"  --cert-dir "${CERT_DIR}"
 
@@ -486,7 +569,7 @@ deploy_kubernetes() {
       --container-registry "${REGISTRY_OLCNE}" \
       --nginx-image "${REGISTRY_OLCNE}/${NGINX_IMAGE}" \
       --pod-network-iface eth1 \
-      --virtual-ip 192.168.99.99 \
+      --virtual-ip "${SUBNET}.99" \
       --master-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
@@ -511,6 +594,7 @@ deploy_kubernetes() {
 #   OLCNE_CLUSTER_NAME OLCNE_ENV_NAME
 #   DEPLOY_HELM HELM_MODULE_NAME
 #   DEPLOY_ISTIO ISTIO_MODULE_NAME
+#   DEPLOY_GLUSTER GLUSTER_MODULE_NAME
 #   REGISTRY_OLCNE
 # Arguments:
 #   None
@@ -570,6 +654,37 @@ deploy_modules() {
     echo_do olcnectl module install \
       --environment-name "${OLCNE_ENV_NAME}" \
       --name "${ISTIO_MODULE_NAME}"
+  fi
+
+  # Gluster module (using Heketi)
+  if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
+
+    # Create the Gluster module
+    # using defaults url/user/secret-key: olcnectl module create --module gluster --help
+    msg "Creating the Gluster module: ${GLUSTER_MODULE_NAME}"
+    HEKETI_CLI_SERVER="http://127.0.0.1:8080"
+    if [[ ${MASTER} == 0 ]]; then
+      # Standalone operator
+      HEKETI_CLI_SERVER="http://${SUBNET}.100:8080"
+    fi
+    echo_do olcnectl module create \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --module gluster \
+      --name "${GLUSTER_MODULE_NAME}" \
+      --gluster-helm-module "${HELM_MODULE_NAME}" \
+      --gluster-server-url "${HEKETI_CLI_SERVER}"
+      
+    # Validate the Gluster module
+    msg "Validating the Gluster module: ${Gluster_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${GLUSTER_MODULE_NAME}"
+
+    # Deploy the Gluster module
+    msg "Deploying the Gluster module: ${GLUSTER_MODULE_NAME} into ${OLCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OLCNE_ENV_NAME}" \
+      --name "${GLUSTER_MODULE_NAME}"
   fi
 
 }
@@ -655,6 +770,54 @@ EOF' \
       \""
     done
   fi
+
+  # Fix: heketi: systemd[1]: /usr/lib/systemd/system/glusterd.service:21: Unknown lvalue 'StartLimitIntervalSec' in section 'Service'
+  if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
+    msg "Removing StartLimitIntervalSec from /usr/lib/systemd/system/glusterd.service on Gluster nodes"
+    for node in ${WORKERS//,/ }; do
+      echo_do ssh "${node}" "\"\
+        sudo sed -i '/^StartLimitIntervalSec=/d' /usr/lib/systemd/system/glusterd.service \
+	&& sudo systemctl daemon-reload \
+        && sudo systemctl restart glusterd.service \
+      \""
+    done
+
+    # Check if number of Gluster servers (Worker nodes) is less than 3, and patch K8s StorageClass. Default is 3 replicas.
+    NB_WORKERS=$(echo ${WORKERS} | awk -F',' '{print NF}')
+    if [[ ${NB_WORKERS} -lt "3" ]]; then
+      # https://kubernetes.io/docs/concepts/storage/storage-classes/#glusterfs
+      # https://github.com/kubernetes/examples/blob/master/staging/persistent-volume-provisioning/README.md
+      volumetype=
+      if [[ ${NB_WORKERS} == "2" ]]; then # 2 replicas
+	  volumetype="replicate:2"
+      elif [[ ${NB_WORKERS} == "1" ]]; then # Distribute volume
+	  volumetype="none"
+      fi      
+      msg "Patching the Kubernetes hyperconverged storageclass volumetype to $volumetype"
+      node=${MASTERS//,*/}
+      # K8s Storage Classes are immutable. Cannot: kubectl patch storageclasses hyperconverged -p '{"Parameters":{"volumetype":"replicate:2"}}'
+      echo_do ssh "${node}" "\"\
+        kubectl get storageclasses hyperconverged -o=yaml | yq w - parameters.volumetype none > /vagrant/hyperconverged.yaml \
+	&& kubectl replace -f /vagrant/hyperconverged.yaml --force \
+	&& rm -f /vagrant/hyperconverged.yaml \
+      \""
+    fi
+  fi
+
+  # Fix: Created slice, Starting Session # https://access.redhat.com/solutions/1564823
+  msg "Create discard filter to suppress user / session log entries in /var/log/messages"
+  nodes="${MASTERS},${WORKERS}"
+  if [[ ${MASTER} == 0 ]]; then
+    nodes="${SUBNET}.100,${nodes}"
+  fi
+  echo 'if $programname == "systemd" and ($msg contains "Starting Session" or $msg contains "Started Session" or $msg contains "Created slice" or $msg contains "Starting user-" or $msg contains "Starting User Slice of" or $msg contains "Removed session" or $msg contains "Removed slice User Slice of" or $msg contains "Stopping User Slice of") then stop' > /vagrant/ignore-systemd-session-slice.conf
+  for node in ${nodes//,/ }; do
+    echo_do ssh "${node}" "\"\
+      sudo cp /vagrant/ignore-systemd-session-slice.conf /etc/rsyslog.d/ignore-systemd-session-slice.conf \
+      && sudo systemctl restart rsyslog \
+      \""
+  done
+  echo_do rm -f /vagrant/ignore-systemd-session-slice.conf
   
 }
 

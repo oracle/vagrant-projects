@@ -454,7 +454,7 @@ passwordless_ssh() {
   echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa
   echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub
   # SSH Host Keys. Should really use ssh-keyscan -t ecdsa,ed25519
-  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -i` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
+  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -I|sed "s/ $//;s/ /,/g"` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'  
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Removing the shared SSH keypair"

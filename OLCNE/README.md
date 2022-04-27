@@ -106,7 +106,7 @@ is installed)
 - `MASTER_MEMORY` (default: `2048`): At least 1700MB are required for Master Nodes.
 - `OPERATOR_CPUS` (default: `1`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
 - `OPERATOR_MEMORY` (default: `1024`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
-- `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
+- `VB_GROUP` (default: `OCNE`): group all VirtualBox VMs under this label.
 - `EXTRA_DISK` (default: `false`): Creates an extra disk (`/dev/sdb`) on Worker nodes that can be used for GlusterFS for Kubernetes Persistent Volumes
 
 ### Cluster parameters
@@ -134,9 +134,9 @@ __Note__: This provisioning script also installs Heketi on the operator node.
 
 - `YUM_REPO` (default: none): additional yum repository to consider
 (e.g. local repo)
-- `OLCNE_DEV` (default: `false`): whether to enable the Oracle Cloud
+- `OCNE_DEV` (default: `false`): whether to enable the Oracle Cloud
 Native Environment developer channel.
-- `REGISTRY_OLCNE` (default: `container-registry.oracle.com/olcne`): Container
+- `REGISTRY_OCNE` (default: `container-registry.oracle.com/olcne`): Container
 registry for Oracle Cloud Native Environment images.
 
 For performance reasons, we recommend using the closest Oracle Container Registry mirror to your region. A list of available regions can be found on the [Regions and Availability Domains](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm) page of the Oracle Cloud Infrastructure documentation.

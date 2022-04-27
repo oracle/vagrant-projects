@@ -57,7 +57,8 @@ to the Dashboard from a browser on your Vagrant host, you will need to set
 `BIND_PROXY` to `true` in your `.env.local` file.
 
 To access the Kubernetes Dashboard, remember to use `localhost` or `127.0.0.1`
-in the URL, i.e. <http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/>.
+in the URL, i.e. <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/>.
+To obtain token from any Master node, you may run: `kubectl -n kubernetes-dashboard get secret -o=jsonpath='{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="kubernetes-dashboard")].data.token}' | base64 --decode`
 
 ## About the `Vagrantfile`
 
@@ -106,7 +107,7 @@ is installed)
 - `OPERATOR_CPUS` (default: `1`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
 - `OPERATOR_MEMORY` (default: `1024`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
 - `VB_GROUP` (default: `OLCNE`): group all VirtualBox VMs under this label.
-- `EXTRA_DISK` (default: `false`): Creates an extra disk (/dev/sdb) on Worker nodes that can be used for GlusterFS for Kubernetes Persistent Volumes
+- `EXTRA_DISK` (default: `false`): Creates an extra disk (`/dev/sdb`) on Worker nodes that can be used for GlusterFS for Kubernetes Persistent Volumes
 
 ### Cluster parameters
 
@@ -126,7 +127,7 @@ hosts in your network.
 - `DEPLOY_ISTIO` (default: `false`): deploys the Istio and Helm modules.
 - `DEPLOY_GLUSTER` (default: `false`): deploys the Gluster and Helm modules.
 __Note__: if `NB_WORKERS` is less than `3`, the `hyperconverged` `storageclass`
-is patched to adjust the numbers of Gluster replicas accordingly.
+is patched to adjust the number of Gluster replicas accordingly.
 __Note__: This provisioning script also installs Heketi on the operator node.
 
 ### Repositories
@@ -140,7 +141,7 @@ registry for Oracle Linux Cloud Native Environment images.
 
 For performance reasons, we recommend using the closest Oracle Container Registry mirror to your region. A list of available regions can be found on the [Regions and Availability Domains](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm) page of the Oracle Cloud Infrastructure documentation.
 
-To specify an Oracle Container Registry mirror, either edit the `Vagrantfile` or install the vagrant-env plugin and create a .env.local file that specifies the mirror.
+To specify an Oracle Container Registry mirror, either edit the `Vagrantfile` or install the vagrant-env plugin and create a `.env.local` file that specifies the mirror.
 
 The following syntax can be used to specify a mirror:
 
@@ -168,7 +169,7 @@ When installed, this `Vagrantfile` will make use of the following third party Va
 - [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
 variables from .env files;
 - [vagrant-hosts](https://github.com/oscar-stack/vagrant-hosts): maintains
-/etc/hosts for the guest VMs;
+`/etc/hosts` for the guest VMs;
 - [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.

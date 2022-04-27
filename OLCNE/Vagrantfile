@@ -223,7 +223,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # Provider-specific configuration -- VirtualBox
-  config.vm.provider "virtualbox" do |vb, override|
+  config.vm.provider :virtualbox do |vb, override|
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
   end
@@ -243,7 +243,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      worker.vm.provider "virtualbox" do |vb, override|
+      worker.vm.provider :virtualbox do |vb, override|
         vb.memory = WORKER_MEMORY
         vb.cpus = WORKER_CPUS
         if EXTRA_DISK
@@ -276,7 +276,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      master.vm.provider "virtualbox" do |vb, override|
+      master.vm.provider :virtualbox do |vb, override|
         vb.memory = MASTER_MEMORY
         vb.cpus = MASTER_CPUS
       end
@@ -309,7 +309,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      operator.vm.provider "virtualbox" do |vb, override|
+      operator.vm.provider :virtualbox do |vb, override|
         vb.memory = OPERATOR_MEMORY
         vb.cpus = OPERATOR_CPUS
       end

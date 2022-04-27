@@ -280,14 +280,14 @@ requirements() {
 
   # Enable transparent masquerading VxLAN
   echo_do sudo modprobe br_netfilter
-  echo_do sudo sh -c "'echo br_netfilter > /etc/modules-load.d/br_netfilter.conf'"
+  echo_do "echo br_netfilter | sudo tee /etc/modules-load.d/br_netfilter.conf"
 
   # Bridge Tunable Parameters
-  cat <<-EOF | sudo tee /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1
-EOF
+  echo_do "cat <<-EOF | sudo tee /etc/sysctl.d/k8s.conf
+	net.bridge.bridge-nf-call-ip6tables = 1
+	net.bridge.bridge-nf-call-iptables = 1
+	net.ipv4.ip_forward = 1
+	EOF"
   echo_do sudo /sbin/sysctl -p /etc/sysctl.d/k8s.conf
   
   # Enable & start firewalld; add eth0 to the public zone
@@ -323,13 +323,13 @@ install_packages() {
     echo_do sudo systemctl enable olcne-agent.service
     if [[ -n ${HTTP_PROXY} ]]; then
       # CRI-O proxies
-      sudo mkdir -p /etc/systemd/system/crio.service.d
-      cat <<-EOF | sudo tee /etc/systemd/system/crio.service.d/crio-proxy.conf
+      echo_do "sudo mkdir -p /etc/systemd/system/crio.service.d"
+      echo_do "cat <<-EOF | sudo tee /etc/systemd/system/crio.service.d/crio-proxy.conf
 	[Service]
-	Environment="HTTP_PROXY=${HTTP_PROXY}"
-	Environment="HTTPS_PROXY=${HTTPS_PROXY}"
-	Environment="NO_PROXY=${NO_PROXY}"
-	EOF
+	Environment=\"HTTP_PROXY=${HTTP_PROXY}\"
+	Environment=\"HTTPS_PROXY=${HTTPS_PROXY}\"
+	Environment=\"NO_PROXY=${NO_PROXY}\"
+	EOF"
     fi
     echo_do sudo firewall-cmd --add-masquerade --permanent
     echo_do sudo firewall-cmd --zone=trusted --add-interface=cni0 --permanent
@@ -361,12 +361,26 @@ install_packages() {
       echo_do sudo dnf config-manager --enable ol8_gluster_appstream
       echo_do sudo dnf module enable -y glusterfs
       echo_do sudo dnf install -y @glusterfs/server
-      # Enable TLS...
+      # Enable TLS / Management Encryption
+      # https://docs.oracle.com/en/operating-systems/oracle-linux/gluster-storage/gluster-install-upgrade.html#gluster-tls
+      msg "Enable GlusterFS Transport Layer Security (TLS) for Management Encryption"
+      echo_do sudo openssl genrsa -out /etc/ssl/glusterfs.key 2048
+      echo_do sudo openssl req -new -x509 -days 365 -key /etc/ssl/glusterfs.key -out /etc/ssl/glusterfs.pem -subj '/CN=`hostname -f`'
+      echo_do eval "cat /etc/ssl/glusterfs.pem >> /vagrant/glusterfs.ca"
+      echo_do sudo touch /var/lib/glusterd/secure-access
       echo_do sudo systemctl enable --now glusterd.service
       echo_do sudo firewall-cmd --permanent --add-service=glusterfs
     fi
 
     if [[ ${OPERATOR} == 1 ]]; then
+      if [[ -f "/vagrant/glusterfs.ca" ]]; then
+        msg "Distributing GlusterFS Certificate Authority's (CA) certificates"
+        for node in ${WORKERS//,/ }; do
+          echo_do ssh -i /vagrant/id_rsa -o "UserKnownHostsFile=/vagrant/known_hosts" "${node}" "sudo cp /vagrant/glusterfs.ca /etc/ssl/glusterfs.ca"
+        done
+        echo_do "rm -f /vagrant/glusterfs.ca"
+      fi
+	
       msg "Installing the Heketi Server & CLI on Operator node"
       echo_do sudo dnf install -y oracle-gluster-release-el8
       echo_do sudo dnf config-manager --enable ol8_gluster_appstream
@@ -440,7 +454,7 @@ passwordless_ssh() {
   echo_do chmod 0600 ~/.ssh/authorized_keys ~/.ssh/id_rsa
   echo_do chmod 0644 ~/.ssh/authorized_keys ~/.ssh/id_rsa.pub
   # SSH Host Keys. Should really use ssh-keyscan -t ecdsa,ed25519
-  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -i` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
+  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -I|sed "s/ $//;s/ /,/g"` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'  
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Removing the shared SSH keypair"
@@ -475,7 +489,7 @@ certificates() {
     # Standalone operator
     nodes="${SUBNET}.100,${nodes}"
   fi
-  echo_do sudo /etc/olcne/gen-certs-helper.sh --nodes "${nodes}"  --cert-dir "${CERT_DIR}"
+  echo_do sudo /etc/olcne/gen-certs-helper.sh --nodes "${nodes}" --cert-dir "${CERT_DIR}"
 
   echo_do sudo sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
 
@@ -740,11 +754,12 @@ fixups() {
   msg "Creating /etc/systemd/system/kubelet.service.d/11-cgroups.conf on K8s nodes"
   for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
     echo_do ssh "${node}" "\"\
-      sh -c 'cat <<EOF | sudo tee /etc/systemd/system/kubelet.service.d/11-cgroups.conf
-[Service]
-CPUAccounting=true
-MemoryAccounting=true
-EOF' \
+      { cat <<-EOF | sudo tee /etc/systemd/system/kubelet.service.d/11-cgroups.conf
+	[Service]
+	CPUAccounting=true
+	MemoryAccounting=true
+	EOF
+      } \
       && sudo systemctl daemon-reload \
       && sudo systemctl restart kubelet \
     \""
@@ -787,17 +802,15 @@ EOF' \
     if [[ ${NB_WORKERS} -lt "3" ]]; then
       # https://kubernetes.io/docs/concepts/storage/storage-classes/#glusterfs
       # https://github.com/kubernetes/examples/blob/master/staging/persistent-volume-provisioning/README.md
-      volumetype=
-      if [[ ${NB_WORKERS} == "2" ]]; then # 2 replicas
-	  volumetype="replicate:2"
-      elif [[ ${NB_WORKERS} == "1" ]]; then # Distribute volume
-	  volumetype="none"
+      volumetype="none" # Distribute volume
+      if [[ ${NB_WORKERS} == "2" ]]; then
+	  volumetype="replicate:2" # 2 replicas
       fi      
       msg "Patching the Kubernetes hyperconverged storageclass volumetype to $volumetype"
       node=${MASTERS//,*/}
       # K8s Storage Classes are immutable. Cannot: kubectl patch storageclasses hyperconverged -p '{"Parameters":{"volumetype":"replicate:2"}}'
       echo_do ssh "${node}" "\"\
-        kubectl get storageclasses hyperconverged -o=yaml | yq w - parameters.volumetype none > /vagrant/hyperconverged.yaml \
+        kubectl get storageclasses hyperconverged -o=yaml | yq w - parameters.volumetype $volumetype > /vagrant/hyperconverged.yaml \
 	&& kubectl replace -f /vagrant/hyperconverged.yaml --force \
 	&& rm -f /vagrant/hyperconverged.yaml \
       \""

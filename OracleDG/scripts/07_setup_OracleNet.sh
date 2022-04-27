@@ -27,6 +27,9 @@
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
 
+# TNSNames.ora
+if [ `hostname` == ${NODE1_HOSTNAME} ]
+then
 cat > ${DB_HOME}/network/admin/tnsnames.ora <<EOF
 LISTENER = (ADDRESS = (PROTOCOL = TCP)(HOST = ${NODE1_HOSTNAME})(PORT = 1521))
 
@@ -52,7 +55,38 @@ ${DB_NAME}_STDBY =
     )
   )
 EOF
+fi
 
+if [ `hostname` == ${NODE2_HOSTNAME} ]
+then
+cat > ${DB_HOME}/network/admin/tnsnames.ora <<EOF
+LISTENER = (ADDRESS = (PROTOCOL = TCP)(HOST = ${NODE2_HOSTNAME})(PORT = 1521))
+
+${DB_NAME} =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = ${NODE1_HOSTNAME})(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SID = ${DB_NAME})
+    )
+  )
+
+${DB_NAME}_STDBY =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = ${NODE2_HOSTNAME})(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SID = ${DB_NAME})
+    )
+  )
+EOF
+fi
+
+# Listener.ora
 if [ `hostname` == ${NODE1_HOSTNAME} ]
 then
 cat > ${DB_HOME}/network/admin/listener.ora <<EOF

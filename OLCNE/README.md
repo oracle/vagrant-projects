@@ -1,21 +1,21 @@
-# Vagrant project to set up Oracle Linux Cloud Native Environment on Oracle Linux 8
+# Vagrant project to set up Oracle Cloud Native Environment on Oracle Linux 8
 
 This Vagrant project will deploy and configure the following components:
 
 - One or more master nodes (one by default, 3 in HA mode)
 - One or more worker nodes (2 by default)
-- An optional operator node for the Oracle Linux Cloud Native Environment
+- An optional operator node for the Oracle Cloud Native Environment
 Platform API Server and Platform CLI tool (default is to install these
 components on the first master node)
 
 If you enable multiple master nodes, an operator node is automatically deployed
 to provide egress routing for the cluster.
 
-All master and worker nodes will have the Oracle Linux Cloud Native
+All master and worker nodes will have the Oracle Cloud Native
 Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
-The installation includes the Kubernetes module for Oracle Linux Cloud
+The installation includes the Kubernetes module for Oracle Cloud
 Native Environment which deploys Kubernetes 1.21.6 configured to use
 the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
@@ -40,7 +40,7 @@ makes configuration much easier
 1. Change into the `vagrant-projects/OLCNE` directory
 1. Run `vagrant up`
 
-Your Oracle Linux Cloud Native Environment is ready!
+Your Oracle Cloud Native Environment is ready!
 
 From any master node (e.g. master1) you can check the status of the cluster (as
 the `vagrant` user). E.g.:
@@ -134,10 +134,10 @@ __Note__: This provisioning script also installs Heketi on the operator node.
 
 - `YUM_REPO` (default: none): additional yum repository to consider
 (e.g. local repo)
-- `OLCNE_DEV` (default: `false`): whether to enable the Oracle Linux Cloud
+- `OLCNE_DEV` (default: `false`): whether to enable the Oracle Cloud
 Native Environment developer channel.
 - `REGISTRY_OLCNE` (default: `container-registry.oracle.com/olcne`): Container
-registry for Oracle Linux Cloud Native Environment images.
+registry for Oracle Cloud Native Environment images.
 
 For performance reasons, we recommend using the closest Oracle Container Registry mirror to your region. A list of available regions can be found on the [Regions and Availability Domains](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm) page of the Oracle Cloud Infrastructure documentation.
 
@@ -182,9 +182,9 @@ vagrant plugin install <name>...
 
 ## Product Documentation
 
-- [Oracle Linux Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)
-- [Oracle Linux Cloud Native Environment: Using Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/orchestration/index.html)
-- [Oracle Linux Cloud Native Environment: Using Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/runtimes/index.html)
+- [Oracle Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)
+- [Oracle Cloud Native Environment: Using Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/orchestration/index.html)
+- [Oracle Cloud Native Environment: Using Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/runtimes/index.html)
 
 ## Feedback
 

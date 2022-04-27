@@ -1,11 +1,11 @@
 #
-# Vagrantfile for Oracle Linux Cloud Native Environment
+# Vagrantfile for Oracle Cloud Native Environment
 #
 # Copyright (c) 2019, 2021 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
-# Description: Deploys an Oracle Linux Cloud Native Environment
+# Description: Deploys an Oracle Cloud Native Environment
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
@@ -13,7 +13,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# This Vagrantfile creates an Oracle Linux Cloud Native Environment and
+# This Vagrantfile creates an Oracle Cloud Native Environment and
 # deploys the Kubernetes module to the master and worker nodes.
 # VMs communicate via a private network using subnet 192.168.99.* (by default):
 #   - HA Master IP: 192.168.99.99          (Virtual IP, when in HA mode)
@@ -59,12 +59,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   WORKER_MEMORY = default_i("WORKER_MEMORY", 1024)
 
   # Group VirtualBox containers
-  VB_GROUP = default_s("VB_GROUP", "OLCNE")
+  VB_GROUP = default_s("VB_GROUP", "OCNE")
 
   # Multi-master setup. Deploy 3 masters in HA mode.
   MULTI_MASTER = default_b('MULTI_MASTER', false)
 
-  # Separate operator node for the Oracle Linux Cloud Native Environment
+  # Separate operator node for the Oracle Cloud Native Environment
   # Platform API Server and Platform Agent (default is to install the
   # components on the (first) master node
   #
@@ -93,17 +93,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Additional yum channel to consider (e.g. local repo)
   YUM_REPO = default_s('YUM_REPO', '')
 
-  # Add Oracle Linux Cloud Native Environment developer channel
-  OLCNE_DEV = default_b('OLCNE_DEV', false)
+  # Add Oracle Cloud Native Environment developer channel
+  OCNE_DEV = default_b('OCNE_DEV', false)
 
-  # Set the default OLCNE_ENV_NAME and OLCNE_CLUSTER_NAMEs
-  OLCNE_ENV_NAME = default_s('OLCNE_ENV_NAME', 'olcne-env')
-  OLCNE_CLUSTER_NAME = default_s('OLCNE_CLUSTER_NAME', 'olcne-cluster')
+  # Set the default OCNE_ENV_NAME and OCNE_CLUSTER_NAMEs
+  OCNE_ENV_NAME = default_s('OCNE_ENV_NAME', 'ocne-env')
+  OCNE_CLUSTER_NAME = default_s('OCNE_CLUSTER_NAME', 'ocne-cluster')
 
-  # Container registry for Oracle Linux Cloud Native Environment images
+  # Container registry for Oracle Cloud Native Environment images
   # You can use registry mirrors in a region close to you.
   # Check the README.md file for more details.
-  REGISTRY_OLCNE = default_s('REGISTRY_OLCNE', 'container-registry.oracle.com/olcne')
+  REGISTRY_OCNE = default_s('REGISTRY_OCNE', 'container-registry.oracle.com/olcne')
 
   # Deploy Istio?
   DEPLOY_ISTIO = default_b('DEPLOY_ISTIO', false)
@@ -118,9 +118,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     DEPLOY_HELM = default_b('DEPLOY_HELM', false)
   end
 
-  HELM_MODULE_NAME = default_s('HELM_MODULE_NAME', 'olcne-helm')
-  ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'olcne-istio')
-  GLUSTER_MODULE_NAME = default_s('GLUSTER_MODULE_NAME', 'olcne-gluster')
+  HELM_MODULE_NAME = default_s('HELM_MODULE_NAME', 'ocne-helm')
+  ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'ocne-istio')
+  GLUSTER_MODULE_NAME = default_s('GLUSTER_MODULE_NAME', 'ocne-gluster')
 
   # Use specific component version (mainly used for development)
   NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
@@ -160,18 +160,18 @@ end
 
 def provision_vm(vm, vm_args)
   args = vm_args.clone
-  args.push("--olcne-environment-name", OLCNE_ENV_NAME)
-  args.push("--olcne-cluster-name", OLCNE_CLUSTER_NAME)
+  args.push("--ocne-environment-name", OCNE_ENV_NAME)
+  args.push("--ocne-cluster-name", OCNE_CLUSTER_NAME)
   args.push("--multi-master") if MULTI_MASTER
   args.push("--repo", YUM_REPO) unless YUM_REPO == ""
-  args.push("--olcne-dev") if OLCNE_DEV
+  args.push("--ocne-dev") if OCNE_DEV
   args.push("--with-helm") if DEPLOY_HELM
   args.push("--helm-module-name", HELM_MODULE_NAME) if DEPLOY_HELM
   args.push("--with-istio") if DEPLOY_ISTIO
   args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
   args.push("--with-gluster") if DEPLOY_GLUSTER
   args.push("--gluster-module-name", GLUSTER_MODULE_NAME) if DEPLOY_GLUSTER
-  args.push("--registry-olcne", REGISTRY_OLCNE) if REGISTRY_OLCNE
+  args.push("--registry-ocne", REGISTRY_OCNE) if REGISTRY_OCNE
   args.push("--verbose") if VERBOSE
   vm.provision "shell",
     path: "scripts/provision.sh",

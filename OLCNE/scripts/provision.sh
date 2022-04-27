@@ -723,6 +723,8 @@ fixups() {
       echo 'source <(kubectl completion bash)' >> ~/.bashrc; \
       echo 'alias k=kubectl' >> ~/.bashrc; \
       echo 'complete -F __start_kubectl k' >> ~/.bashrc; \
+      echo 'command -v helm >/dev/null 2>&1 && source <(helm completion bash)' >> ~/.bashrc; \
+      echo 'command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)' >> ~/.bashrc; \
       \""
   done
 

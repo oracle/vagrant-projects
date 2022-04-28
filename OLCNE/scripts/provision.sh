@@ -818,12 +818,13 @@ fixups() {
     fi
   fi
 
-  # Fix: Created slice, Starting Session # https://access.redhat.com/solutions/1564823
-  msg "Create discard filter to suppress user / session log entries in /var/log/messages"
   nodes="${MASTERS},${WORKERS}"
   if [[ ${MASTER} == 0 ]]; then
     nodes="${SUBNET}.100,${nodes}"
   fi
+
+  # Fix: Created slice, Starting Session # https://access.redhat.com/solutions/1564823
+  msg "Create discard filter to suppress user / session log entries in /var/log/messages"
   echo 'if $programname == "systemd" and ($msg contains "Starting Session" or $msg contains "Started Session" or $msg contains "Created slice" or $msg contains "Starting user-" or $msg contains "Starting User Slice of" or $msg contains "Removed session" or $msg contains "Removed slice User Slice of" or $msg contains "Stopping User Slice of") then stop' > /vagrant/ignore-systemd-session-slice.conf
   for node in ${nodes//,/ }; do
     echo_do ssh "${node}" "\"\
@@ -832,6 +833,14 @@ fixups() {
       \""
   done
   echo_do rm -f /vagrant/ignore-systemd-session-slice.conf
+
+  # Fix: firewalld: WARNING: AllowZoneDrifting is enabled. This is considered an insecure configuration option.
+  for node in ${nodes//,/ }; do
+    echo_do ssh "${node}" "\"\
+      sudo sed -i 's/AllowZoneDrifting=yes/AllowZoneDrifting=no/' /etc/firewalld/firewalld.conf \
+      && sudo systemctl reload firewalld.service \
+      \""
+  done
   
 }
 

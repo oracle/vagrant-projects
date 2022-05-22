@@ -20,6 +20,7 @@
 #   - Operator    : 192.168.99.100         (Optional, none by default)
 #   - Master i    : 192.168.99.(100+i)     (1 by default, 3 in HA mode)
 #   - Worker i    : 192.168.99.(110+i)     (2 by default)
+#   - MetalLB Pool: 192.168.99.240 - 192.168.99.250
 #
 # Optional plugins:
 #     vagrant-hosts (maintains /etc/hosts for the VMs)
@@ -76,7 +77,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     STANDALONE_OPERATOR = default_b('STANDALONE_OPERATOR', false)
   end
 
-  # Creates and extra disk (/dev/sdb) so it can be used as a
+  # Creates an extra disk (/dev/sdb) so it can be used as a
   # Gluster Storage for Kubernetes Persistent Volumes
   EXTRA_DISK = default_b('EXTRA_DISK', false)
 
@@ -108,11 +109,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Deploy Istio?
   DEPLOY_ISTIO = default_b('DEPLOY_ISTIO', false)
 
+  # Deploy MetalLB?
+  DEPLOY_METALLB = default_b('DEPLOY_METALLB', false)
+
   # Deploy Gluster?
   DEPLOY_GLUSTER = default_b('DEPLOY_GLUSTER', false)
 
-  # Helm is required to deploy Istio otherwise it's optional
-  if DEPLOY_ISTIO or DEPLOY_GLUSTER
+  # Helm is required to deploy Istio, MetalLB or Gluster. Otherwise it's optional
+  if DEPLOY_ISTIO or DEPLOY_METALLB or DEPLOY_GLUSTER
     DEPLOY_HELM = true
   else
     DEPLOY_HELM = default_b('DEPLOY_HELM', false)
@@ -120,12 +124,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   HELM_MODULE_NAME = default_s('HELM_MODULE_NAME', 'ocne-helm')
   ISTIO_MODULE_NAME = default_s('ISTIO_MODULE_NAME', 'ocne-istio')
+  METALLB_MODULE_NAME = default_s('METALLB_MODULE_NAME', 'ocne-metallb')
   GLUSTER_MODULE_NAME = default_s('GLUSTER_MODULE_NAME', 'ocne-gluster')
 
   # Use specific component version (mainly used for development)
   NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
 
-  # Update OS and Reboot
+  # Update Base OS
   UPDATE_OS = default_b('UPDATE_OS', false)
   
   # Verbose console
@@ -169,6 +174,8 @@ def provision_vm(vm, vm_args)
   args.push("--helm-module-name", HELM_MODULE_NAME) if DEPLOY_HELM
   args.push("--with-istio") if DEPLOY_ISTIO
   args.push("--istio-module-name", ISTIO_MODULE_NAME) if DEPLOY_ISTIO
+  args.push("--with-metallb") if DEPLOY_METALLB
+  args.push("--metallb-module-name", METALLB_MODULE_NAME) if DEPLOY_METALLB
   args.push("--with-gluster") if DEPLOY_GLUSTER
   args.push("--gluster-module-name", GLUSTER_MODULE_NAME) if DEPLOY_GLUSTER
   args.push("--registry-ocne", REGISTRY_OCNE) if REGISTRY_OCNE
@@ -223,7 +230,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # Provider-specific configuration -- VirtualBox
-  config.vm.provider :virtualbox do |vb, override|
+  config.vm.provider :virtualbox do |vb|
+    vb.linked_clone = false
     vb.customize ["modifyvm", :id, "--groups", "/" + VB_GROUP]
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
   end
@@ -244,6 +252,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
       worker.vm.provider :virtualbox do |vb, override|
+        vb.name = "worker#{i}"
         vb.memory = WORKER_MEMORY
         vb.cpus = WORKER_CPUS
         if EXTRA_DISK
@@ -276,7 +285,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      master.vm.provider :virtualbox do |vb, override|
+      master.vm.provider :virtualbox do |vb|
+        vb.name = "master#{i}"
         vb.memory = MASTER_MEMORY
         vb.cpus = MASTER_CPUS
       end
@@ -285,7 +295,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         lv.cpus = MASTER_CPUS
       end
       if BIND_PROXY && i == 1
-        # Bind kubectl proxy proxy port
+        # Bind kubectl proxy port
         master.vm.network :forwarded_port, guest: 8001, host: 8001
       end
       # Update OS if UPDATE_OS=true
@@ -294,6 +304,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       args = ["--master", "--nginx-image", NGINX_IMAGE]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
+        args.push("--subnet", SUBNET)
         args.push("--workers", workers.chop)
         args.push("--masters", masters.chop)
       end
@@ -309,7 +320,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      operator.vm.provider :virtualbox do |vb, override|
+      operator.vm.provider :virtualbox do |vb|
+        vb.name = "operator"
         vb.memory = OPERATOR_MEMORY
         vb.cpus = OPERATOR_CPUS
       end

@@ -80,7 +80,8 @@ parse_args() {
   OCNE_CLUSTER_NAME='' OCNE_ENV_NAME='' OCNE_DEV=0 OCNE_VERSION='' REGISTRY_OCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
   VERBOSE=0 SUBNET='' EXTRA_REPO='' NGINX_IMAGE=''
-  DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
+  DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
+  DEPLOY_METALLB=0 METALLB_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -185,6 +186,19 @@ parse_args() {
         ISTIO_MODULE_NAME="$2"
         shift; shift
         ;;
+      "--with-metallb")
+        DEPLOY_HELM=1
+        DEPLOY_METALLB=1
+        shift
+        ;;
+      "--metallb-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --metallb-module-name" >&2
+	        exit 1
+        fi
+        METALLB_MODULE_NAME="$2"
+        shift; shift
+        ;;
       "--with-gluster")
         DEPLOY_HELM=1
         DEPLOY_GLUSTER=1
@@ -220,7 +234,10 @@ parse_args() {
   readonly OCNE_CLUSTER_NAME OCNE_ENV_NAME OCNE_DEV REGISTRY_OCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
   readonly VERBOSE EXTRA_REPO NGINX_IMAGE
-  readonly DEPLOY_HELM HELM_MODULE_NAME DEPLOY_ISTIO ISTIO_MODULE_NAME DEPLOY_GLUSTER GLUSTER_MODULE_NAME
+  readonly DEPLOY_HELM HELM_MODULE_NAME
+  readonly DEPLOY_ISTIO ISTIO_MODULE_NAME
+  readonly DEPLOY_METALLB METALLB_MODULE_NAME
+  readonly DEPLOY_GLUSTER GLUSTER_MODULE_NAME
 }
 
 #######################################
@@ -238,8 +255,8 @@ setup_repos() {
 
   # Add OCNE release package
   echo_do sudo dnf install -y oracle-olcne-release-el8
-  echo_do sudo dnf config-manager --enable ol8_olcne14 ol8_baseos_latest ol8_appstream ol8_addons ol8_UEKR6
-  echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13
+  echo_do sudo dnf config-manager --enable ol8_olcne15 ol8_baseos_latest ol8_appstream ol8_addons ol8_UEKR6
+  echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13 ol8_olcne14
 
   # Optional extra repo
   if [[ -n ${EXTRA_REPO} ]]; then echo_do sudo dnf config-manager --add-repo "${EXTRA_REPO}"; fi
@@ -260,7 +277,6 @@ setup_repos() {
 clean_networking() {
   msg "Removing extra NetworkManager connection"
   nmcli -f GENERAL.STATE con show "Wired connection 1" && sudo nmcli con del "Wired connection 1"
-
 }
 
 #######################################
@@ -290,9 +306,9 @@ requirements() {
 	EOF"
   echo_do sudo /sbin/sysctl -p /etc/sysctl.d/k8s.conf
   
-  # Enable & start firewalld; add eth0 to the public zone
+  # Enable & start firewalld; add eth1 (nat) to the public zone
   echo_do sudo systemctl enable --now firewalld
-  echo_do sudo firewall-cmd --zone=public --add-interface=eth0 --permanent
+  echo_do sudo firewall-cmd --zone=public --add-interface=eth1 --permanent
 }
 
 #######################################
@@ -347,13 +363,21 @@ install_packages() {
     # OCNE 1.0.1 requires these ports for single master as well
     echo_do sudo firewall-cmd --add-port=10251/tcp --permanent
     echo_do sudo firewall-cmd --add-port=10252/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=2379/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=2380/tcp --permanent
+    echo_do sudo firewall-cmd --add-port=2379-2380/tcp --permanent
     # Software load balancer firewall rules
-    echo_do sudo firewall-cmd --add-port=6444/tcp --permanent
-    echo_do sudo firewall-cmd --add-protocol=vrrp --permanent
+    if [[ ${MULTI_MASTER} == 1 ]]; then    
+      echo_do sudo firewall-cmd --add-port=6444/tcp --permanent
+      echo_do sudo firewall-cmd --add-protocol=vrrp --permanent
+    fi
   fi
 
+  if [[ ${DEPLOY_METALLB} == 1 ]]; then
+    if [[ ${WORKER} == 1 ]]; then
+      echo_do sudo firewall-cmd --add-port=7946/tcp --permanent
+      echo_do sudo firewall-cmd --add-port=7946/udp --permanent
+    fi
+  fi
+  
   if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
     if [[ ${WORKER} == 1 ]]; then
       msg "Installing the GlusterFS Server on Worker node"
@@ -413,7 +437,7 @@ install_packages() {
       echo_do sudo cp /vagrant/topology-ocne.json /etc/heketi/topology-ocne.json
       echo_do sudo chown heketi: /etc/heketi/topology-ocne.json
       msg "Loading Gluster Cluster Topology with Heketi"
-      # export HEKETI_CLI_USER=admin; export HEKTI_CLI_KEY=secret
+      # export HEKETI_CLI_USER=admin; export HEKETI_CLI_KEY=secret
       echo_do heketi-cli --user=admin --secret=secret topology load --json=/etc/heketi/topology-ocne.json
       echo_do rm -f /vagrant/topology-ocne.json
     fi
@@ -435,7 +459,7 @@ install_packages() {
 passwordless_ssh() {
   msg "Allow passwordless ssh between VMs"
   # Generate common key
-  if [[ ! -f /vagrant/id_rsa ]]; then
+  if [[ ! -f /vagrant/id_rsa && ! -f /vagrant/id_rsa ]]; then
     msg "Generating shared SSH keypair in PEM format"
     echo_do ssh-keygen -m PEM -t rsa -f /vagrant/id_rsa -q -N "''" -C "'vagrant@ocne'"
   fi
@@ -450,12 +474,12 @@ passwordless_ssh() {
   # Authorise passwordless ssh
   echo_do "[ -f ~/.ssh/id_rsa.pub ] || ( cp /vagrant/id_rsa.pub ~/.ssh && echo_do chmod 0644 ~/.ssh/id_rsa.pub && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys )"
   # SSH Host Keys. Should really use ssh-keyscan -t ecdsa,ed25519
-  echo_do eval 'echo "`hostname -s`,`hostname -f`,`hostname -I|sed "s/ $//;s/ /,/g"` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
+  echo_do eval '[ -f /etc/ssh/ssh_known_hosts ] || echo "`hostname -s`,`hostname -f`,`hostname -I|sed "s/ $//;s/ /,/g"` `cat /etc/ssh/ssh_host_ed25519_key.pub`" >> /vagrant/known_hosts'
   # Last node removes the key
   if [[ ${OPERATOR} == 1 ]]; then
     if [[ -f /vagrant/id_rsa && -f /vagrant/id_rsa.pub ]]; then
       msg "Removing the shared SSH keypair"
-      echo_do rm /vagrant/id_rsa /vagrant/id_rsa.pub
+      echo_do rm -f /vagrant/id_rsa /vagrant/id_rsa.pub
     fi
     if [[ -f /vagrant/known_hosts ]]; then
       msg "Copying SSH Host Keys to allow StrictHostKeyChecking"
@@ -464,7 +488,7 @@ passwordless_ssh() {
 	echo_do ssh "${node}" "sudo cp /vagrant/known_hosts /etc/ssh/ssh_known_hosts"
       done
       msg "Removing the shared SSH Known Hosts file"
-      echo_do rm /vagrant/known_hosts
+      echo_do rm -f /vagrant/known_hosts
     fi
   fi
 }
@@ -518,16 +542,16 @@ bootstrap_ocne() {
   echo_do sudo /etc/olcne/bootstrap-olcne.sh \
     --secret-manager-type file \
     --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-    --olcne-ca-path ${CERT_DIR}/production/ca.cert \
     --olcne-node-key-path ${CERT_DIR}/production/node.key \
+    --olcne-ca-path ${CERT_DIR}/production/ca.cert \
     --olcne-component api-server
 
   for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
     echo_do ssh "${node}" sudo /etc/olcne/bootstrap-olcne.sh \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
       --olcne-node-key-path ${CERT_DIR}/production/node.key \
+      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
       --olcne-component agent
   done
 }
@@ -554,8 +578,8 @@ deploy_kubernetes() {
       --environment-name "${OCNE_ENV_NAME}" \
       --secret-manager-type file \
       --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
       --olcne-node-key-path ${CERT_DIR}/production/node.key \
+      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
       --update-config
 
   msg "Create the Kubernetes module for ${OCNE_ENV_NAME} "
@@ -570,6 +594,7 @@ deploy_kubernetes() {
       --pod-network-iface eth1 \
       --master-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip true \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
       --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
       --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
@@ -585,6 +610,7 @@ deploy_kubernetes() {
       --virtual-ip "${SUBNET}.99" \
       --master-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
+      --restrict-service-externalip true \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
       --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
       --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
@@ -607,6 +633,7 @@ deploy_kubernetes() {
 #   OCNE_CLUSTER_NAME OCNE_ENV_NAME
 #   DEPLOY_HELM HELM_MODULE_NAME
 #   DEPLOY_ISTIO ISTIO_MODULE_NAME
+#   DEPLOY_METALLB METALLB_MODULE_NAME
 #   DEPLOY_GLUSTER GLUSTER_MODULE_NAME
 #   REGISTRY_OCNE
 # Arguments:
@@ -667,6 +694,43 @@ deploy_modules() {
     echo_do olcnectl module install \
       --environment-name "${OCNE_ENV_NAME}" \
       --name "${ISTIO_MODULE_NAME}"
+  fi
+
+  # MetalLB module
+  if [[ ${DEPLOY_METALLB} == 1 ]]; then
+    # Create MetalLB Configuration File
+    # https://metallb.universe.tf/configuration/
+    echo_do "cat <<-EOF | tee /vagrant/metallb-config.yaml
+	address-pools:
+	- name: default
+	  protocol: layer2
+	  addresses:
+	  - ${SUBNET}.240-${SUBNET}.250
+	EOF"
+      
+    # Create the MetalLB module
+    msg "Creating the MetalLB module: ${METALLB_MODULE_NAME}"
+    echo_do olcnectl module create \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --module metallb \
+      --name "${METALLB_MODULE_NAME}" \
+      --metallb-helm-module "${HELM_MODULE_NAME}" \
+      --metallb-config /vagrant/metallb-config.yaml
+
+    msg "Removing MetalLB temporary configuration file"
+    echo_do rm -f /vagrant/metallb-config.yaml
+    
+    # Validate the MetalLB module
+    msg "Validating the MetalLB module: ${METALLB_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${METALLB_MODULE_NAME}"
+
+    # Deploy the MetalLB module
+    msg "Deploying the MetalLB module: ${METALLB_MODULE_NAME} into ${OCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${METALLB_MODULE_NAME}"
   fi
 
   # Gluster module (using Heketi)
@@ -823,16 +887,21 @@ fixups() {
     nodes="${SUBNET}.100,${nodes}"
   fi
 
-  # Fix: Created slice, Starting Session # https://access.redhat.com/solutions/1564823
+  # Fix: systemd: Started Session XX of user vagrant / session-XX.scope:
+  #      systemd-logind: New session XX of user vagrant / Session XX logged out / Removed session XX
+  # https://access.redhat.com/solutions/1564823
   msg "Create discard filter to suppress user / session log entries in /var/log/messages"
-  echo 'if $programname == "systemd" and ($msg contains "Starting Session" or $msg contains "Started Session" or $msg contains "Created slice" or $msg contains "Starting user-" or $msg contains "Starting User Slice of" or $msg contains "Removed session" or $msg contains "Removed slice User Slice of" or $msg contains "Stopping User Slice of") then stop' > /vagrant/ignore-systemd-session-slice.conf
+  echo 'if $programname == "systemd" and ($msg contains "Started Session" or $msg contains "scope: Succeeded") then stop' > /vagrant/ignore-systemd-session-slice.conf
+  echo 'if $programname == "systemd-logind" and ($msg contains "New session" or $msg contains "logged out. Waiting for processes to exit" or $msg contains "Removed session") then stop' > /vagrant/ignore-systemd-logind-session.conf
   for node in ${nodes//,/ }; do
     echo_do ssh "${node}" "\"\
-      sudo cp /vagrant/ignore-systemd-session-slice.conf /etc/rsyslog.d/ignore-systemd-session-slice.conf \
+      sudo cp /vagrant/ignore-systemd-session-slice.conf /etc/rsyslog.d/ \
+      && sudo cp /vagrant/ignore-systemd-logind-session.conf /etc/rsyslog.d/ \
       && sudo systemctl restart rsyslog \
       \""
   done
   echo_do rm -f /vagrant/ignore-systemd-session-slice.conf
+  echo_do rm -f /vagrant/ignore-systemd-logind-session.conf
 
   # Fix: firewalld: WARNING: AllowZoneDrifting is enabled. This is considered an insecure configuration option.
   for node in ${nodes//,/ }; do

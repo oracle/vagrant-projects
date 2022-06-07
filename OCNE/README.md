@@ -37,7 +37,7 @@ makes configuration much easier
 ## Quick start
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-1. Change into the `vagrant-projects/OLCNE` directory
+1. Change into the `vagrant-projects/OCNE` directory
 1. Run `vagrant up`
 
 Your Oracle Cloud Native Environment is ready!

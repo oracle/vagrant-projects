@@ -16,13 +16,13 @@ Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Cloud
-Native Environment which deploys Kubernetes 1.21.6 configured to use
+Native Environment which deploys Kubernetes 1.22.8 configured to use
 the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
 
-You may optionally enable the deployment of the Helm, Istio or Gluster modules.
-Note that enabling the Istio or Gluster module will automatically enable the Helm
-module.
+You may optionally enable the deployment of the Helm, Istio, MetalLB or Gluster
+modules. Note that enabling the Istio, MetalLB or Gluster modules will
+automatically enable the Helm module.
 
 _Note:_ Kata Containers requires Intel hardware virtualization support and
 will not work in a VirtualBox guest until nested virtualization support is
@@ -30,15 +30,16 @@ released for Intel CPUs.
 
 ## Prerequisites
 
-1. Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM
-1. [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
+1. Read the [prerequisites in the top level README](../README.md#prerequisites)
+to set up Vagrant with either VirtualBox or KVM
+2. [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
 makes configuration much easier
 
 ## Quick start
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-1. Change into the `vagrant-projects/OCNE` directory
-1. Run `vagrant up`
+2. Change into the `vagrant-projects/OCNE` directory
+3. Run `vagrant up`
 
 Your Oracle Cloud Native Environment is ready!
 
@@ -64,9 +65,11 @@ To obtain token from any Master node, you may run: `kubectl -n kubernetes-dashbo
 
 The VMs communicate via a private network:
 
-- Controller node (if any): 192.168.99.100
-- Master node i: 192.168.99.(100+i) / master*i*.vagrant.vm
-- Worker node i: 192.168.99.(110+i) / worker*i*.vagrant.vm
+- Controller node IP: 192.168.99.100 (if `STANDALONE_OPERATOR=true`)
+- Master node _i_: 192.168.99.(100_+i_) / master*_i_*.vagrant.vm
+- Worker node _i_: 192.168.99.(110_+i_) / worker*_i_*.vagrant.vm
+- Master Virtual IP: 192.168.99.99 (if `MULTI_MASTER=true`)
+- LoadBalancer IPs: 192.168.99.240 - 192.168.99.250 (if `DEPLOY_METALLB=true`)
 
 ## Configuration
 
@@ -79,9 +82,9 @@ There are several ways to set parameters:
 
 1. Update the `Vagrantfile`. This is straightforward; the downside is that you
 will lose changes when you update this repository.
-1. Use environment variables. Might be difficult to remember the parameters
+2. Use environment variables. Might be difficult to remember the parameters
 used when the VM was instantiated.
-1. Use the `.env`/`.env.local` files (requires
+3. Use the `.env`/`.env.local` files (requires
 [vagrant-env](https://github.com/gosuri/vagrant-env) plugin). Configure
 your cluster by editing the `.env` file; or better copy `.env` to `.env.local`
 and edit the latter one, it won't be overridden when you update this repository
@@ -91,11 +94,11 @@ local configuration!)
 Parameters are considered in the following order (first one wins):
 
 1. Environment variables
-1. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+2. `.env.local` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
 is installed)
-1. `.env` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
+3. `.env` (if [vagrant-env](https://github.com/gosuri/vagrant-env) plugin
 is installed)
-1. `Vagrantfile` definitions
+4. `Vagrantfile` definitions
 
 ### VM parameters
 
@@ -125,6 +128,7 @@ __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
 - `DEPLOY_HELM` (default: `false`): deploys the Helm module.
 - `DEPLOY_ISTIO` (default: `false`): deploys the Istio and Helm modules.
+- `DEPLOY_METALLB` (default: `false`): deploys the MetalLB and Helm modules.
 - `DEPLOY_GLUSTER` (default: `false`): deploys the Gluster and Helm modules.
 __Note__: if `NB_WORKERS` is less than `3`, the `hyperconverged` `storageclass`
 is patched to adjust the number of Gluster replicas accordingly.
@@ -160,7 +164,7 @@ Mainly used for development.
 `OLCNE_VERSION`, `NGINX_IMAGE`.
 - `NB_MASTERS` (default: none): override number of masters to deploy. Requires `MULTI_MASTER=true` to function properly.
 - `SUBNET` (default: `192.168.99`): Set the VM provider host-only / private network subnet.
-- `UPDATE_OS` (default: false): Runs `dnf -y update` and reboots the VM.
+- `UPDATE_OS` (default: false): Runs `dnf -y update` on the VM.
 
 ## Optional plugins
 

@@ -14,7 +14,7 @@ the OracleLinux/8 [README.md](../OracleLinux/8/README.md) file.
 
 ## Getting started
 1. Clone this repository `git clone https://github.com/oracle/vagrant-boxes`
-1. Change into the `vagrant-boxes/ContainerTools` folder
+1. Change into the `vagrant-projects/ContainerTools` folder
 1. Run `vagrant up; vagrant ssh`
 1. Within the guest, run Podman commands, for example `podman run -it oraclelinux:7-slim` to run an Oracle Linux 7 container, or `podman run -ti oraclelinux:8-slim` to run an Oracle Linux 8 container
 

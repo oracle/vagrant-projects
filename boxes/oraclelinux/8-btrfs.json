@@ -4,6 +4,36 @@
   "name": "oraclelinux/8-btrfs",
   "versions": [
     {
+      "version": "8.6.361",
+      "status": "active",
+      "release_date": "13-Jul-2022",
+      "description_html": "<ul>\n<li>Releasing 8.6.361</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.6.361",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/OL8U6_x86_64-vagrant-btrfs-virtualbox-b361.box",
+        "checksum": "b999c8c5646fda339b7864218d0fcdabda4a91abe62f22ef0880688b8a3ee698",
+        "checksum_type": "sha256",
+        "size": 578429336,
+        "kernel": "5.4.17-2136.309.4.el8uek.x86_64"
+      }]
+    },
+    {
+      "version": "8.6.362",
+      "status": "active",
+      "release_date": "13-Jul-2022",
+      "description_html": "<ul>\n<li>Releasing 8.6.362</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.6.362",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/OL8U6_x86_64-vagrant-btrfs-libvirt-b362.box",
+        "checksum": "f184c090e10390a5cae9f6ec43068d6aded46939943a51f98771c70557e4fd98",
+        "checksum_type": "sha256",
+        "size": 505431737,
+        "kernel": "5.4.17-2136.309.4.el8uek.x86_64"
+      }]
+    },
+    {
       "version": "8.6.339",
       "status": "active",
       "release_date": "19-May-2022",

@@ -1,4 +1,4 @@
-# ocr-yum-mirror
+# Ocr-Yum-Mirror
 
 A Vagrant project to automatically build an Oracle Linux Yum Server mirror and, at the same time, an Oracle Container Registry mirror for Oracle Cloud Native Environment.
 This projects collects all the software (RPMs and container images) required to deploy/install Oracle Cloud Native Environment on Oracle Linux 8 and can be very helpful while looking for an offline deployment option for the same.

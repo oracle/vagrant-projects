@@ -2,7 +2,7 @@
 
 A Vagrant project to automatically build an Oracle Linux Yum Server mirror and, at the same time, an Oracle Container Registry mirror for Oracle Cloud Native Environment.
 This projects collects all the software (RPMs and container images) required to deploy/install Oracle Cloud Native Environment on Oracle Linux 8 and can be very helpful while looking for an offline deployment option for the same.
- By default, following yum channels are mirrored on the vagrant machine:
+ By default, following Oracle Linux 8 Yum Channels are mirrored on the vagrant machine:
 
 - ol8_baseos_latest
 - ol8_appstream
@@ -50,7 +50,7 @@ vagrant plugin install <name>...
 
 ## Further information
 
-The vagrant box contains two custom scripts to possibly resync the Yum as well as the OCR (Oracle Container Registry) mirrors.
+The vagrant box contains two custom scripts to possibly resync the Oracle Linux Yum Channels as well as the Oracle Container Registry (OCR) mirrors.
 Those commands could be edited to add further yum-channels to be mirrored or customize the synchronization process.
 Examples:
 

@@ -12,7 +12,7 @@ This projects collects all the software (RPMs and container images) required to 
 - ol8_UEKR7
 
 Optionally further channels can be added once the virtual machine completed the first boot.
-Channles could also be added to the script `/home/vagrant/sync-yum.sh` to the new channels will be synced automatically.
+Channels could also be added to the script `/home/vagrant/sync-yum.sh` to get them synced automatically.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ Read the [prerequisites in the top level README](../../README.md#prerequisites) 
 ## Getting started
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-1. Change into the `vagrant-projects/ocr-yum-mirror` directory
+1. Change into the `vagrant-projects/Ocr-Yum-Mirror` directory
 1. Run `vagrant status` to check Vagrantfile status and possible plugin(s) required
 1. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection!

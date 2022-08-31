@@ -2,10 +2,10 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2022 Oracle and/or its affiliates. All rights reserved.
 #
-# Since: January, 2018
-# Author: gerald.venzl@oracle.com
+# Since: August, 2022
+# Author: simon.coter@oracle.com
 # Description: Updates Oracle Linux to the latest version
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -43,8 +43,6 @@ sudo /usr/bin/reposync --delete --newest-only --repoid ol8_addons --download-met
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR6 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 
-echo 'YUM MIRROR SETUP: Completed'
-
 # add sync script for yum mirror
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_baseos_latest --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" > /home/vagrant/sync-yum.sh
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_appstream --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
@@ -55,8 +53,4 @@ echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --downloa
 chown vagrant:vagrant /home/vagrant/sync-yum.sh
 chmod 755 /home/vagrant/sync-yum.sh
 
-# fix locale warning
-echo LANG=en_US.utf-8 >> /etc/environment
-echo LC_ALL=en_US.utf-8 >> /etc/environment
-
-echo 'INSTALLER: Locale set'
+echo 'YUM MIRROR SETUP: Completed'

@@ -1,11 +1,11 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
-# Since: January, 2020
-# Author: gerald.venzl@oracle.com
-# Description: Creates an Oracle Linux virtual machine.
+# Since: August, 2022
+# Author: simon.coter@oracle.com
+# Description: Creates a Yum and OCR mirror on an Oracle Linux virtual machine
 # Optional plugins:
 #     vagrant-env (use .env files for configuration)
 #     vagrant-proxyconf (if you don't have direct access to the Internet)

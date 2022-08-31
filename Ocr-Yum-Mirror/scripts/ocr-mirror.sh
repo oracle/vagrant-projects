@@ -2,11 +2,12 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2022 Oracle and/or its affiliates. All rights reserved.
 #
-# Since: January, 2018
-# Author: gerald.venzl@oracle.com
-# Description: Updates Oracle Linux to the latest version
+# Since: August, 2022
+# Author: simon.coter@oracle.com
+# Description: Setup the Oracle Container Registry Mirror
+# Manual steps avaialble at https://docs.oracle.com/en/operating-systems/oracle-linux/podman/podman-UsingContainerRegistries.html#podman-ocr-local-mirror
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
@@ -47,15 +48,9 @@ podman run -d -p 5000:5000 --name ocr-yum-mirror --restart=always \
 # collect OCNE container images
 registry-image-helper.sh --to ocr-yum-mirror:5000/olcne
 
-echo 'OCR MIRROR SETUP: Completed'
-
 # add sync script for OCR mirror
 echo "sudo registry-image-helper.sh --to ocr-yum-mirror:5000/olcne" > /home/vagrant/sync-ocr.sh
 chown vagrant:vagrant /home/vagrant/sync-ocr.sh
 chmod 755 /home/vagrant/sync-ocr.sh
 
-# fix locale warning
-echo LANG=en_US.utf-8 >> /etc/environment
-echo LC_ALL=en_US.utf-8 >> /etc/environment
-
-echo 'INSTALLER: Locale set'
+echo 'OCR MIRROR SETUP: Completed'

@@ -17,7 +17,7 @@ echo 'OCR MIRROR SETUP: Started up'
 # Software Install & system configuration
 dnf install podman -y
 dnf install openssl -y
-firewall-cmd --zone=public --permanent --add-port=5001/tcp
+firewall-cmd --zone=public --permanent --add-port=5000/tcp
 systemctl restart firewalld
 dnf install olcne-utils -y
 

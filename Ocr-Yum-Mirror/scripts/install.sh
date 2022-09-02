@@ -18,6 +18,9 @@ dnf upgrade -y
 
 echo 'INSTALLER: System updated'
 
+echo 'INSTALLER: allow ssh access by password'
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+
 # fix locale warning
 echo LANG=en_US.utf-8 >> /etc/environment
 echo LC_ALL=en_US.utf-8 >> /etc/environment

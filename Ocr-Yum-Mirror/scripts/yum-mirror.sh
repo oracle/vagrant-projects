@@ -35,6 +35,10 @@ printf "o\nn\np\n1\n\n\nw\n" |fdisk /dev/sdb
 mkfs.xfs /dev/sdb1
 mkdir -p /var/yum
 mount /dev/sdb1 /var/yum
+
+echo 'INSTALLER: Add entry for the 2nd virtual-disk into /etc/fstab'
+cat /etc/mtab |grep sdb1 >> /etc/fstab
+
 ln -s /var/yum /var/www/html/yum
 dnf install -y policycoreutils-python-utils
 #/usr/sbin/semanage fcontext -a -t httpd_sys_content_t "/var/yum(/.*)?"

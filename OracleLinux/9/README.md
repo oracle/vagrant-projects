@@ -74,7 +74,7 @@ Set in your environment:
 EXTEND=container-tools
 ```
 
-Within the guest, run **podman** commands, for example `podman run -it oraclelinux:7-slim` to run an Oracle Linux 7 container, or `podman run -ti oraclelinux:8-slim` to run an Oracle Linux 8 container
+Within the guest, run **podman** commands, for example `podman run -it oraclelinux:8-slim` to run an Oracle Linux 8 container, or `podman run -ti oraclelinux:9-slim` to run an Oracle Linux 9 container
 
 ## Other info
 

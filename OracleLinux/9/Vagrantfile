@@ -1,10 +1,8 @@
 #
-# LICENSE UPL 1.0
+# Copyright (c) 2022 Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# https://oss.oracle.com/licenses/upl.
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
-#
-# Since: January, 2020
-# Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle Linux virtual machine.
 # Optional plugins:
 #     vagrant-env (use .env files for configuration)

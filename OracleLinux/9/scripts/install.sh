@@ -1,11 +1,9 @@
 #!/bin/bash
 #
-# LICENSE UPL 1.0
+# Copyright (c) 2022 Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# https://oss.oracle.com/licenses/upl.
 #
-# Copyright (c) 1982-2018 Oracle and/or its affiliates. All rights reserved.
-#
-# Since: January, 2018
-# Author: gerald.venzl@oracle.com
 # Description: Updates Oracle Linux to the latest version
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.

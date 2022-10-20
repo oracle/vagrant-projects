@@ -4,9 +4,10 @@ A Vagrantfile that installs and configures the Container Tools module on Oracle 
 This module provides the tools to use container runtimes. That is: mainly Podman, but also Buildah, Skopeo...
 
 __Note:__ This Vagrant project is deprecated. However, the same functionality is
-available as an extension to the OracleLinux/8 project. For more information,
-see the [Container Tools](../OracleLinux/8/README.md#container-tools) section of
-the OracleLinux/8 [README.md](../OracleLinux/8/README.md) file.
+available as an extension to the OracleLinux/8 and OracleLinux/9 projects. For
+more information, see the Container Tools section of the Oracle Linux/8
+[README.md](../OracleLinux/8/README.md#container-tools) file or the Oracle
+Linux/9 [README.md](../OracleLinux/9/README.md#container-tools) file.
 
 ## Prerequisites
 1. Install [Oracle VM VirtualBox](https://www.virtualbox.org/wiki/Downloads)

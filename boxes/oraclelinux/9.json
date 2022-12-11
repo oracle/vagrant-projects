@@ -4,6 +4,21 @@
   "name": "oraclelinux/9",
   "versions": [
     {
+      "version": "9.1.407",
+      "status": "active",
+      "release_date": "08-Dec-2022",
+      "description_html": "<ul>\n<li>Releasing 9.1.407</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.1.407",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U1_x86_64-vagrant-virtualbox-b407.box",
+        "checksum": "946e5fa29bf3007b0b63ba5839d39f36e6f520a203f96bfe4f2137e2eea04687",
+        "checksum_type": "sha256",
+        "size": 529637960,
+        "kernel": "5.15.0-4.70.5.2.el9uek.x86_64"
+      }]
+    },
+    {
       "version": "9.1.389",
       "status": "active",
       "release_date": "25-Nov-2022",

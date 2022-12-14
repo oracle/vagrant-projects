@@ -16,7 +16,7 @@ Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Cloud
-Native Environment which deploys Kubernetes 1.22.8 configured to use
+Native Environment which deploys Kubernetes [1.24.8](https://docs.oracle.com/en/operating-systems/olcne/1.5/relnotes/components.html#d672e108) configured to use
 the CRI-O runtime interface. Two runtime engines are installed, runc and
 Kata Containers.
 
@@ -66,8 +66,8 @@ To obtain token from any Master node, you may run: `kubectl -n kubernetes-dashbo
 The VMs communicate via a private network:
 
 - Controller node IP: 192.168.99.100 (if `STANDALONE_OPERATOR=true`)
-- Master node _i_: 192.168.99.(100_+i_) / master*_i_*.vagrant.vm
-- Worker node _i_: 192.168.99.(110_+i_) / worker*_i_*.vagrant.vm
+- Master node _i_: 192.168.99.(100+i) / master_i_.vagrant.vm
+- Worker node _i_: 192.168.99.(110+i) / worker_i_.vagrant.vm
 - Master Virtual IP: 192.168.99.99 (if `MULTI_MASTER=true`)
 - LoadBalancer IPs: 192.168.99.240 - 192.168.99.250 (if `DEPLOY_METALLB=true`)
 

@@ -4,6 +4,21 @@
   "name": "oraclelinux/9-btrfs",
   "versions": [
     {
+      "version": "9.1.408",
+      "status": "active",
+      "release_date": "08-Dec-2022",
+      "description_html": "<ul>\n<li>Releasing 9.1.408</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.1.408",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U1_x86_64-vagrant-btrfs-virtualbox-b408.box",
+        "checksum": "72bbf845fc89356c3bf2c00dc89ade7435b654181a110fa4777c1547906c4ff5",
+        "checksum_type": "sha256",
+        "size": 519221777,
+        "kernel": "5.15.0-4.70.5.2.el9uek.x86_64"
+      }]
+    },
+    {
       "version": "9.1.391",
       "status": "active",
       "release_date": "25-Nov-2022",

@@ -1,7 +1,7 @@
 #
 # Vagrantfile for Oracle Cloud Native Environment
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -247,7 +247,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 110 + i
       ip_addr = "#{SUBNET}.#{ip}"
       workers += "#{ip_addr},"
-      worker.vm.network :private_network, ip: ip_addr
+      worker.vm.network :private_network, nic_type: "virtio", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -281,7 +281,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 100 + i
       ip_addr = "#{SUBNET}.#{ip}"
       masters += "#{ip_addr},"
-      master.vm.network :private_network, ip: ip_addr
+      master.vm.network :private_network, nic_type: "virtio", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
@@ -316,7 +316,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   if STANDALONE_OPERATOR
     config.vm.define "operator" do |operator|
       operator.vm.hostname = "operator.vagrant.vm"
-      operator.vm.network :private_network, ip: "#{SUBNET}.100"
+      operator.vm.network :private_network, nic_type: "virtio", ip: "#{SUBNET}.100"
       if Vagrant.has_plugin?("vagrant-hosts")
         operator.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end

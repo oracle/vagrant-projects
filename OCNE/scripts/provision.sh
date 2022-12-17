@@ -326,16 +326,22 @@ requirements() {
 #######################################
 install_packages() {
 
+  ### `nft_masq` is not part of kernel-uek-core since OL8U7. To enable masquerading, we must install kernel-uek-modules
+  ### https://docs.oracle.com/en/operating-systems/uek/7/relnotes7.0/uek7.0-NewFeaturesandChanges.html
+  msg "Installing kernel-uek-modules"
+  echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
+  msg "Installing the OpenSSL toolkit"
+  echo_do sudo dnf install -y openssl
+  ###
+    
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Installing the Oracle Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
     echo_do sudo dnf install -y olcnectl"${OCNE_VERSION}" olcne-api-server"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
     echo_do sudo systemctl enable olcne-api-server.service
     echo_do sudo firewall-cmd --add-port=8091/tcp --permanent
-    #echo_do sudo firewall-cmd --add-masquerade --permanent
+    echo_do sudo firewall-cmd --add-masquerade --permanent
   fi
   if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
-    msg "Installing the OpenSSL toolkit"
-    echo_do sudo dnf install -y openssl
     msg "Installing the Oracle Cloud Native Environment Platform Agent"
     echo_do sudo dnf install -y olcne-agent"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
     echo_do sudo systemctl enable olcne-agent.service
@@ -349,7 +355,7 @@ install_packages() {
 	Environment=\"NO_PROXY=${NO_PROXY}\"
 	EOF"
     fi
-    #echo_do sudo firewall-cmd --add-masquerade --permanent
+    echo_do sudo firewall-cmd --add-masquerade --permanent
     echo_do sudo firewall-cmd --zone=trusted --add-interface=cni0 --permanent
     echo_do sudo firewall-cmd --add-port=8090/tcp --permanent
     echo_do sudo firewall-cmd --add-port=10250/tcp --permanent

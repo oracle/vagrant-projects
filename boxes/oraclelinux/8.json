@@ -4,6 +4,21 @@
   "name": "oraclelinux/8",
   "versions": [
     {
+      "version": "8.7.411",
+      "status": "active",
+      "release_date": "19-Dec-2022",
+      "description_html": "<ul>\n<li>Releasing 8.7.411</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.7.411",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8/OL8U7_x86_64-vagrant-virtualbox-b411.box",
+        "checksum": "d69ad6882ff0777d4e6a638a5acef1e5f81c7566719b7da662ef67f27c4b9de5",
+        "checksum_type": "sha256",
+        "size": 728631026,
+        "kernel": "5.15.0-5.76.5.1.el8uek.x86_64"
+      }]
+    },
+    {
       "version": "8.7.405",
       "status": "active",
       "release_date": "08-Dec-2022",

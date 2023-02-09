@@ -2,7 +2,7 @@
 #
 # Provision Oracle Cloud Native Environment nodes
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # https://oss.oracle.com/licenses/upl.
 #
@@ -255,7 +255,7 @@ setup_repos() {
 
   # Add OCNE release package
   echo_do sudo dnf install -y oracle-olcne-release-el8
-  echo_do sudo dnf config-manager --enable ol8_olcne15 ol8_baseos_latest ol8_appstream ol8_addons ol8_UEKR6
+  echo_do sudo dnf config-manager --enable ol8_olcne15 ol8_baseos_latest ol8_appstream ol8_addons ol8_kvm_appstream ol8_UEKR7
   echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13 ol8_olcne14
 
   # Optional extra repo
@@ -326,6 +326,14 @@ requirements() {
 #######################################
 install_packages() {
 
+  ### `nft_masq` is not part of kernel-uek-core since OL8U7. To enable masquerading, we must install kernel-uek-modules
+  ### https://docs.oracle.com/en/operating-systems/uek/7/relnotes7.0/uek7.0-NewFeaturesandChanges.html
+  msg "Installing kernel-uek-modules"
+  echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
+  msg "Installing the OpenSSL toolkit"
+  echo_do sudo dnf install -y openssl
+  ###
+    
   if [[ ${OPERATOR} == 1 ]]; then
     msg "Installing the Oracle Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
     echo_do sudo dnf install -y olcnectl"${OCNE_VERSION}" olcne-api-server"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
@@ -372,7 +380,7 @@ install_packages() {
   fi
 
   if [[ ${DEPLOY_METALLB} == 1 ]]; then
-    if [[ ${WORKER} == 1 ]]; then
+    if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
       echo_do sudo firewall-cmd --add-port=7946/tcp --permanent
       echo_do sudo firewall-cmd --add-port=7946/udp --permanent
     fi
@@ -393,7 +401,7 @@ install_packages() {
       echo_do eval "cat /etc/ssl/glusterfs.pem >> /vagrant/glusterfs.ca"
       echo_do sudo touch /var/lib/glusterd/secure-access
       echo_do sudo systemctl enable --now glusterd.service
-      echo_do sudo firewall-cmd --permanent --add-service=glusterfs
+      echo_do sudo firewall-cmd --add-service=glusterfs --permanent
     fi
 
     if [[ ${OPERATOR} == 1 ]]; then
@@ -791,6 +799,16 @@ fixups() {
       echo 'command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)' >> ~/.bashrc; \
       \""
   done
+
+  # Fix: /usr/libexec/crio/conmon doesn't exist
+  #      conmon in @ol8_x86_64_appstream overrides @ol8_x86_64_olcne15
+  msg "Change conmon from /usr/libexec/crio/conmon to /usr/bin/conmon in /etc/crio/crio.conf"
+  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+    echo_do ssh "${node}" "\"\
+      sudo sed 's|/usr/libexec/crio/conmon|/usr/bin/conmon|' -i /etc/crio/crio.conf \
+      && sudo systemctl restart crio.service \
+    \""
+  done  
 
   msg "Starting kubectl proxy service on master nodes"
   for node in ${MASTERS//,/ }; do

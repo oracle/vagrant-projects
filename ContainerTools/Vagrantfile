@@ -17,7 +17,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 # Box metadata location and box name
-BOX_URL = "https://oracle.github.io/vagrant-boxes/boxes"
+BOX_URL = "https://oracle.github.io/vagrant-projects/boxes"
 BOX_NAME = "oraclelinux/8"
 
 # define hostname

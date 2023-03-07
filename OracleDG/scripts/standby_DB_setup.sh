@@ -71,6 +71,14 @@ exit;
 EOF
 
 echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Set LOCAL_LISTENER"
+echo "-----------------------------------------------------------------"
+${DB_HOME}/bin/sqlplus / as sysdba <<EOF
+alter system set local_listener='(ADDRESS=(PROTOCOL=TCP)(HOST=${NODE2_HOSTNAME})(PORT=1521))' scope=both;
+exit;
+EOF
+
+echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Enabling DG Broker"
 echo "-----------------------------------------------------------------"
 ${DB_HOME}/bin/sqlplus / as sysdba <<EOF

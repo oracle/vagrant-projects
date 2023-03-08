@@ -352,6 +352,12 @@ if ! File.exist?(path)
   exit
 end
 
+var_gi_software_ver_major = var_gi_software_ver.digits.to_a[5].to_s + var_gi_software_ver.digits.to_a[4].to_s
+if var_gi_software_ver_major.to_i < 21
+  puts "ERROR: gi_software version must be 21c"
+  exit
+end
+
 #------------------------------------------------------------------
 
 # Install required Vagrant plugin

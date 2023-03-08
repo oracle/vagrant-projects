@@ -1,0 +1,46 @@
+#!/usr/bin/expect -f
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
+#      07_setup_user_equ.expect
+#
+#    DESCRIPTION
+#      Setup users equivalences
+#
+#    NOTES
+#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+#    AUTHOR
+#      ruggero.citton@oracle.com
+#
+#    MODIFIED   (MM/DD/YY)
+#    rcitton     03/30/20 - VBox libvirt & kvm support
+#    rcitton     10/01/19 - Creation
+#
+#    REVISION
+#    20200330 - $Revision: 2.0.2.1 $
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+set timeout 20
+set username [lindex $argv 0]
+set password [lindex $argv 1]
+set node1    [lindex $argv 2]
+set node2    [lindex $argv 3]
+set path     [lindex $argv 4]
+
+spawn $path -user $username -hosts "$node1 $node2" -noPromptPassphrase -advanced
+
+expect "Do you want to continue and let the script make the above mentioned changes (yes/no)?" { send "yes\n" }
+expect  "password:" { send "$password\n" }
+expect  "password:" { send "$password\n" }
+expect  "password:" { send "$password\n" }
+expect  "password:" { send "$password\n" }
+#expect { default {} }
+
+#----------------------------------------------------------
+# EndOfFile
+#----------------------------------------------------------

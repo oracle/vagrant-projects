@@ -1,12 +1,14 @@
 # Oracle Database Vagrant projects
 
-This directory contains Vagrant build files to provision an Oracle Database automatically, using Vagrant, an Oracle Linux 7 box and a shell script.
+This directory contains Vagrant build files to provision an Oracle Database automatically, using Vagrant, an Oracle Linux box and a shell script.
 
 ## Prerequisites
 
 Read the [prerequisites in the top level README](../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM.
 
 ## Getting started
+
+(These steps may vary slightly for each project. **For more information, please check the individual README within each directory!**)
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
 2. Change into the desired version directory
@@ -15,8 +17,6 @@ Read the [prerequisites in the top level README](../README.md#prerequisites) to 
 4. Run `vagrant up`
 5. Connect to the database.
 6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
-
-**For more information please check the individual README within each directory!**
 
 ## Acknowledgements
 

@@ -208,7 +208,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-istio")
-        DEPLOY_HELM=1
         DEPLOY_ISTIO=1
         shift
         ;;
@@ -221,7 +220,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-metallb")
-        DEPLOY_HELM=1
         DEPLOY_METALLB=1
         shift
         ;;
@@ -234,7 +232,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-gluster")
-        DEPLOY_HELM=1
         DEPLOY_GLUSTER=1
         shift
         ;;

@@ -16,15 +16,17 @@ Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
 The installation includes the Kubernetes module for Oracle Cloud
-Native Environment which deploys Kubernetes [1.24.8](https://docs.oracle.com/en/operating-systems/olcne/1.5/relnotes/components.html#d672e108) configured to use
-the CRI-O runtime interface. Two runtime engines are installed, runc and
-Kata Containers.
+Native Environment which deploys Kubernetes [1.25.7](https://docs.oracle.com/en/operating-systems/olcne/1.6/relnotes/components.html#components)
+configured to use the CRI-O runtime interface. Two runtime engines are installed,
+[runC](https://docs.oracle.com/en/operating-systems/olcne/1.6/runtimes/runc.html#runc)
+and (now deprecated) [Kata](https://docs.oracle.com/en/operating-systems/olcne/1.6/runtimes/kata.html#kata) Containers.
 
-You may optionally enable the deployment of the Helm, Istio, MetalLB or Gluster
-modules. Note that enabling the Istio, MetalLB or Gluster modules will
-automatically enable the Helm module.
+You may set your cluster networking to Calico (default), Flannel (deprecated) or Multus on top of either Calico or Flannel.
 
-_Note:_ Kata Containers requires Intel hardware virtualization support and
+You may optionally enable the deployment of Istio, MetalLB or Gluster (deprecated)
+modules. Note that Helm is now installed automatically.
+
+_Note:_ Kata Containers (now deprecated) require Intel hardware virtualization support and
 will not work in a VirtualBox guest until nested virtualization support is
 released for Intel CPUs.
 
@@ -126,10 +128,13 @@ At least one worker node is required.
 Kubernetes Dashboard from a browser on your host.
 __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
-- `DEPLOY_HELM` (default: `false`): deploys the Helm module.
-- `DEPLOY_ISTIO` (default: `false`): deploys the Istio and Helm modules.
-- `DEPLOY_METALLB` (default: `false`): deploys the MetalLB and Helm modules.
-- `DEPLOY_GLUSTER` (default: `false`): deploys the Gluster and Helm modules.
+- `POD_NETWORK` (default: `calico`): deploys the Calico networking module with default configuration. Can be set to [`calico`, `flannel`, `none`].
+- `DEPLOY_CALICO` (default: `false`): deploys the Calico networking module with custom configuration `calico-config.yaml`.
+- `DEPLOY_MULTUS` (default: `false`): deploys the Multus networking module with custom configuration `multus-config.yaml`.
+- `DEPLOY_HELM` (default: `false`): deploys the Helm module (deprecated).
+- `DEPLOY_ISTIO` (default: `false`): deploys the Istio modules.
+- `DEPLOY_METALLB` (default: `false`): deploys the MetalLB module.
+- `DEPLOY_GLUSTER` (default: `false`): deploys the Gluster module (deprecated).
 __Note__: if `NB_WORKERS` is less than `3`, the `hyperconverged` `storageclass`
 is patched to adjust the number of Gluster replicas accordingly.
 __Note__: This provisioning script also installs Heketi on the operator node.
@@ -186,9 +191,10 @@ vagrant plugin install <name>...
 
 ## Product Documentation
 
-- [Oracle Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/start/index.html)
-- [Oracle Cloud Native Environment: Using Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/orchestration/index.html)
-- [Oracle Cloud Native Environment: Using Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/runtimes/index.html)
+- [Oracle Cloud Native Environment: Getting Started](https://docs.oracle.com/en/operating-systems/olcne/1.6/start/)
+- [Oracle Cloud Native Environment: Container Orchestration](https://docs.oracle.com/en/operating-systems/olcne/1.6/orchestration/)
+- [Oracle Cloud Native Environment: Container Runtimes](https://docs.oracle.com/en/operating-systems/olcne/1.6/runtimes/)
+- [Oracle Cloud Native Environment: Platform CLI](https://docs.oracle.com/en/operating-systems/olcne/1.6/olcnectl/)
 
 ## Feedback
 

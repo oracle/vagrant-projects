@@ -45,7 +45,7 @@ dnf install -y policycoreutils-python-utils
 restorecon -F -R -v /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_baseos_latest --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_appstream --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-sudo /usr/bin/reposync --delete --newest-only --repoid ol8_olcne15 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
+sudo /usr/bin/reposync --delete --newest-only --repoid ol8_olcne16 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_addons --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR6 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
 sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
@@ -53,7 +53,7 @@ sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --download-meta
 # add sync script for yum mirror
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_baseos_latest --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" > /home/vagrant/sync-yum.sh
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_appstream --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
-echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_olcne15 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
+echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_olcne16 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_addons --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR6 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh
 echo "sudo /usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum" >> /home/vagrant/sync-yum.sh

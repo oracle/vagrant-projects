@@ -22,16 +22,16 @@ sudo firewall-cmd --reload
 # system configuration - yum mirror
 sudo ln -s /var/yum /var/www/html/yum
 sudo /usr/sbin/semanage fcontext -a -t httpd_sys_content_t "/var/yum(/.*)?"
-sudo restorecon -F -R -v /var/yum
+sudo restorecon -RFv /var/yum
 
 # add sync script for yum mirror
 cat <<EOF | tee /home/vagrant/sync-yum.sh
-/usr/bin/reposync --delete --newest-only --repoid ol8_baseos_latest --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-/usr/bin/reposync --delete --newest-only --repoid ol8_appstream --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-/usr/bin/reposync --delete --newest-only --repoid ol8_olcne16 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-/usr/bin/reposync --delete --newest-only --repoid ol8_addons --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-/usr/bin/reposync --delete --newest-only --repoid ol8_UEKR6 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
-/usr/bin/reposync --delete --newest-only --repoid ol8_UEKR7 --download-metadata --exclude='*.src,*.nosrc' -p /var/yum
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_baseos_latest
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_appstream
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_olcne16
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_addons
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_UEKR6
+/usr/bin/reposync --newest-only --delete --download-metadata --exclude='*.src,*.nosrc' -p /var/yum --remote-time --repoid ol8_UEKR7
 EOF
 chmod 700 /home/vagrant/sync-yum.sh
 

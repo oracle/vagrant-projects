@@ -117,17 +117,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = NAME
 
   # Provision everything on the first run
-  config.vm.provision "shell", path: "scripts/install.sh"
+  config.vm.provision "shell", path: "scripts/install.sh", privileged: false
   
   # Provision everything for OCNE yum-mirror
-  config.vm.provision "shell", path: "scripts/yum-mirror.sh"
+  config.vm.provision "shell", path: "scripts/yum-mirror.sh", privileged: false
   
   # Provision everything for OCNE ocr-mirror 
-  config.vm.provision "shell", path: "scripts/ocr-mirror.sh"
+  config.vm.provision "shell", path: "scripts/ocr-mirror.sh", privileged: false
 
   # Share Yum mirror and OCNE mirror access
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Linux Yum Mirror is available at http://<host-machine>:8080/yum/'"
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Container Registry Mirror is available at https://<host-machine>:5000/olcne/'"
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 8 ready to use!'"
+  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Linux Yum Mirror is available at http://<host-machine>:8080/yum/'", privileged: false
+  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Container Registry Mirror is available at https://<host-machine>:5000/olcne/'", privileged: false
+  config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 8 ready to use!'", privileged: false
 
 end

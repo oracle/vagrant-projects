@@ -15,42 +15,42 @@
 echo 'OCR MIRROR SETUP: Started up'
 
 # Software Install & system configuration
-dnf install podman -y
-dnf install openssl -y
-firewall-cmd --zone=public --permanent --add-port=5000/tcp
-systemctl restart firewalld
-dnf install olcne-utils -y
+# sudo dnf install -y podman
+sudo dnf install -y openssl
+sudo firewall-cmd --zone=public --add-port=5000/tcp --permanent 
+sudo systemctl reload firewalld.service
+sudo dnf install -y olcne-utils
 
 # disable SELINUX
-setenforce 0
-sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+# sudo setenforce 0
+# sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
 
 # system configuration - ocr mirror
-openssl req -x509 -newkey rsa:4096 -keyout /tmp/ocr-yum-mirror.key -nodes -out /tmp/ocr-yum-mirror.crt -sha256 -subj '/CN=ocr-yum-mirror' -addext "subjectAltName = DNS:ocr-yum-mirror" -days 3650
-mkdir -p /var/yum/registry
-ln -s /var/yum/registry /var/lib/registry
-mkdir -p /var/lib/registry/conf.d
-cp /tmp/ocr-yum-mirror.crt /var/lib/registry/conf.d/
-cp /tmp/ocr-yum-mirror.key /var/lib/registry/conf.d/
-cp /tmp/ocr-yum-mirror.crt /etc/pki/ca-trust/source/anchors/
-update-ca-trust
-chmod 600 /var/lib/registry/conf.d/ocr-yum-mirror.key
+openssl req -x509 -newkey rsa:4096 -keyout /vagrant/ocr-yum-mirror.key -nodes -out /vagrant/ocr-yum-mirror.crt -sha256 -subj '/CN=ocr-yum-mirror' -addext "subjectAltName = DNS:ocr-yum-mirror" -days 3650
+mkdir /var/yum/registry
+sudo /usr/sbin/semanage fcontext -a -t user_home_t "/var/yum/registry(/.*)?"
+mkdir /var/yum/registry/conf.d
+cp /vagrant/ocr-yum-mirror.crt /var/yum/registry/conf.d/
+cp /vagrant/ocr-yum-mirror.key /var/yum/registry/conf.d/
+sudo cp /vagrant/ocr-yum-mirror.crt /etc/pki/ca-trust/source/anchors/
+sudo update-ca-trust
 
 # start container-registry mirror container
 podman run -d -p 5000:5000 --name ocr-yum-mirror --restart=always \
-    -v /var/lib/registry:/registry_data \
+    -v /var/yum/registry:/registry_data:Z \
     -e REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/registry_data \
     -e REGISTRY_HTTP_TLS_KEY=/registry_data/conf.d/ocr-yum-mirror.key \
     -e REGISTRY_HTTP_TLS_CERTIFICATE=/registry_data/conf.d/ocr-yum-mirror.crt \
     -e REGISTRY_AUTH="" \
     container-registry.oracle.com/os/registry:v2.7.1.1
 
-# collect OCNE container images
-registry-image-helper.sh --to ocr-yum-mirror:5000/olcne
-
 # add sync script for OCR mirror
-echo "sudo registry-image-helper.sh --to ocr-yum-mirror:5000/olcne" > /home/vagrant/sync-ocr.sh
-chown vagrant:vagrant /home/vagrant/sync-ocr.sh
-chmod 755 /home/vagrant/sync-ocr.sh
+cat <<EOF | tee /home/vagrant/sync-ocr.sh
+/usr/bin/registry-image-helper.sh --to ocr-yum-mirror:5000/olcne $*
+EOF
+chmod 700 /home/vagrant/sync-ocr.sh
+
+# collect OCNE container images
+/home/vagrant/sync-ocr.sh --version 1.25.7
 
 echo 'OCR MIRROR SETUP: Completed'

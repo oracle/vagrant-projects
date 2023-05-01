@@ -21,8 +21,8 @@ dnf install -y httpd
 dnf install -y oracle-olcne-release-el8
 dnf install net-tools -y
 dnf install mlocate -y
-dnf config-manager --enable ol8_olcne15 ol8_baseos_latest ol8_appstream ol8_addons ol8_UEKR6
-dnf config-manager --disable ol8_olcne12 ol8_olcne13 ol8_olcne14
+dnf config-manager --enable ol8_olcne16 ol8_addons ol8_baseos_latest ol8_appstream ol8_UEKR7
+dnf config-manager --disable ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
 systemctl enable --now httpd.service
 systemctl enable --now firewalld.service
 firewall-cmd --permanent --add-service=http

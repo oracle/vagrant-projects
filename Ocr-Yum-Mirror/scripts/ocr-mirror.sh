@@ -26,7 +26,7 @@ sudo dnf install -y olcne-utils
 # sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
 
 # system configuration - ocr mirror
-openssl req -x509 -newkey rsa:4096 -keyout /vagrant/ocr-yum-mirror.key -nodes -out /vagrant/ocr-yum-mirror.crt -sha256 -subj '/CN=ocr-yum-mirror' -addext "subjectAltName = DNS:ocr-yum-mirror" -days 3650
+openssl req -x509 -newkey rsa:4096 -keyout /vagrant/ocr-yum-mirror.key -nodes -out /vagrant/ocr-yum-mirror.crt -sha256 -subj '/CN=ocr-yum-mirror' -addext "subjectAltName = DNS:ocr-yum-mirror,IP:10.0.2.2" -days 3650
 mkdir /var/yum/registry
 sudo /usr/sbin/semanage fcontext -a -t user_home_t "/var/yum/registry(/.*)?"
 mkdir /var/yum/registry/conf.d
@@ -34,6 +34,9 @@ cp /vagrant/ocr-yum-mirror.crt /var/yum/registry/conf.d/
 cp /vagrant/ocr-yum-mirror.key /var/yum/registry/conf.d/
 sudo cp /vagrant/ocr-yum-mirror.crt /etc/pki/ca-trust/source/anchors/
 sudo update-ca-trust
+
+# Allow podman rootless container in detached mode to run beyond logout
+sudo loginctl enable-linger
 
 # start container-registry mirror container
 podman run -d -p 5000:5000 --name ocr-yum-mirror --restart=always \

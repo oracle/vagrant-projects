@@ -80,6 +80,7 @@ parse_args() {
   OCNE_CLUSTER_NAME='' OCNE_ENV_NAME='' OCNE_DEV=0 OCNE_VERSION='' REGISTRY_OCNE=''
   OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
   VERBOSE=0 SUBNET='' EXTRA_REPO='' NGINX_IMAGE=''
+  POD_NETWORK=calico DEPLOY_CALICO=0 CALICO_MODULE_NAME='' DEPLOY_MULTUS=0 MULTUS_MODULE_NAME=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
   DEPLOY_METALLB=0 METALLB_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
 
@@ -161,6 +162,39 @@ parse_args() {
         WORKERS="$2"
         shift; shift
         ;;
+      "--pod-network")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --pod-network" >&2
+	        exit 1
+        fi
+        POD_NETWORK="$2"
+        shift; shift
+        ;;
+
+      "--with-calico")
+        DEPLOY_CALICO=1
+        shift
+        ;;
+      "--calico-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --calico-module-name" >&2
+	        exit 1
+        fi
+        CALICO_MODULE_NAME="$2"
+        shift; shift
+        ;;
+      "--with-multus")
+        DEPLOY_MULTUS=1
+        shift
+        ;;
+      "--multus-module-name")
+        if [[ $# -lt 2 ]]; then
+          echo "Missing parameter for --multus-module-name" >&2
+	        exit 1
+        fi
+        MULTUS_MODULE_NAME="$2"
+        shift; shift
+        ;;
       "--with-helm")
         DEPLOY_HELM=1
         shift
@@ -174,7 +208,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-istio")
-        DEPLOY_HELM=1
         DEPLOY_ISTIO=1
         shift
         ;;
@@ -187,7 +220,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-metallb")
-        DEPLOY_HELM=1
         DEPLOY_METALLB=1
         shift
         ;;
@@ -200,7 +232,6 @@ parse_args() {
         shift; shift
         ;;
       "--with-gluster")
-        DEPLOY_HELM=1
         DEPLOY_GLUSTER=1
         shift
         ;;
@@ -234,6 +265,9 @@ parse_args() {
   readonly OCNE_CLUSTER_NAME OCNE_ENV_NAME OCNE_DEV REGISTRY_OCNE
   readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
   readonly VERBOSE EXTRA_REPO NGINX_IMAGE
+  readonly POD_NETWORK
+  readonly DEPLOY_CALICO CALICO_MODULE_NAME
+  readonly DEPLOY_MULTUS MULTUS_MODULE_NAME
   readonly DEPLOY_HELM HELM_MODULE_NAME
   readonly DEPLOY_ISTIO ISTIO_MODULE_NAME
   readonly DEPLOY_METALLB METALLB_MODULE_NAME
@@ -255,8 +289,8 @@ setup_repos() {
 
   # Add OCNE release package
   echo_do sudo dnf install -y oracle-olcne-release-el8
-  echo_do sudo dnf config-manager --enable ol8_olcne15 ol8_baseos_latest ol8_appstream ol8_addons ol8_kvm_appstream ol8_UEKR7
-  echo_do sudo dnf config-manager --disable ol8_olcne12 ol8_olcne13 ol8_olcne14
+  echo_do sudo dnf config-manager --enable ol8_olcne16 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+  echo_do sudo dnf config-manager --disable ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
 
   # Optional extra repo
   if [[ -n ${EXTRA_REPO} ]]; then echo_do sudo dnf config-manager --add-repo "${EXTRA_REPO}"; fi
@@ -307,7 +341,7 @@ requirements() {
   echo_do sudo /sbin/sysctl -p /etc/sysctl.d/k8s.conf
   
   # Enable & start firewalld; add eth1 (nat) to the public zone
-  echo_do sudo systemctl enable --now firewalld
+  echo_do sudo systemctl enable --now firewalld.service
   echo_do sudo firewall-cmd --zone=public --add-interface=eth1 --permanent
 }
 
@@ -328,8 +362,10 @@ install_packages() {
 
   ### `nft_masq` is not part of kernel-uek-core since OL8U7. To enable masquerading, we must install kernel-uek-modules
   ### https://docs.oracle.com/en/operating-systems/uek/7/relnotes7.0/uek7.0-NewFeaturesandChanges.html
-  msg "Installing kernel-uek-modules"
-  echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
+  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
+    msg "Installing kernel-uek-modules"
+    echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
+  fi
   msg "Installing the OpenSSL toolkit"
   echo_do sudo dnf install -y openssl
   ###
@@ -339,7 +375,9 @@ install_packages() {
     echo_do sudo dnf install -y olcnectl"${OCNE_VERSION}" olcne-api-server"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
     echo_do sudo systemctl enable olcne-api-server.service
     echo_do sudo firewall-cmd --add-port=8091/tcp --permanent
-    echo_do sudo firewall-cmd --add-masquerade --permanent
+    if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
+      echo_do sudo firewall-cmd --add-masquerade --permanent
+    fi
   fi
   if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
     msg "Installing the Oracle Cloud Native Environment Platform Agent"
@@ -450,9 +488,14 @@ install_packages() {
       echo_do rm -f /vagrant/topology-ocne.json
     fi
   fi
-  
-  # Reload firewalld
-  echo_do sudo firewall-cmd --reload
+
+  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
+    # Reload firewalld
+    echo_do sudo firewall-cmd --reload
+  else
+    msg "Disable firewalld.service as required by Calico networking"
+    echo_do sudo systemctl disable --now firewalld.service
+  fi
 }
 
 #######################################
@@ -599,8 +642,9 @@ deploy_kubernetes() {
       --module kubernetes --name "${OCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OCNE}" \
       --nginx-image "${REGISTRY_OCNE}/${NGINX_IMAGE}" \
+      --pod-network "${POD_NETWORK}" \
       --pod-network-iface eth1 \
-      --master-nodes "${master_nodes}" \
+      --control-plane-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
       --restrict-service-externalip true \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
@@ -614,9 +658,10 @@ deploy_kubernetes() {
       --module kubernetes --name "${OCNE_CLUSTER_NAME}" \
       --container-registry "${REGISTRY_OCNE}" \
       --nginx-image "${REGISTRY_OCNE}/${NGINX_IMAGE}" \
+      --pod-network "${POD_NETWORK}" \
       --pod-network-iface eth1 \
       --virtual-ip "${SUBNET}.99" \
-      --master-nodes "${master_nodes}" \
+      --control-plane-nodes "${master_nodes}" \
       --worker-nodes "${worker_nodes}" \
       --restrict-service-externalip true \
       --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
@@ -654,11 +699,61 @@ deploy_modules() {
 
   msg "Deploying additional modules"
 
-  # Helm module
+  # Calico networking module
+  if [[ ${DEPLOY_CALICO} == 1 ]]; then
+
+    # Create the Calico networking module
+    msg "Creating the Calico networking module: ${CALICO_MODULE_NAME}"
+    echo_do olcnectl module create \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --module calico \
+      --name "${CALICO_MODULE_NAME}" \
+      --calico-kubernetes-module "${OCNE_CLUSTER_NAME}" \
+      --calico-installation-config /vagrant/calico-config.yaml
+
+    # Validate the Calico networking module
+    msg "Validating the Calico networking module: ${CALICO_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${CALICO_MODULE_NAME}"
+
+    # Deploy the Calico networking module
+    msg "Deploying the Calico module: ${CALICO_MODULE_NAME} into ${OCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${CALICO_MODULE_NAME}"
+  fi
+
+  # Multus networking module
+  if [[ ${DEPLOY_MULTUS} == 1 ]]; then
+
+    # Create the Multus networking module
+    msg "Creating the Multus networking module: ${MULTUS_MODULE_NAME}"
+    echo_do olcnectl module create \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --module multus \
+      --name "${MULTUS_MODULE_NAME}" \
+      --multus-kubernetes-module "${OCNE_CLUSTER_NAME}" \
+      --multus-installation-config /vagrant/multus-config.yaml
+
+    # Validate the Multus networking module
+    msg "Validating the Multus networking module: ${MULTUS_MODULE_NAME}"
+    echo_do olcnectl module validate \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${MULTUS_MODULE_NAME}"
+
+    # Deploy the Multus networking module
+    msg "Deploying the Multus module: ${MULTUS_MODULE_NAME} into ${OCNE_CLUSTER_NAME}"
+    echo_do olcnectl module install \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${MULTUS_MODULE_NAME}"
+  fi
+
+  # Helm module (deprecated)
   if [[ ${DEPLOY_HELM} == 1 ]]; then
 
     # Create the Helm module
-    msg "Creating the Helm module: ${HELM_MODULE_NAME}"
+    msg "Creating the Helm module (deprecated): ${HELM_MODULE_NAME}"
     echo_do olcnectl module create \
       --environment-name "${OCNE_ENV_NAME}" \
       --module helm \
@@ -746,7 +841,7 @@ deploy_modules() {
 
     # Create the Gluster module
     # using defaults url/user/secret-key: olcnectl module create --module gluster --help
-    msg "Creating the Gluster module: ${GLUSTER_MODULE_NAME}"
+    msg "Creating the Gluster module (deprecated): ${GLUSTER_MODULE_NAME}"
     HEKETI_CLI_SERVER="http://127.0.0.1:8080"
     if [[ ${MASTER} == 0 ]]; then
       # Standalone operator
@@ -925,7 +1020,7 @@ fixups() {
   for node in ${nodes//,/ }; do
     echo_do ssh "${node}" "\"\
       sudo sed -i 's/AllowZoneDrifting=yes/AllowZoneDrifting=no/' /etc/firewalld/firewalld.conf \
-      && sudo systemctl reload firewalld.service \
+      && (sudo systemctl reload firewalld.service; true) \
       \""
   done
   

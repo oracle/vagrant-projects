@@ -6,7 +6,7 @@ This projects collects all the software (RPMs and container images) required to 
 
 - ol8_baseos_latest
 - ol8_appstream
-- ol8_olcne15
+- ol8_olcne16
 - ol8_addons
 - ol8_UEKR6
 - ol8_UEKR7

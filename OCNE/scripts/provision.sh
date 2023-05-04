@@ -779,8 +779,7 @@ deploy_modules() {
       --module istio \
       --name "${ISTIO_MODULE_NAME}" \
       --istio-container-registry "${REGISTRY_OCNE}" \
-      --istio-helm-module "${HELM_MODULE_NAME}"
-
+      --istio-kubernetes-module "${OCNE_CLUSTER_NAME}"
 
     # Validate the Istio module
     msg "Validating the Istio module: ${ISTIO_MODULE_NAME}"
@@ -813,7 +812,7 @@ deploy_modules() {
       --environment-name "${OCNE_ENV_NAME}" \
       --module metallb \
       --name "${METALLB_MODULE_NAME}" \
-      --metallb-helm-module "${HELM_MODULE_NAME}" \
+      --metallb-kubernetes-module "${OCNE_CLUSTER_NAME}" \
       --metallb-config /vagrant/metallb-config.yaml
 
     msg "Removing MetalLB temporary configuration file"
@@ -847,7 +846,7 @@ deploy_modules() {
       --environment-name "${OCNE_ENV_NAME}" \
       --module gluster \
       --name "${GLUSTER_MODULE_NAME}" \
-      --gluster-helm-module "${HELM_MODULE_NAME}" \
+      --gluster-kubernetes-module "${OCNE_CLUSTER_NAME}" \
       --gluster-server-url "${HEKETI_CLI_SERVER}"
       
     # Validate the Gluster module

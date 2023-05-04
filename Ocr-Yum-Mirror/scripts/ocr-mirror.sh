@@ -49,11 +49,11 @@ podman run -d -p 5000:5000 --name ocr-yum-mirror --restart=always \
 
 # add sync script for OCR mirror
 cat <<EOF | tee /home/vagrant/sync-ocr.sh
-/usr/bin/registry-image-helper.sh --to ocr-yum-mirror:5000/olcne $*
+/usr/bin/registry-image-helper.sh --to ocr-yum-mirror:5000/olcne --version 1.25.7
 EOF
 chmod 700 /home/vagrant/sync-ocr.sh
 
 # collect OCNE container images
-/home/vagrant/sync-ocr.sh --version 1.25.7
+/home/vagrant/sync-ocr.sh
 
 echo 'OCR MIRROR SETUP: Completed'

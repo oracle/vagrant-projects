@@ -362,10 +362,8 @@ install_packages() {
 
   ### `nft_masq` is not part of kernel-uek-core since OL8U7. To enable masquerading, we must install kernel-uek-modules
   ### https://docs.oracle.com/en/operating-systems/uek/7/relnotes7.0/uek7.0-NewFeaturesandChanges.html
-  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-    msg "Installing kernel-uek-modules"
-    echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
-  fi
+  msg "Installing kernel-uek-modules"
+  echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
   msg "Installing the OpenSSL toolkit"
   echo_do sudo dnf install -y openssl
   ###
@@ -375,9 +373,7 @@ install_packages() {
     echo_do sudo dnf install -y olcnectl"${OCNE_VERSION}" olcne-api-server"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
     echo_do sudo systemctl enable olcne-api-server.service
     echo_do sudo firewall-cmd --add-port=8091/tcp --permanent
-    if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-      echo_do sudo firewall-cmd --add-masquerade --permanent
-    fi
+    echo_do sudo firewall-cmd --add-masquerade --permanent
   fi
   if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
     msg "Installing the Oracle Cloud Native Environment Platform Agent"
@@ -489,12 +485,12 @@ install_packages() {
     fi
   fi
 
-  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-    # Reload firewalld
-    echo_do sudo firewall-cmd --reload
-  else
+  if [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
     msg "Disable firewalld.service as required by Calico networking"
     echo_do sudo systemctl disable --now firewalld.service
+  else
+    # Reload firewalld
+    echo_do sudo firewall-cmd --reload
   fi
 }
 

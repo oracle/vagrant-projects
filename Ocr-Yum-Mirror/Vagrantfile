@@ -46,18 +46,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # change memory size
   config.vm.provider "virtualbox" do |v|
-    v.memory = 2048
+    v.memory = 1024
     v.name = NAME
-  # add second disk device
+    # add second disk device
     file_to_disk = File.realpath( "." ).to_s + "/disk.vdi"
 
-    if ARGV[0] == "up" && ! File.exist?(file_to_disk)
-       v.customize [
-            'createhd',
-            '--filename', file_to_disk,
-            '--format', 'VDI',
-            '--size', 50 * 1024 # 50 GB
-            ]
+    if ARGV[0] == "up"
+       if ! File.exist?(file_to_disk)
+         v.customize [
+              'createhd',
+              '--filename', file_to_disk,
+              '--format', 'VDI',
+              '--size', 50 * 1024 # 50 GB
+              ]
+       end
        v.customize [
             'storageattach', :id,
             '--storagectl', 'SATA Controller', # The name may vary
@@ -126,8 +128,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", path: "scripts/ocr-mirror.sh", privileged: false
 
   # Share Yum mirror and OCNE mirror access
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Linux Yum Mirror is available at http://<host-machine>:8080/yum/'", privileged: false
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Oracle Container Registry Mirror is available at https://<host-machine>:5000/olcne/'", privileged: false
-  config.vm.provision "shell", inline: "echo 'INSTALLER: Installation complete, Oracle Linux 8 ready to use!'", privileged: false
+  config.vm.post_up_message = <<-MSG
+    Installation complete, Oracle Linux 8 mirror ready to use!
+    
+    -----------------------------------------------------------
+    Local Ocr-Yum-Mirror, accessible via:
+      127.0.0.1 (localhost); or
+      10.0.2.2 (inside VirtualBox VMs)
+    
+    URLs:
+     - OracleLinux8 Yum Repo    - http://localhost:8080/yum/
+     - OCNE 1.6 Docker Registry - https://localhost:5000/olcne/
+    
+    -----------------------------------------------------------
+  MSG
 
 end

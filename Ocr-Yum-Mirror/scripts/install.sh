@@ -31,9 +31,11 @@ EOF
 echo 'INSTALLER: Locale set'
 
 echo 'INSTALLER: Creating persistent virtual-disk /dev/sdb1'
-# persistent disk
-printf "o\nn\np\n1\n\n\nw\n" |sudo fdisk /dev/sdb
-sudo mkfs.xfs /dev/sdb1
+# persistent disk. check if xfs fs already exists
+if ! sudo blkid /dev/sdb1 | grep -q "TYPE=\"xfs\""; then
+    printf "o\nn\np\n1\n\n\nw\n" |sudo fdisk /dev/sdb
+    sudo mkfs.xfs /dev/sdb1
+fi
 sudo mkdir -p /var/yum
 sudo mount /dev/sdb1 /var/yum
 sudo chown vagrant: /var/yum

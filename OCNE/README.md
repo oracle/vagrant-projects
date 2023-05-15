@@ -2,16 +2,16 @@
 
 This Vagrant project will deploy and configure the following components:
 
-- One or more master nodes (one by default, 3 in HA mode)
+- One or more control plane nodes (one by default, 3 in HA mode)
 - One or more worker nodes (2 by default)
 - An optional operator node for the Oracle Cloud Native Environment
 Platform API Server and Platform CLI tool (default is to install these
-components on the first master node)
+components on the first control plane node)
 
-If you enable multiple master nodes, an operator node is automatically deployed
+If you enable multiple control plane nodes, an operator node is automatically deployed
 to provide egress routing for the cluster.
 
-All master and worker nodes will have the Oracle Cloud Native
+All control plane and worker nodes will have the Oracle Cloud Native
 Environment Platform Agent installed and configured to communicate with the
 Platform API Server on the operator node.
 
@@ -45,7 +45,7 @@ makes configuration much easier
 
 Your Oracle Cloud Native Environment is ready!
 
-From any master node (e.g. master1) you can check the status of the cluster (as
+From any control plane node (e.g. controlplane1) you can check the status of the cluster (as
 the `vagrant` user). E.g.:
 
 - `kubectl cluster-info`
@@ -61,16 +61,16 @@ to the Dashboard from a browser on your Vagrant host, you will need to set
 
 To access the Kubernetes Dashboard, remember to use `localhost` or `127.0.0.1`
 in the URL, i.e. <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/>.
-To obtain token from any Master node, you may run: `kubectl -n kubernetes-dashboard get secret -o=jsonpath='{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="kubernetes-dashboard")].data.token}' | base64 --decode`
+To obtain token from any Control plane node, you may run: `kubectl -n kubernetes-dashboard get secret -o=jsonpath='{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="kubernetes-dashboard")].data.token}' | base64 --decode`
 
 ## About the `Vagrantfile`
 
 The VMs communicate via a private network:
 
 - Controller node IP: 192.168.99.100 (if `STANDALONE_OPERATOR=true`)
-- Master node _i_: 192.168.99.(100+ _i_ ) / master *_i_* .vagrant.vm
+- Control plane node _i_: 192.168.99.(100+ _i_ ) / controlplane *_i_* .vagrant.vm
 - Worker node _i_: 192.168.99.(110+ _i_ ) / worker *_i_* .vagrant.vm
-- Master Virtual IP: 192.168.99.99 (if `MULTI_MASTER=true`)
+- Control plane Virtual IP: 192.168.99.99 (if `MULTI_CONTROL_PLANE=true`)
 - LoadBalancer IPs: 192.168.99.240 - 192.168.99.250 (if `DEPLOY_METALLB=true`)
 
 ## Configuration
@@ -107,24 +107,24 @@ is installed)
 - `VERBOSE` (default: `false`): verbose output during VM deployment.
 - `WORKER_CPUS` (default: `1`):  Provision Worker Node with 1 vCPU.
 - `WORKER_MEMORY` (default: `1024`): Provision Worker Node with 1GB memory.
-- `MASTER_CPUS` (default: `2`): At least 2 vCPUS are required for Master Nodes.
-- `MASTER_MEMORY` (default: `2048`): At least 1700MB are required for Master Nodes.
-- `OPERATOR_CPUS` (default: `1`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
-- `OPERATOR_MEMORY` (default: `1024`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_MASTER=true`.
+- `CONTROL_PLANE_CPUS` (default: `2`): At least 2 vCPUS are required for Control plane Nodes.
+- `CONTROL_PLANE_MEMORY` (default: `2048`): At least 1700MB are required for Control plane Nodes.
+- `OPERATOR_CPUS` (default: `1`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_CONTROL_PLANE=true`.
+- `OPERATOR_MEMORY` (default: `1024`): Only applicable if `STANDALONE_OPERATOR=true` or `MULTI_CONTROL_PLANE=true`.
 - `VB_GROUP` (default: `OCNE`): group all VirtualBox VMs under this label.
 - `EXTRA_DISK` (default: `false`): Creates an extra disk (`/dev/sdb`) on Worker nodes that can be used for GlusterFS for Kubernetes Persistent Volumes
 
 ### Cluster parameters
 
-- `STANDALONE_OPERATOR` (default: `false` unless `MULTI_MASTER=true`): create
+- `STANDALONE_OPERATOR` (default: `false` unless `MULTI_CONTROL_PLANE=true`): create
 a separate VM for the operator node -- default is to install the operator
-components on the (first) master node.
-- `MULTI_MASTER` (default: `false`): multi-master setup. Deploy 3 masters in
+components on the (first) control plane node.
+- `MULTI_CONTROL_PLANE` (default: `false`): multi-control-plane setup. Deploy 3 control planes in
 HA mode.
 - `NB_WORKERS` (default: `2`): number of worker nodes to provision.
 At least one worker node is required.
 - `BIND_PROXY` (default: `false`): bind the kubectl proxy port (8001) from the
-(first) master to the Vagrant host. This is required if you want to access the
+(first) control plane to the Vagrant host. This is required if you want to access the
 Kubernetes Dashboard from a browser on your host.
 __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
@@ -165,9 +165,7 @@ The following syntax can be used to specify a mirror:
 Danger zone!
 Mainly used for development.
 
-- The following parameters can be set to use specific component version:
-`OLCNE_VERSION`, `NGINX_IMAGE`.
-- `NB_MASTERS` (default: none): override number of masters to deploy. Requires `MULTI_MASTER=true` to function properly.
+- `NB_CONTROL_PLANES` (default: none): override number of control planes to deploy. Requires `MULTI_CONTROL_PLANE=true` to function properly.
 - `SUBNET` (default: `192.168.99`): Set the VM provider host-only / private network subnet.
 - `UPDATE_OS` (default: false): Runs `dnf -y update` on the VM.
 

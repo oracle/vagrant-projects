@@ -14,13 +14,13 @@
 # vi: set ft=ruby :
 
 # This Vagrantfile creates an Oracle Cloud Native Environment and
-# deploys the Kubernetes module to the master and worker nodes.
+# deploys the Kubernetes module to the control plane and worker nodes.
 # VMs communicate via a private network using subnet 192.168.99.* (by default):
-#   - HA Master IP: 192.168.99.99          (Virtual IP, when in HA mode)
-#   - Operator    : 192.168.99.100         (Optional, none by default)
-#   - Master i    : 192.168.99.(100+i)     (1 by default, 3 in HA mode)
-#   - Worker i    : 192.168.99.(110+i)     (2 by default)
-#   - MetalLB Pool: 192.168.99.240 - 192.168.99.250
+#   - HA Control plane IP: 192.168.99.99          (Virtual IP, when in HA mode)
+#   - Operator           : 192.168.99.100         (Optional, none by default)
+#   - Control plane i    : 192.168.99.(100+i)     (1 by default, 3 in HA mode)
+#   - Worker i           : 192.168.99.(110+i)     (2 by default)
+#   - MetalLB Pool       : 192.168.99.240 - 192.168.99.250
 #
 # Optional plugins:
 #     vagrant-hosts (maintains /etc/hosts for the VMs)
@@ -54,24 +54,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # vCPUS and Memory for the VMs
   OPERATOR_CPUS = default_i('OPERATOR_CPUS', 1)
   OPERATOR_MEMORY = default_i('OPERATOR_MEMORY', 1024)
-  MASTER_CPUS = default_i('MASTER_CPUS', 2)
-  MASTER_MEMORY = default_i('MASTER_MEMORY', 2048)
+  CONTROL_PLANE_CPUS = default_i('CONTROL_PLANE_CPUS', 2)
+  CONTROL_PLANE_MEMORY = default_i('CONTROL_PLANE_MEMORY', 2048)
   WORKER_CPUS = default_i('WORKER_CPUS', 1)
   WORKER_MEMORY = default_i('WORKER_MEMORY', 1024)
 
   # Group VirtualBox containers
   VB_GROUP = default_s('VB_GROUP', 'OCNE')
 
-  # Multi-master setup. Deploy 3 masters in HA mode.
-  MULTI_MASTER = default_b('MULTI_MASTER', false)
+  # Multi-control-plane setup. Deploy 3 control planes in HA mode.
+  MULTI_CONTROL_PLANE = default_b('MULTI_CONTROL_PLANE', false)
 
   # Separate operator node for the Oracle Cloud Native Environment
   # Platform API Server and Platform Agent (default is to install the
-  # components on the (first) master node
+  # components on the (first) control plane node
   #
-  # If multi-master is enabled, the standalone operator is automatically
+  # If multi-control-plane is enabled, the standalone operator is automatically
   # enabled for routing purposes
-  if MULTI_MASTER
+  if MULTI_CONTROL_PLANE
     STANDALONE_OPERATOR = true
   else
     STANDALONE_OPERATOR = default_b('STANDALONE_OPERATOR', false)
@@ -81,14 +81,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Gluster Storage for Kubernetes Persistent Volumes
   EXTRA_DISK = default_b('EXTRA_DISK', false)
 
-  # Override number of masters to deploy
+  # Override number of control planes to deploy
   # This should not be changed -- for development purpose
-  NB_MASTERS = default_i('NB_MASTERS', MULTI_MASTER ? 3 : 1)
+  NB_CONTROL_PLANES = default_i('NB_CONTROL_PLANES', MULTI_CONTROL_PLANE ? 3 : 1)
 
   # Number of worker nodes to provision
   NB_WORKERS = default_i('NB_WORKERS', 2)
 
-  # Bind the kubectl proxy from the (first) master to the vagrant host
+  # Bind the kubectl proxy from the (first) control plane to the vagrant host
   BIND_PROXY = default_b('BIND_PROXY', false)
 
   # Additional yum channel to consider (e.g. local repo)
@@ -138,9 +138,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   METALLB_MODULE_NAME = default_s('METALLB_MODULE_NAME', 'ocne-metallb')
   GLUSTER_MODULE_NAME = default_s('GLUSTER_MODULE_NAME', 'ocne-gluster')
 
-  # Use specific component version (mainly used for development)
-  NGINX_IMAGE = default_s('NGINX_IMAGE', 'nginx:1.17.7')
-
   # Update Base OS
   UPDATE_OS = default_b('UPDATE_OS', false)
   
@@ -178,7 +175,7 @@ def provision_vm(vm, vm_args)
   args = vm_args.clone
   args.push("--ocne-environment-name", OCNE_ENV_NAME)
   args.push("--ocne-cluster-name", OCNE_CLUSTER_NAME)
-  args.push("--multi-master") if MULTI_MASTER
+  args.push("--multi-control-plane") if MULTI_CONTROL_PLANE
   args.push("--repo", YUM_REPO) unless YUM_REPO == ""
   args.push("--ocne-dev") if OCNE_DEV
   args.push("--pod-network", POD_NETWORK) if POD_NETWORK
@@ -206,6 +203,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.box = BOX_NAME
   config.vm.box_url = "#{BOX_URL}/#{BOX_NAME}.json"
+  # config.vm.box_version = "8.6.359"
 
   # If we use the vagrant-proxyconf plugin, we should not proxy k8s/local IPs
   # Unfortunately we can't use CIDR with no_proxy, so we have to enumerate and
@@ -263,6 +261,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       ip = 110 + i
       ip_addr = "#{SUBNET}.#{ip}"
       workers += "#{ip_addr},"
+#      worker.vm.network :private_network, nic_type: "virtio", ip: ip_addr, nm_controlled: "yes"
       worker.vm.network :private_network, nic_type: "virtio", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
         worker.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
@@ -289,42 +288,42 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # Masters provisioning
-  masters = ""
-  NB_MASTERS.downto(1) do |i|
-    config.vm.define "master#{i}" do |master|
-      master.vm.hostname = "master#{i}.vagrant.vm"
+  # Control plane provisioning
+  control_planes = ""
+  NB_CONTROL_PLANES.downto(1) do |i|
+    config.vm.define "controlplane#{i}" do |control_plane|
+      control_plane.vm.hostname = "controlplane#{i}.vagrant.vm"
       ip = 100 + i
       ip_addr = "#{SUBNET}.#{ip}"
-      masters += "#{ip_addr},"
-      master.vm.network :private_network, nic_type: "virtio", ip: ip_addr
+      control_planes += "#{ip_addr},"
+      control_plane.vm.network :private_network, nic_type: "virtio", ip: ip_addr
       if Vagrant.has_plugin?("vagrant-hosts")
-        master.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
+        control_plane.vm.provision :hosts, :sync_hosts => true, :add_localhost_hostnames => false
       end
-      master.vm.provider :virtualbox do |vb|
-        vb.name = "master#{i}"
-        vb.memory = MASTER_MEMORY
-        vb.cpus = MASTER_CPUS
+      control_plane.vm.provider :virtualbox do |vb|
+        vb.name = "control_plane#{i}"
+        vb.memory = CONTROL_PLANE_MEMORY
+        vb.cpus = CONTROL_PLANE_CPUS
       end
       config.vm.provider :libvirt do |lv|
-        lv.memory = MASTER_MEMORY
-        lv.cpus = MASTER_CPUS
+        lv.memory = CONTROL_PLANE_MEMORY
+        lv.cpus = CONTROL_PLANE_CPUS
       end
       if BIND_PROXY && i == 1
         # Bind kubectl proxy port
-        master.vm.network :forwarded_port, guest: 8001, host: 8001
+        control_plane.vm.network :forwarded_port, guest: 8001, host: 8001
       end
       # Update OS if UPDATE_OS=true
-      update_os(master.vm)
-      # Provisioning: Master Node
-      args = ["--master", "--nginx-image", NGINX_IMAGE]
+      update_os(control_plane.vm)
+      # Provisioning: Control plane Node
+      args = ["--control-plane"]
       if !STANDALONE_OPERATOR && i == 1
         args.push("--operator")
         args.push("--subnet", SUBNET)
         args.push("--workers", workers.chop)
-        args.push("--masters", masters.chop)
+        args.push("--control-planes", control_planes.chop)
       end
-      provision_vm(master.vm, args)
+      provision_vm(control_plane.vm, args)
     end
   end
 
@@ -351,8 +350,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       args = ["--operator"]
       args.push("--subnet", SUBNET)
       args.push("--workers", workers.chop)
-      args.push("--masters", masters.chop)
-      args.push("--nginx-image", NGINX_IMAGE)
+      args.push("--control-planes", control_planes.chop)
       provision_vm(operator.vm, args)
     end
   end

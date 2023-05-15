@@ -386,27 +386,27 @@ quick_install_ocne() {
     api_server=$(ip -f inet addr show eth1| sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
   fi
 
-  provision_opts=" --api-server ${api_server} --control-plane-nodes ${CONTROL_PLANES} --worker-nodes ${WORKERS}"
-  provision_opts+=" --environment-name ${OCNE_ENV_NAME} --name ${OCNE_CLUSTER_NAME}"
-  provision_opts+=" --container-registry ${REGISTRY_OCNE}"
-  provision_opts+=" --selinux enforcing"
+  provision_opts=(--api-server "${api_server}" --control-plane-nodes "${CONTROL_PLANES}" --worker-nodes "${WORKERS}")
+  provision_opts=("${provision_opts[@]}" --environment-name "${OCNE_ENV_NAME}" --name "${OCNE_CLUSTER_NAME}")
+  provision_opts=("${provision_opts[@]}" --container-registry "${REGISTRY_OCNE}")
+  provision_opts=("${provision_opts[@]}" --selinux enforcing)
 
   if [[ ${MULTI_CONTROL_PLANE} == 1 ]]; then
-    provision_opts+=" --virtual-ip ${SUBNET}.99"
+    provision_opts=("${provision_opts[@]}" --virtual-ip "${SUBNET}".99)
   fi
 
   if [[ -n ${HTTP_PROXY} ]]; then
-    provision_opts+=" --http-proxy ${HTTP_PROXY}"
-    provision_opts+=" --https-proxy ${HTTPS_PROXY}"
-    provision_opts+=" --no-proxy ${NO_PROXY}"
+    provision_opts=("${provision_opts[@]}" --http-proxy "${HTTP_PROXY}")
+    provision_opts=("${provision_opts[@]}" --https-proxy "${HTTPS_PROXY}")
+    provision_opts=("${provision_opts[@]}" --no-proxy "${NO_PROXY}")
   fi
 
   if [[ ${VERBOSE} == 1 ]]; then
-    provision_opts+=" --debug"
+    provision_opts=("${provision_opts[@]}" --debug)
   fi
 
   msg "Provision the OCNE cluster with quick install"
-  echo_do olcnectl provision ${provision_opts} --yes --timeout 20
+  echo_do olcnectl provision "${provision_opts[@]}" --yes --timeout 20
 
   msg "Update config to avoid having to enter the --api-server option in future olcnectl commands"
   echo_do olcnectl module instances \
@@ -590,7 +590,7 @@ deploy_modules() {
       --gluster-server-url "${HEKETI_CLI_SERVER}"
       
     # Validate the Gluster module
-    msg "Validating the Gluster module: ${Gluster_MODULE_NAME}"
+    msg "Validating the Gluster module: ${GLUSTER_MODULE_NAME}"
     echo_do olcnectl module validate \
       --environment-name "${OCNE_ENV_NAME}" \
       --name "${GLUSTER_MODULE_NAME}"

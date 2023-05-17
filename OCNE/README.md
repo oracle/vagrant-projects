@@ -21,7 +21,7 @@ configured to use the CRI-O runtime interface. Two runtime engines are installed
 [runC](https://docs.oracle.com/en/operating-systems/olcne/1.6/runtimes/runc.html#runc)
 and (now deprecated) [Kata](https://docs.oracle.com/en/operating-systems/olcne/1.6/runtimes/kata.html#kata) Containers.
 
-You may set your cluster networking to Calico (default), Flannel (deprecated) or Multus on top of either Calico or Flannel.
+You may set your cluster networking to Flannel (default), Calico or Multus on top of either Calico or Flannel.
 
 You may optionally enable the deployment of Istio, MetalLB or Gluster (deprecated)
 modules. Note that Helm is now installed automatically.

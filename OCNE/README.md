@@ -128,7 +128,6 @@ At least one worker node is required.
 Kubernetes Dashboard from a browser on your host.
 __Note__: you only need this if you want to expose the kubectl proxy to other
 hosts in your network.
-- `POD_NETWORK` (default: `calico`): deploys the Calico networking module with default configuration. Can be set to [`calico`, `flannel`, `none`].
 - `DEPLOY_CALICO` (default: `false`): deploys the Calico networking module with custom configuration `calico-config.yaml`.
 - `DEPLOY_MULTUS` (default: `false`): deploys the Multus networking module with custom configuration `multus-config.yaml`.
 - `DEPLOY_HELM` (default: `false`): deploys the Helm module (deprecated).

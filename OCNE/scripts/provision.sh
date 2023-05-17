@@ -75,7 +75,7 @@ parse_args() {
   OCNE_CLUSTER_NAME='' OCNE_ENV_NAME='' OCNE_DEV=0 REGISTRY_OCNE=''
   OPERATOR=0 MULTI_CONTROL_PLANE=0 CONTROL_PLANE=0 CONTROL_PLANES='' WORKER=0 WORKERS=''
   VERBOSE=0 SUBNET='' EXTRA_REPO=''
-  POD_NETWORK=calico DEPLOY_CALICO=0 CALICO_MODULE_NAME='' DEPLOY_MULTUS=0 MULTUS_MODULE_NAME=''
+  DEPLOY_CALICO=0 CALICO_MODULE_NAME='' DEPLOY_MULTUS=0 MULTUS_MODULE_NAME=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
   DEPLOY_METALLB=0 METALLB_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
 
@@ -149,15 +149,6 @@ parse_args() {
         WORKERS="$2"
         shift; shift
         ;;
-      "--pod-network")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --pod-network" >&2
-	        exit 1
-        fi
-        POD_NETWORK="$2"
-        shift; shift
-        ;;
-
       "--with-calico")
         DEPLOY_CALICO=1
         shift
@@ -252,7 +243,6 @@ parse_args() {
   readonly OCNE_CLUSTER_NAME OCNE_ENV_NAME OCNE_DEV REGISTRY_OCNE
   readonly OPERATOR MULTI_CONTROL_PLANE CONTROL_PLANE CONTROL_PLANES WORKER WORKERS
   readonly VERBOSE EXTRA_REPO
-  readonly POD_NETWORK
   readonly DEPLOY_CALICO CALICO_MODULE_NAME
   readonly DEPLOY_MULTUS MULTUS_MODULE_NAME
   readonly DEPLOY_HELM HELM_MODULE_NAME
@@ -300,7 +290,77 @@ setup_repos() {
 #   None
 #######################################
 prerequisites() {
-  msg "Configure prerequisites such as firewall, etc.."
+
+  if [[ ${DEPLOY_CALICO} == 1 ]]; then
+    msg "Installing kernel-uek-modules for calico" 
+    echo_do sudo dnf install -y kernel-uek-modules-$(uname -r) 
+  fi 
+
+  if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
+    if [[ ${WORKER} == 1 ]]; then
+      msg "Installing the GlusterFS Server on Worker node"
+      echo_do sudo dnf install -y oracle-gluster-release-el8
+      echo_do sudo dnf config-manager --enable ol8_gluster_appstream
+      echo_do sudo dnf module enable -y glusterfs
+      echo_do sudo dnf install -y @glusterfs/server
+      # Enable TLS / Management Encryption
+      # https://docs.oracle.com/en/operating-systems/oracle-linux/gluster-storage/gluster-install-upgrade.html#gluster-tls
+      msg "Enable GlusterFS Transport Layer Security (TLS) for Management Encryption"
+      echo_do sudo openssl genrsa -out /etc/ssl/glusterfs.key 2048
+      echo_do sudo openssl req -new -x509 -days 365 -key /etc/ssl/glusterfs.key -out /etc/ssl/glusterfs.pem -subj '/CN=`hostname -f`'
+      echo_do eval "cat /etc/ssl/glusterfs.pem >> /vagrant/glusterfs.ca"
+      echo_do sudo touch /var/lib/glusterd/secure-access
+      echo_do sudo systemctl enable --now glusterd.service
+      echo_do sudo firewall-cmd --add-service=glusterfs --permanent
+    fi
+
+    if [[ ${OPERATOR} == 1 ]]; then
+      if [[ -f "/vagrant/glusterfs.ca" ]]; then
+        msg "Distributing GlusterFS Certificate Authority's (CA) certificates"
+        for node in ${WORKERS//,/ }; do
+          echo_do ssh -i /vagrant/id_rsa -o "UserKnownHostsFile=/vagrant/known_hosts" "${node}" "sudo cp /vagrant/glusterfs.ca /etc/ssl/glusterfs.ca"
+        done
+        echo_do "rm -f /vagrant/glusterfs.ca"
+      fi
+	
+      msg "Installing the Heketi Server & CLI on Operator node"
+      echo_do sudo dnf install -y oracle-gluster-release-el8
+      echo_do sudo dnf config-manager --enable ol8_gluster_appstream
+      echo_do sudo dnf module enable -y glusterfs
+      echo_do sudo dnf install -y heketi heketi-client
+      if [[ ${MASTER} == 0 ]]; then
+	# Standalone operator
+	echo_do sudo firewall-cmd --add-port=8080/tcp --permanent
+      fi
+      msg "Modifying the default /etc/heketi/heketi.json onto /vagrant/heketi.json"
+      echo_do sudo dnf install -y jq
+      contents="$(jq '.use_auth=true|.jwt.admin.key="secret"|.glusterfs.executor="ssh"|.glusterfs.sshexec.keyfile="/etc/heketi/vagrant_key"|.glusterfs.sshexec.user="vagrant"|.glusterfs.sshexec.sudo=true|del(.glusterfs.sshexec.port)|del(.glusterfs.sshexec.fstab)|.glusterfs.loglevel="info"' /etc/heketi/heketi.json)" && echo -E "${contents}" > /vagrant/heketi.json
+      echo_do sudo cp /vagrant/heketi.json /etc/heketi/heketi.json
+      echo_do rm -f /vagrant/heketi.json
+      # SSH Key *MUST* be in PEM format! Heketi would reject it otherwise.
+      msg "Copying the Vagrant SSH Key. Must be in PEM format!"
+      echo_do sudo cp /vagrant/id_rsa /etc/heketi/vagrant_key
+      # Fix default permission which exposes the secret /etc/heketi/heketi.json
+      echo_do sudo chmod 0600 /etc/heketi/vagrant_key /etc/heketi/heketi.json
+      echo_do sudo chown -R heketi: /etc/heketi
+      # Enable Heketi
+      echo_do sudo systemctl enable --now heketi.service
+      # Test Heketi
+      msg "Waiting to Heketi service to become ready"
+      echo_do curl --retry-connrefused --retry 10 --retry-delay 5 127.0.0.1:8080/hello
+      # Heketi ready
+      msg "Creating Gluster Topology file /etc/heketi/topology-ocne.json"
+      # https://github.com/heketi/heketi/blob/master/docs/admin/topology.md
+      jq -R '{clusters:[{nodes:(./","|map({node:{hostnames:{manage:[.],storage:[.]},zone:1},devices:[{name:"/dev/sdb",destroydata:false}]}))}]}' <<< "${WORKERS}" > /vagrant/topology-ocne.json
+      echo_do sudo cp /vagrant/topology-ocne.json /etc/heketi/topology-ocne.json
+      echo_do sudo chown heketi: /etc/heketi/topology-ocne.json
+      msg "Loading Gluster Cluster Topology with Heketi"
+      # export HEKETI_CLI_USER=admin; export HEKETI_CLI_KEY=secret
+      echo_do heketi-cli --user=admin --secret=secret topology load --json=/etc/heketi/topology-ocne.json
+      echo_do rm -f /vagrant/topology-ocne.json
+    fi
+  fi
+
 
 }
 
@@ -430,12 +490,62 @@ quick_install_ocne() {
 #   None
 #######################################
 deploy_modules() {
-  local node
+  local node control_plane_nodes worker_nodes
 
   msg "Deploying additional modules"
 
   # Calico networking module
   if [[ ${DEPLOY_CALICO} == 1 ]]; then
+
+    # BEGIN WORKAROUND: recreate Kubernetes module until calico can be installed 
+    # with olcnectl provision quick installation
+
+    msg "Workaround: recreate Kubernetes module for Calico pod-network"
+
+    control_plane_nodes="${CONTROL_PLANES//,/:8090,}:8090"
+    worker_nodes="${WORKERS//,/:8090,}:8090"
+
+    echo_do olcnectl module uninstall \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    echo_do olcnectl module create --module kubernetes \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}" \
+      --container-registry "${REGISTRY_OCNE}" \
+      --control-plane-nodes "${control_plane_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --selinux enforcing \
+      --pod-network none  \
+      --pod-network-iface eth1 \
+      --restrict-service-externalip false
+
+    echo_do olcnectl module validate \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    echo_do olcnectl module install \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    # END WORKAROUND
+
+    if ! [ -f /vagrant/calico-config.yaml ]; then
+      echo_do "cat <<-EOF | tee /vagrant/calico-config.yaml
+    installation:
+      cni:
+        type: Calico
+      calicoNetwork:
+        bgp: Disabled
+        ipPools:
+        - cidr: 10.244.0.0/16
+          encapsulation: VXLAN
+        nodeAddressAutodetectionV4:
+         interface: eth1
+      registry: container-registry.oracle.com
+      imagePath: olcne
+EOF"
+    fi
 
     # Create the Calico networking module
     msg "Creating the Calico networking module: ${CALICO_MODULE_NAME}"
@@ -462,6 +572,26 @@ deploy_modules() {
   # Multus networking module
   if [[ ${DEPLOY_MULTUS} == 1 ]]; then
 
+    if ! [ -f /vagrant/multus-config.yaml ]; then
+      echo_do "cat <<-EOF | tee /vagrant/multus-config.yaml
+    apiVersion: k8s.cni.cncf.io/v1 
+    kind: NetworkAttachmentDefinition 
+    metadata:
+      name: bridge-conf 
+    spec:
+      config: '{
+          cniVersion: 0.3.1, 
+          type: bridge, 
+          bridge: mybr0, 
+          ipam: {
+              type: host-local, 
+              subnet: 192.168.12.0/24, 
+              rangeStart: 192.168.12.10, 
+              rangeEnd: 192.168.12.200
+        } 
+      }'
+EOF"
+    fi
     # Create the Multus networking module
     msg "Creating the Multus networking module: ${MULTUS_MODULE_NAME}"
     echo_do olcnectl module create \
@@ -544,7 +674,7 @@ deploy_modules() {
 	  protocol: layer2
 	  addresses:
 	  - ${SUBNET}.240-${SUBNET}.250
-	EOF"
+EOF"
       
     # Create the MetalLB module
     msg "Creating the MetalLB module: ${METALLB_MODULE_NAME}"
@@ -779,11 +909,15 @@ ready() {
     api_server=$(ip -f inet addr show eth1| sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
   fi
 
+  node=${CONTROL_PLANES//,*/}
+
   msg "OCNE Modules deployed in this environment."
   olcnectl module instances --api-server "${api_server}:8091" --environment-name "${OCNE_ENV_NAME}"
 
+  msg "OCNE Pods deployed in this environment."
+  ssh vagrant@"${node}" kubectl get pods -A
+
   msg "Your Oracle Cloud Native Environment is operational."
-  node=${CONTROL_PLANES//,*/}
   ssh vagrant@"${node}" kubectl get nodes -o=wide
 }
 

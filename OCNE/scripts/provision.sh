@@ -12,10 +12,6 @@
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 
-# Constants
-readonly CERT_DIR=/etc/olcne/pki
-readonly EXTERNALIP_VALIDATION_CERT_DIR=/etc/olcne/pki-externalip-validation-webhook
-
 #######################################
 # Convenience function used to limit output during provisioning
 # Exit on error
@@ -68,26 +64,25 @@ msg() {
 # Parse arguments
 # Exit on error.
 # Globals:
-#   OCNE_DEV OCNE_VERSION K8S_VERSION MASTER MASTERS WORKER WORKERS
-#   OPERATOR MULTI_MASTER REGISTRY_OCNE VERBOSE EXTRA_REPO
-#   NGINX_IMAGE
+#   OCNE_DEV CONTROL_PLANE CONTROL_PLANES WORKER WORKERS
+#   OPERATOR MULTI_CONTROL_PLANE REGISTRY_OCNE VERBOSE EXTRA_REPO
 # Arguments:
 #   Command line
 # Returns:
 #   None
 #######################################
 parse_args() {
-  OCNE_CLUSTER_NAME='' OCNE_ENV_NAME='' OCNE_DEV=0 OCNE_VERSION='' REGISTRY_OCNE=''
-  OPERATOR=0 MULTI_MASTER=0 MASTER=0 MASTERS='' WORKER=0 WORKERS=''
-  VERBOSE=0 SUBNET='' EXTRA_REPO='' NGINX_IMAGE=''
-  POD_NETWORK=calico DEPLOY_CALICO=0 CALICO_MODULE_NAME='' DEPLOY_MULTUS=0 MULTUS_MODULE_NAME=''
+  OCNE_CLUSTER_NAME='' OCNE_ENV_NAME='' OCNE_DEV=0 REGISTRY_OCNE=''
+  OPERATOR=0 MULTI_CONTROL_PLANE=0 CONTROL_PLANE=0 CONTROL_PLANES='' WORKER=0 WORKERS=''
+  VERBOSE=0 SUBNET='' EXTRA_REPO=''
+  DEPLOY_CALICO=0 CALICO_MODULE_NAME='' DEPLOY_MULTUS=0 MULTUS_MODULE_NAME=''
   DEPLOY_HELM=0 HELM_MODULE_NAME='' DEPLOY_ISTIO=0 ISTIO_MODULE_NAME=''
   DEPLOY_METALLB=0 METALLB_MODULE_NAME='' DEPLOY_GLUSTER=0 GLUSTER_MODULE_NAME=''
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      "--master")
-        MASTER=1
+      "--control-plane")
+        CONTROL_PLANE=1
         shift
         ;;
       "--worker")
@@ -98,8 +93,8 @@ parse_args() {
         OPERATOR=1
         shift
         ;;
-      "--multi-master")
-        MULTI_MASTER=1
+      "--multi-control-plane")
+        MULTI_CONTROL_PLANE=1
         shift
         ;;
       "--ocne-dev")
@@ -122,14 +117,6 @@ parse_args() {
         OCNE_CLUSTER_NAME="$2"
         shift; shift;
         ;;
-      "--nginx-image")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --nginx-image" >&2
-          exit 1
-        fi
-        NGINX_IMAGE="$2"
-        shift; shift
-        ;;
       "--repo")
         if [[ $# -lt 2 ]]; then
           echo "Missing parameter for --repo" >&2
@@ -146,12 +133,12 @@ parse_args() {
         REGISTRY_OCNE="$2"
         shift; shift
         ;;
-      "--masters")
+      "--control-planes")
         if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --masters" >&2
+          echo "Missing parameter for --control-planes" >&2
 	        exit 1
         fi
-        MASTERS="$2"
+        CONTROL_PLANES="$2"
         shift; shift
         ;;
       "--workers")
@@ -162,15 +149,6 @@ parse_args() {
         WORKERS="$2"
         shift; shift
         ;;
-      "--pod-network")
-        if [[ $# -lt 2 ]]; then
-          echo "Missing parameter for --pod-network" >&2
-	        exit 1
-        fi
-        POD_NETWORK="$2"
-        shift; shift
-        ;;
-
       "--with-calico")
         DEPLOY_CALICO=1
         shift
@@ -263,9 +241,8 @@ parse_args() {
   done
 
   readonly OCNE_CLUSTER_NAME OCNE_ENV_NAME OCNE_DEV REGISTRY_OCNE
-  readonly OPERATOR MULTI_MASTER MASTER MASTERS WORKER WORKERS
-  readonly VERBOSE EXTRA_REPO NGINX_IMAGE
-  readonly POD_NETWORK
+  readonly OPERATOR MULTI_CONTROL_PLANE CONTROL_PLANE CONTROL_PLANES WORKER WORKERS
+  readonly VERBOSE EXTRA_REPO
   readonly DEPLOY_CALICO CALICO_MODULE_NAME
   readonly DEPLOY_MULTUS MULTUS_MODULE_NAME
   readonly DEPLOY_HELM HELM_MODULE_NAME
@@ -285,12 +262,16 @@ parse_args() {
 #   None
 #######################################
 setup_repos() {
-  msg "Configure repos for Oracle Cloud Native Environment"
+  msg "Configure dnf repos for Oracle Cloud Native Environment"
 
-  # Add OCNE release package
-  echo_do sudo dnf install -y oracle-olcne-release-el8
-  echo_do sudo dnf config-manager --enable ol8_olcne16 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
-  echo_do sudo dnf config-manager --disable ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
+  # Workaround for ol8_developer channels not available bug
+  echo_do sudo dnf install -y oraclelinux-developer-release-el8
+
+  if [[ ${OPERATOR} == 1 ]]; then
+      echo_do sudo dnf install -y oracle-olcne-release-el8
+      echo_do sudo dnf config-manager --enable ol8_olcne16 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+      echo_do sudo dnf config-manager --disable ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
+  fi
 
   # Optional extra repo
   if [[ -n ${EXTRA_REPO} ]]; then echo_do sudo dnf config-manager --add-repo "${EXTRA_REPO}"; fi
@@ -300,7 +281,7 @@ setup_repos() {
 }
 
 #######################################
-# Clean up private network interface
+# Configure prerequisites
 # Globals:
 #   None
 # Arguments:
@@ -308,122 +289,13 @@ setup_repos() {
 # Returns:
 #   None
 #######################################
-clean_networking() {
-  msg "Removing extra NetworkManager connection"
-  nmcli -f GENERAL.STATE con show "Wired connection 1" && sudo nmcli con del "Wired connection 1"
-}
+prerequisites() {
 
-#######################################
-# Fulfil requirements
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-requirements() {
-  msg "Fulfil requirements"
-  # Disable Swap
-  echo_do sudo swapoff -a
-  echo_do sudo sed -i "'/ swap /d'" /etc/fstab
+  if [[ ${DEPLOY_CALICO} == 1 ]]; then
+    msg "Installing kernel-uek-modules for calico" 
+    echo_do sudo dnf install -y kernel-uek-modules-$(uname -r) 
+  fi 
 
-  # Enable transparent masquerading VxLAN
-  echo_do sudo modprobe br_netfilter
-  echo_do "echo br_netfilter | sudo tee /etc/modules-load.d/br_netfilter.conf"
-
-  # Bridge Tunable Parameters
-  echo_do "cat <<-EOF | sudo tee /etc/sysctl.d/k8s.conf
-	net.bridge.bridge-nf-call-ip6tables = 1
-	net.bridge.bridge-nf-call-iptables = 1
-	net.ipv4.ip_forward = 1
-	EOF"
-  echo_do sudo /sbin/sysctl -p /etc/sysctl.d/k8s.conf
-  
-  # Enable & start firewalld; add eth1 (nat) to the public zone
-  echo_do sudo systemctl enable --now firewalld.service
-  echo_do sudo firewall-cmd --zone=public --add-interface=eth1 --permanent
-}
-
-#######################################
-# Install packages on the node
-# Note: As of OCNE 1.0.1 kubernetes packages are deployed automatically.
-# We are still installing them to be able to customize the configuration for
-# the vagrant environment.
-# Globals:
-#   OPERATOR OCNE_VERSION MASTER WORKER K8S_VERSION MULTI_MASTER
-#   REGISTRY_OCNE NGINX_IMAGE
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-install_packages() {
-
-  ### `nft_masq` is not part of kernel-uek-core since OL8U7. To enable masquerading, we must install kernel-uek-modules
-  ### https://docs.oracle.com/en/operating-systems/uek/7/relnotes7.0/uek7.0-NewFeaturesandChanges.html
-  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-    msg "Installing kernel-uek-modules"
-    echo_do sudo dnf install -y kernel-uek-modules-$(uname -r)
-  fi
-  msg "Installing the OpenSSL toolkit"
-  echo_do sudo dnf install -y openssl
-  ###
-    
-  if [[ ${OPERATOR} == 1 ]]; then
-    msg "Installing the Oracle Cloud Native Environment Platform API Server and Platform CLI tool to the operator node."
-    echo_do sudo dnf install -y olcnectl"${OCNE_VERSION}" olcne-api-server"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
-    echo_do sudo systemctl enable olcne-api-server.service
-    echo_do sudo firewall-cmd --add-port=8091/tcp --permanent
-    if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-      echo_do sudo firewall-cmd --add-masquerade --permanent
-    fi
-  fi
-  if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
-    msg "Installing the Oracle Cloud Native Environment Platform Agent"
-    echo_do sudo dnf install -y olcne-agent"${OCNE_VERSION}" olcne-utils"${OCNE_VERSION}"
-    echo_do sudo systemctl enable olcne-agent.service
-    if [[ -n ${HTTP_PROXY} ]]; then
-      # CRI-O proxies
-      echo_do "sudo mkdir -p /etc/systemd/system/crio.service.d"
-      echo_do "cat <<-EOF | sudo tee /etc/systemd/system/crio.service.d/crio-proxy.conf
-	[Service]
-	Environment=\"HTTP_PROXY=${HTTP_PROXY}\"
-	Environment=\"HTTPS_PROXY=${HTTPS_PROXY}\"
-	Environment=\"NO_PROXY=${NO_PROXY}\"
-	EOF"
-    fi
-    echo_do sudo firewall-cmd --add-masquerade --permanent
-    echo_do sudo firewall-cmd --zone=trusted --add-interface=cni0 --permanent
-    echo_do sudo firewall-cmd --add-port=8090/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=10250/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=10255/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=8472/udp --permanent
-    echo_do sudo firewall-cmd --add-port=30000-32767/tcp --permanent
-  fi
-
-  if [[ ${MASTER} == 1 ]]; then
-    echo_do sudo dnf install -y bash-completion
-    echo_do sudo firewall-cmd --add-port=6443/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=8001/tcp --permanent
-    # OCNE 1.0.1 requires these ports for single master as well
-    echo_do sudo firewall-cmd --add-port=10251/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=10252/tcp --permanent
-    echo_do sudo firewall-cmd --add-port=2379-2380/tcp --permanent
-    # Software load balancer firewall rules
-    if [[ ${MULTI_MASTER} == 1 ]]; then    
-      echo_do sudo firewall-cmd --add-port=6444/tcp --permanent
-      echo_do sudo firewall-cmd --add-protocol=vrrp --permanent
-    fi
-  fi
-
-  if [[ ${DEPLOY_METALLB} == 1 ]]; then
-    if [[ ${MASTER} == 1 || ${WORKER} == 1 ]]; then
-      echo_do sudo firewall-cmd --add-port=7946/tcp --permanent
-      echo_do sudo firewall-cmd --add-port=7946/udp --permanent
-    fi
-  fi
-  
   if [[ ${DEPLOY_GLUSTER} == 1 ]]; then
     if [[ ${WORKER} == 1 ]]; then
       msg "Installing the GlusterFS Server on Worker node"
@@ -489,13 +361,21 @@ install_packages() {
     fi
   fi
 
-  if ! [[ ${POD_NETWORK} == "calico" || ${DEPLOY_CALICO} == 1 ]]; then
-    # Reload firewalld
-    echo_do sudo firewall-cmd --reload
-  else
-    msg "Disable firewalld.service as required by Calico networking"
-    echo_do sudo systemctl disable --now firewalld.service
-  fi
+
+}
+
+#######################################
+# Clean up private network interface
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+clean_networking() {
+  msg "Removing extra NetworkManager connection"
+  nmcli -f GENERAL.STATE con show "Wired connection 1" && sudo nmcli con del "Wired connection 1"
 }
 
 #######################################
@@ -535,7 +415,7 @@ passwordless_ssh() {
     if [[ -f /vagrant/known_hosts ]]; then
       msg "Copying SSH Host Keys to allow StrictHostKeyChecking"
       echo_do "[ -f /etc/ssh/ssh_known_hosts ] || sudo cp /vagrant/known_hosts /etc/ssh/ssh_known_hosts"
-      for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+      for node in ${CONTROL_PLANES//,/ } ${WORKERS//,/ }; do
 	echo_do ssh "${node}" "sudo cp /vagrant/known_hosts /etc/ssh/ssh_known_hosts"
       done
       msg "Removing the shared SSH Known Hosts file"
@@ -545,139 +425,54 @@ passwordless_ssh() {
 }
 
 #######################################
-# Generate and distribute X.509 Certificates
+#  OCNE Quick Install
 # Globals:
-#   CERT_DIR MASTER MASTERS WORKERS
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-certificates() {
-  local nodes
-
-  msg "Generate and deploy X.509 Certificates"
-  nodes="${MASTERS},${WORKERS}"
-
-  if [[ ${MASTER} == 0 ]]; then
-    # Standalone operator
-    nodes="${SUBNET}.100,${nodes}"
-  fi
-  echo_do sudo /etc/olcne/gen-certs-helper.sh --nodes "${nodes}" --cert-dir "${CERT_DIR}"
-
-  echo_do sudo sed -i -e "'s/^USER=.*/USER=vagrant/'"  ${CERT_DIR}/olcne-tranfer-certs.sh
-
-  echo_do sh -c "'find ${CERT_DIR} -type f -name node.key -exec sudo chmod 0644 {} \;'"
-
-  echo_do bash -ex ${CERT_DIR}/olcne-tranfer-certs.sh
-
-  echo_do sudo /etc/olcne/gen-certs-helper.sh --one-cert --nodes "externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local" --cert-dir "${EXTERNALIP_VALIDATION_CERT_DIR}"
-
-   echo_do sudo chown -R vagrant: ${EXTERNALIP_VALIDATION_CERT_DIR}
-  
-}
-
-#######################################
-# Bootstrap OCNE
-# Globals:
-#   CERT_DIR MASTERS WORKERS
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-bootstrap_ocne() {
-  local node
-
-  msg "Bootstrap the Oracle Cloud Native Environment Platform Agent on all nodes"
-  echo_do sudo /etc/olcne/bootstrap-olcne.sh \
-    --secret-manager-type file \
-    --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-    --olcne-node-key-path ${CERT_DIR}/production/node.key \
-    --olcne-ca-path ${CERT_DIR}/production/ca.cert \
-    --olcne-component api-server
-
-  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
-    echo_do ssh "${node}" sudo /etc/olcne/bootstrap-olcne.sh \
-      --secret-manager-type file \
-      --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-      --olcne-node-key-path ${CERT_DIR}/production/node.key \
-      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
-      --olcne-component agent
-  done
-}
-
-#######################################
-# Deploy Kubernetes cluster
-# Globals:
-#   CERT_DIR MASTERS MULTI_MASTER
+#   CONTROL_PLANES MULTI_CONTROL_PLANE
 #   OCNE_CLUSTER_NAME OCNE_ENV_NAME
-#   REGISTRY_OCNE NGINX_IMAGE
+#   REGISTRY_OCNE
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
-deploy_kubernetes() {
-  local node master_nodes worker_nodes
-  master_nodes="${MASTERS//,/:8090,}:8090"
-  worker_nodes="${WORKERS//,/:8090,}:8090"
+quick_install_ocne() {
+  local api_server provision_opts=''
 
-  msg "Create the Oracle Cloud Native Environment: ${OCNE_ENV_NAME}"
-  echo_do olcnectl environment create \
-      --api-server 127.0.0.1:8091 \
-      --environment-name "${OCNE_ENV_NAME}" \
-      --secret-manager-type file \
-      --olcne-node-cert-path ${CERT_DIR}/production/node.cert \
-      --olcne-node-key-path ${CERT_DIR}/production/node.key \
-      --olcne-ca-path ${CERT_DIR}/production/ca.cert \
-      --update-config
+  echo_do sudo dnf install -y olcnectl
 
-  msg "Create the Kubernetes module for ${OCNE_ENV_NAME} "
-  if [[ ${MULTI_MASTER} == 0 ]]; then
-    # Single master
-    echo_do olcnectl module create \
-      --environment-name "${OCNE_ENV_NAME}" \
-      --selinux enforcing \
-      --module kubernetes --name "${OCNE_CLUSTER_NAME}" \
-      --container-registry "${REGISTRY_OCNE}" \
-      --nginx-image "${REGISTRY_OCNE}/${NGINX_IMAGE}" \
-      --pod-network "${POD_NETWORK}" \
-      --pod-network-iface eth1 \
-      --control-plane-nodes "${master_nodes}" \
-      --worker-nodes "${worker_nodes}" \
-      --restrict-service-externalip true \
-      --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
-      --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
-      --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
+  if [[ ${CONTROL_PLANE} == 1 ]]; then
+    api_server=${CONTROL_PLANES//,*/}
   else
-    # HA Multi-master
-    echo_do olcnectl module create \
-      --environment-name "${OCNE_ENV_NAME}" \
-      --selinux enforcing \
-      --module kubernetes --name "${OCNE_CLUSTER_NAME}" \
-      --container-registry "${REGISTRY_OCNE}" \
-      --nginx-image "${REGISTRY_OCNE}/${NGINX_IMAGE}" \
-      --pod-network "${POD_NETWORK}" \
-      --pod-network-iface eth1 \
-      --virtual-ip "${SUBNET}.99" \
-      --control-plane-nodes "${master_nodes}" \
-      --worker-nodes "${worker_nodes}" \
-      --restrict-service-externalip true \
-      --restrict-service-externalip-ca-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/ca.cert \
-      --restrict-service-externalip-tls-cert=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.cert \
-      --restrict-service-externalip-tls-key=${EXTERNALIP_VALIDATION_CERT_DIR}/production/node.key
+    api_server=$(ip -f inet addr show eth1| sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
   fi
 
-  msg "Validate all required prerequisites are met for the Kubernetes module"
-  echo_do olcnectl module validate \
-    --environment-name "${OCNE_ENV_NAME}" \
-    --name "${OCNE_CLUSTER_NAME}"
+  provision_opts=(--api-server "${api_server}" --control-plane-nodes "${CONTROL_PLANES}" --worker-nodes "${WORKERS}")
+  provision_opts=("${provision_opts[@]}" --environment-name "${OCNE_ENV_NAME}" --name "${OCNE_CLUSTER_NAME}")
+  provision_opts=("${provision_opts[@]}" --container-registry "${REGISTRY_OCNE}")
+  provision_opts=("${provision_opts[@]}" --selinux enforcing)
 
-  msg "Deploy the Kubernetes module into ${OCNE_ENV_NAME} (Be patient!)"
-  echo_do olcnectl module install \
+  if [[ ${MULTI_CONTROL_PLANE} == 1 ]]; then
+    provision_opts=("${provision_opts[@]}" --virtual-ip "${SUBNET}".99)
+  fi
+
+  if [[ -n ${HTTP_PROXY} ]]; then
+    provision_opts=("${provision_opts[@]}" --http-proxy "${HTTP_PROXY}")
+    provision_opts=("${provision_opts[@]}" --https-proxy "${HTTPS_PROXY}")
+    provision_opts=("${provision_opts[@]}" --no-proxy "${NO_PROXY}")
+  fi
+
+  if [[ ${VERBOSE} == 1 ]]; then
+    provision_opts=("${provision_opts[@]}" --debug)
+  fi
+
+  msg "Provision the OCNE cluster with quick install"
+  echo_do olcnectl provision "${provision_opts[@]}" --yes --timeout 20
+
+  msg "Update config to avoid having to enter the --api-server option in future olcnectl commands"
+  echo_do olcnectl module instances \
+    --api-server "${api_server}:8091" \
     --environment-name "${OCNE_ENV_NAME}" \
-    --name "${OCNE_CLUSTER_NAME}"
+    --update-config
 }
 
 #######################################
@@ -695,12 +490,62 @@ deploy_kubernetes() {
 #   None
 #######################################
 deploy_modules() {
-  local node
+  local node control_plane_nodes worker_nodes
 
   msg "Deploying additional modules"
 
   # Calico networking module
   if [[ ${DEPLOY_CALICO} == 1 ]]; then
+
+    # BEGIN WORKAROUND: recreate Kubernetes module until calico can be installed 
+    # with olcnectl provision quick installation
+
+    msg "Workaround: recreate Kubernetes module for Calico pod-network"
+
+    control_plane_nodes="${CONTROL_PLANES//,/:8090,}:8090"
+    worker_nodes="${WORKERS//,/:8090,}:8090"
+
+    echo_do olcnectl module uninstall \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    echo_do olcnectl module create --module kubernetes \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}" \
+      --container-registry "${REGISTRY_OCNE}" \
+      --control-plane-nodes "${control_plane_nodes}" \
+      --worker-nodes "${worker_nodes}" \
+      --selinux enforcing \
+      --pod-network none  \
+      --pod-network-iface eth1 \
+      --restrict-service-externalip false
+
+    echo_do olcnectl module validate \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    echo_do olcnectl module install \
+      --environment-name "${OCNE_ENV_NAME}" \
+      --name "${OCNE_CLUSTER_NAME}"
+
+    # END WORKAROUND
+
+    if ! [ -f /vagrant/calico-config.yaml ]; then
+      echo_do "cat <<-EOF | tee /vagrant/calico-config.yaml
+    installation:
+      cni:
+        type: Calico
+      calicoNetwork:
+        bgp: Disabled
+        ipPools:
+        - cidr: 10.244.0.0/16
+          encapsulation: VXLAN
+        nodeAddressAutodetectionV4:
+         interface: eth1
+      registry: container-registry.oracle.com
+      imagePath: olcne
+EOF"
+    fi
 
     # Create the Calico networking module
     msg "Creating the Calico networking module: ${CALICO_MODULE_NAME}"
@@ -727,6 +572,26 @@ deploy_modules() {
   # Multus networking module
   if [[ ${DEPLOY_MULTUS} == 1 ]]; then
 
+    if ! [ -f /vagrant/multus-config.yaml ]; then
+      echo_do "cat <<-EOF | tee /vagrant/multus-config.yaml
+    apiVersion: k8s.cni.cncf.io/v1 
+    kind: NetworkAttachmentDefinition 
+    metadata:
+      name: bridge-conf 
+    spec:
+      config: '{
+          cniVersion: 0.3.1, 
+          type: bridge, 
+          bridge: mybr0, 
+          ipam: {
+              type: host-local, 
+              subnet: 192.168.12.0/24, 
+              rangeStart: 192.168.12.10, 
+              rangeEnd: 192.168.12.200
+        } 
+      }'
+EOF"
+    fi
     # Create the Multus networking module
     msg "Creating the Multus networking module: ${MULTUS_MODULE_NAME}"
     echo_do olcnectl module create \
@@ -809,7 +674,7 @@ deploy_modules() {
 	  protocol: layer2
 	  addresses:
 	  - ${SUBNET}.240-${SUBNET}.250
-	EOF"
+EOF"
       
     # Create the MetalLB module
     msg "Creating the MetalLB module: ${METALLB_MODULE_NAME}"
@@ -817,7 +682,7 @@ deploy_modules() {
       --environment-name "${OCNE_ENV_NAME}" \
       --module metallb \
       --name "${METALLB_MODULE_NAME}" \
-      --metallb-helm-module "${HELM_MODULE_NAME}" \
+      --metallb-kubernetes-module "${OCNE_CLUSTER_NAME}" \
       --metallb-config /vagrant/metallb-config.yaml
 
     msg "Removing MetalLB temporary configuration file"
@@ -843,7 +708,7 @@ deploy_modules() {
     # using defaults url/user/secret-key: olcnectl module create --module gluster --help
     msg "Creating the Gluster module (deprecated): ${GLUSTER_MODULE_NAME}"
     HEKETI_CLI_SERVER="http://127.0.0.1:8080"
-    if [[ ${MASTER} == 0 ]]; then
+    if [[ ${CONTROL_PLANE} == 0 ]]; then
       # Standalone operator
       HEKETI_CLI_SERVER="http://${SUBNET}.100:8080"
     fi
@@ -855,7 +720,7 @@ deploy_modules() {
       --gluster-server-url "${HEKETI_CLI_SERVER}"
       
     # Validate the Gluster module
-    msg "Validating the Gluster module: ${Gluster_MODULE_NAME}"
+    msg "Validating the Gluster module: ${GLUSTER_MODULE_NAME}"
     echo_do olcnectl module validate \
       --environment-name "${OCNE_ENV_NAME}" \
       --name "${GLUSTER_MODULE_NAME}"
@@ -872,7 +737,7 @@ deploy_modules() {
 #######################################
 # Run Kubernetes fixups
 # Globals:
-#   MASTERS
+#   CONTROL_PLANES
 # Arguments:
 #   None
 # Returns:
@@ -881,8 +746,8 @@ deploy_modules() {
 fixups() {
   local node
 
-  msg "Copying admin.conf for vagrant user on master node(s)"
-  for node in ${MASTERS//,/ }; do
+  msg "Copying admin.conf for vagrant user on control plane node(s)"
+  for node in ${CONTROL_PLANES//,/ }; do
     echo_do ssh "${node}" "\"\
       mkdir -p ~/.kube; \
       sudo cp /etc/kubernetes/admin.conf ~/.kube/config; \
@@ -898,15 +763,15 @@ fixups() {
   # Fix: /usr/libexec/crio/conmon doesn't exist
   #      conmon in @ol8_x86_64_appstream overrides @ol8_x86_64_olcne15
   msg "Change conmon from /usr/libexec/crio/conmon to /usr/bin/conmon in /etc/crio/crio.conf"
-  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+  for node in ${CONTROL_PLANES//,/ } ${WORKERS//,/ }; do
     echo_do ssh "${node}" "\"\
       sudo sed 's|/usr/libexec/crio/conmon|/usr/bin/conmon|' -i /etc/crio/crio.conf \
       && sudo systemctl restart crio.service \
     \""
   done  
 
-  msg "Starting kubectl proxy service on master nodes"
-  for node in ${MASTERS//,/ }; do
+  msg "Starting kubectl proxy service on control plane nodes"
+  for node in ${CONTROL_PLANES//,/ }; do
     # Expose the kubectl proxy to the host
     echo_do ssh "${node}" "\"\
         sudo sed -i.bak 's/KUBECTL_PROXY_ARGS=--port 8001/KUBECTL_PROXY_ARGS=--port 8001 --accept-hosts=.* --address=0.0.0.0/' \
@@ -930,7 +795,7 @@ fixups() {
   #                    unknown container "/system.slice/kubelet.service"'
   #               containerName="/system.slice/kubelet.service"
   msg "Creating /etc/systemd/system/kubelet.service.d/11-cgroups.conf on K8s nodes"
-  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+  for node in ${CONTROL_PLANES//,/ } ${WORKERS//,/ }; do
     echo_do ssh "${node}" "\"\
       { cat <<-EOF | sudo tee /etc/systemd/system/kubelet.service.d/11-cgroups.conf
 	[Service]
@@ -945,7 +810,7 @@ fixups() {
 
   # Fix: audit: type=1400 avc:  denied  { ioctl } for  comm="iptables" path="/sys/fs/cgroup" dev="tmpfs"
   msg "Fix AVC Denial on iptables"
-  for node in ${MASTERS//,/ } ${WORKERS//,/ }; do
+  for node in ${CONTROL_PLANES//,/ } ${WORKERS//,/ }; do
     echo_do ssh "${node}" "\"\
       echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /tmp/local_iptables.cil \
       && sudo semodule -i /tmp/local_iptables.cil \
@@ -954,9 +819,9 @@ fixups() {
   done
   
   # Fix: Keepalived_vrrp: (VI_1) WARNING - equal priority advert received from remote host with our IP address.
-  if [[ ${MULTI_MASTER} == 1 ]]; then
+  if [[ ${MULTI_CONTROL_PLANE} == 1 ]]; then
     msg "Fix Keepalived: remove unicast_src_ip from unicast_peers"
-    for node in ${MASTERS//,/ }; do
+    for node in ${CONTROL_PLANES//,/ }; do
       echo_do ssh "${node}" "\"\
         sudo perl -i -ne 'print unless /^\s*$node\s*$/' /etc/keepalived/keepalived.conf \
 	&& sudo systemctl restart keepalived.service
@@ -985,7 +850,7 @@ fixups() {
 	  volumetype="replicate:2" # 2 replicas
       fi      
       msg "Patching the Kubernetes hyperconverged storageclass volumetype to $volumetype"
-      node=${MASTERS//,*/}
+      node=${CONTROL_PLANES//,*/}
       # K8s Storage Classes are immutable. Cannot: kubectl patch storageclasses hyperconverged -p '{"Parameters":{"volumetype":"replicate:2"}}'
       echo_do ssh "${node}" "\"\
         kubectl get storageclasses hyperconverged -o=yaml | yq w - parameters.volumetype $volumetype > /vagrant/hyperconverged.yaml \
@@ -995,8 +860,8 @@ fixups() {
     fi
   fi
 
-  nodes="${MASTERS},${WORKERS}"
-  if [[ ${MASTER} == 0 ]]; then
+  nodes="${CONTROL_PLANES},${WORKERS}"
+  if [[ ${CONTROL_PLANE} == 0 ]]; then
     nodes="${SUBNET}.100,${nodes}"
   fi
 
@@ -1029,18 +894,31 @@ fixups() {
 #######################################
 # Cluster ready!
 # Globals:
-#   MASTERS
+#   CONTROL_PLANES
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
 ready() {
-  local node
+  local node api_server
+
+  if [[ ${CONTROL_PLANE} == 1 ]]; then
+    api_server=${CONTROL_PLANES//,*/}
+  else
+    api_server=$(ip -f inet addr show eth1| sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
+  fi
+
+  node=${CONTROL_PLANES//,*/}
+
+  msg "OCNE Modules deployed in this environment."
+  olcnectl module instances --api-server "${api_server}:8091" --environment-name "${OCNE_ENV_NAME}"
+
+  msg "OCNE Pods deployed in this environment."
+  ssh vagrant@"${node}" kubectl get pods -A
 
   msg "Your Oracle Cloud Native Environment is operational."
-  node=${MASTERS//,*/}
-  ssh vagrant@"${node}" kubectl get nodes
+  ssh vagrant@"${node}" kubectl get nodes -o=wide
 }
 
 #######################################
@@ -1050,15 +928,11 @@ main () {
   parse_args "$@"
   clean_networking
   setup_repos
-  requirements
-  install_packages
+  prerequisites
   passwordless_ssh
-  msg "Oracle Linux base software installation complete."
-  # All nodes are up, orchestrate installation
   if [[ ${OPERATOR} == 1 ]]; then
-    certificates
-    bootstrap_ocne
-    deploy_kubernetes
+    msg "Oracle Linux base pre-requisites complete,start provisioning nodes"
+    quick_install_ocne
     deploy_modules
     fixups
     ready

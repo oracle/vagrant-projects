@@ -1,1 +1,44 @@
-blank_issues_enabled: false
+            - ad: Java JDK Kurulumu
+  kullanımlar: eylemler/setup-java@v4.2.1
+  ile:
+    # Kurulacak Java sürümü. Java sürümünün tamamını veya bir kısmını alır. README dosyasında desteklenen söz dizimi örneklerine bakın
+    Java sürümü: # isteğe bağlı
+    # `.Java sürümü` dosyasının yolu. README dosyasında desteklenen söz dizimi örneklerine bakın
+    java-sürüm-dosyası: # isteğe bağlı
+    # Java dağıtımı. README dosyasında desteklenen dağıtımların listesine bakın
+    dağıtım:
+    # Paket türü (jdk, jre, jdk+fx, jre+fx)
+    java paketi: # isteğe bağlı, varsayılan jdk'dir
+    # Paketin mimarisi (varsayılan olarak aksiyon çalıştırıcısının mimarisidir)
+    mimari: # isteğe bağlı
+    # Sıkıştırılmış JDK'nın bulunduğu yol
+    jdkDosyası: # isteğe bağlı
+    # Eylemin sürüm spesifikasyonunu karşılayan mevcut en son sürümü kontrol etmesini istiyorsanız bu seçeneği ayarlayın
+    en son kontrol: # isteğe bağlı
+    # pom.xml dosyasındaki DistributionManagement deposunun kimliği. Varsayılan "github"dur
+    sunucu kimliği: # isteğe bağlı, varsayılan github'dur
+    # Apache Maven deposunda kimlik doğrulaması için kullanıcı adının ortam değişkeni adı. Varsayılan $GITHUB_ACTOR'dur
+    sunucu-kullanıcı adı: # isteğe bağlı, varsayılan: GITHUB_ACTOR
+    # Apache Maven deposunda kimlik doğrulaması için parola veya belirteç için ortam değişkeni adı. Varsayılan $GITHUB_TOKEN'dir
+    sunucu şifresi: # isteğe bağlı, varsayılan: GITHUB_TOKEN
+    # Settings.xml dosyasının yazılacağı yol. Varsayılan ~/.m2'dir.
+    ayarlar yolu: # isteğe bağlı
+    # Eğer varsa settings.xml dosyasının üzerine yazın. Varsayılan "doğru"dur.
+    üzerine yazma ayarları: # isteğe bağlı, varsayılan değer doğrudur
+    # İçe aktarılacak GPG özel anahtarı. Varsayılan boş dizedir.
+    gpg-özel-anahtar: # isteğe bağlı
+    # GPG özel anahtar parolası için ortam değişkeni adı. Varsayılan $GPG_PASSPHRASE şeklindedir.
+    gpg parolası: # isteğe bağlı
+    # Bağımlılıkları önbelleğe alacak derleme platformunun adı. "Maven", "gradle" veya "sbt" olabilir.
+    önbellek: # isteğe bağlı
+    # Bağımlılık dosyasının yolu: pom.xml, build.gradle, build.sbt, vb. Bu seçenek `cache' seçeneğiyle birlikte kullanılabilir. Bu seçenek atlanırsa eylem, bağımlılık dosyasını havuzun tamamında arar. Bu seçenek, birden fazla bağımlılığın önbelleğe alınması için joker karakterleri ve dosya adlarının listesini destekler.
+    önbellek bağımlılığı yolu: # isteğe bağlı
+    # İş adımını yayınlamak için iş durumunu aktarmaya yönelik geçici çözüm. Bu değişken manuel ayar için tasarlanmamıştır
+    job-status: # isteğe bağlı, varsayılan ${{ job.status }}
+    # Microsoft Build of OpenJDK için olduğu gibi, github.com'da barındırılan sürüm bildirimlerini alırken kimlik doğrulamak için kullanılan belirteç. Bu eylemi github.com'da çalıştırırken varsayılan değer yeterlidir. GHES üzerinde çalışırken hız sınırlamasıyla karşılaşıyorsanız github.com için kişisel bir erişim belirteci iletebilirsiniz.
+    belirteç: # isteğe bağlı, varsayılan ${{ github.server_url == 'https://github.com' && github.token || '' }}
+    # "${distribution_${java-version}" varsayılan adı istenmiyorsa Maven Araç Zinciri Kimliğinin adı. Gelişmiş Kullanım dosyasında desteklenen sözdizimi örneklerine bakın
+    mvn-toolchain-id: # isteğe bağlı
+    # "${distribution}" varsayılan adı istenmiyorsa Maven Takım Zinciri Satıcısının adı. Gelişmiş Kullanım dosyasında desteklenen sözdizimi örneklerine bakın
+    mvn-toolchain-vendor: # isteğe bağlı
+          

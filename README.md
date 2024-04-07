@@ -1,3 +1,6 @@
+<font style="vertical-align: inherit;"><font style="vertical-align: inherit;">sudo yum group "Sanallaştırma Ana Bilgisayarı"nı yükle</font></font><font></font><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">
+sudo systemctl etkinleştir --şimdi libvirtd</font></font><font></font><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">
+sudo usermod -a -G libvirt opc</font></font>
 # vagrant-projects
 
 A collection of Vagrant projects that provision Oracle and other software automatically, using Vagrant, an Oracle Linux box, and shell scripts. Unless indicated otherwise, these projects work with both Oracle VM VirtualBox and libvirt/KVM.

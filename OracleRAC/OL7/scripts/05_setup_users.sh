@@ -12,14 +12,14 @@
 #      Setup oracle & grid users
 #
 #    NOTES
-#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #
 #    AUTHOR
-#      ruggero.citton@oracle.com
+#       Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
 #    rcitton     03/30/20 - VBox libvirt & kvm support
-#    rcitton     10/01/19 - Creation
+#    rcitton     11/06/18 - Creation
 #
 #    REVISION
 #    20200330 - $Revision: 2.0.2.1 $
@@ -95,12 +95,36 @@ chmod -R ug+rw /u01
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Set user env"
 echo "-----------------------------------------------------------------"
-
+if [ `hostname` == ${NODE1_HOSTNAME} ]
+then
   cat >> /home/grid/.bash_profile << EOF
 export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 export ORACLE_SID=+ASM1
 EOF
+
+  cat >> /home/oracle/.bash_profile << EOF
+export ORACLE_HOME=${DB_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=${DB_NAME}1
+EOF
+fi
+
+if [ `hostname` == ${NODE2_HOSTNAME} ]
+then
+  cat >> /home/grid/.bash_profile << EOF
+export ORACLE_HOME=${GI_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=+ASM2
+EOF
+
+  cat >> /home/oracle/.bash_profile << EOF
+export ORACLE_HOME=${DB_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=${DB_NAME}2
+EOF
+fi
+
 
 #----------------------------------------------------------
 # EndOfFile

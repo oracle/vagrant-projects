@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Oracle RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RDBMS (18c, 19c, 21c) hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 8 and shell scripts.
+two Oracle RDBMS (18c, 19c, 21c, 23ai) hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 8 and shell scripts.
 ![](images/OracleDG.png)
 
 The virtualization provider can be VirtualBox or KVM/libVirt
@@ -41,7 +41,7 @@ Running two RDBMS nodes at least 6Gb per node are required
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to version (18c, 19c, 21c) for Linux x86-64 you need -> "See All", example
+    go to version (18c, 19c, 21c, 23ai) for Linux x86-64 you need -> "See All", example
 
     * Oracle Database 21c (21.3) for Linux x86-64
        LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
@@ -107,7 +107,7 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      prefix_name: ol7-dg
+      prefix_name: vgt8-213-dg
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -116,7 +116,7 @@ The following can be customized:
       oradata_disk_num:   2
       oradata_disk_size: 20
       # ---------------------------------------------
-      db_software: LINUX.X64_193000_db_home.zip
+      db_software: LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       oracle_password: welcome1
@@ -125,7 +125,7 @@ The following can be customized:
       # ---------------------------------------------
       ora_languages:   en,en_GB
       # ---------------------------------------------
-      db_name:         DB193H1
+      db_name:         DB213H1
       pdb_name:        PDB1
       cdb:             false
       adg:             false
@@ -152,7 +152,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name: vgt-ol7-dg
+      prefix_name: vgt8-213-dg
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -160,7 +160,7 @@ The following can be customized:
       oradata_disk_size: 20
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
-      db_software:     LINUX.X64_193000_db_home.zip
+      db_software:     LINUX.X64_213000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       oracle_password: welcome1
@@ -169,7 +169,7 @@ The following can be customized:
       # ---------------------------------------------
       ora_languages:   en,en_GB
       # ---------------------------------------------
-      db_name:         DB193H1
+      db_name:         DB213H1
       pdb_name:        PDB1
       cdb:             false
       adg:             false

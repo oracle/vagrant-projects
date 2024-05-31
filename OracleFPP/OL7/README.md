@@ -137,7 +137,7 @@ The following can be customized:
       deploy: 'true'
 
     shared:
-      prefix_name: ol7-fpp
+      prefix_name: vgt7-213-fpp
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
@@ -187,7 +187,7 @@ The following can be customized:
       deploy: 'false'
 
     shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt7-213-fpp
       # ---------------------------------------------
       network:       public
       netmask:       255.255.255.0
@@ -240,7 +240,7 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt7-213-fpp
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
@@ -289,7 +289,7 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt7-213-fpp
       # ---------------------------------------------
       network:       hostonly
       bridge_nic:    br0

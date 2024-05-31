@@ -127,7 +127,7 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      prefix_name:   vgt-ol9-rac
+      prefix_name:   vgt9-213-rac
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1: 192.168.56.115
@@ -187,7 +187,7 @@ The following can be customized:
       storage_pool_name: Vagrant_KVM_Storage
 
     shared:
-      prefix_name:   vgt-ol9-rac
+      prefix_name:   vgt9-213-rac
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1:      192.168.125.115

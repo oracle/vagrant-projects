@@ -24,7 +24,7 @@ host2:
   deploy: 'true'
 
 shared:
-  prefix_name:   vgt-ol7-fpp
+  prefix_name:   vgt7-213-fpp
   # ---------------------------------------------
   network:       hostonly
   netmask:       
@@ -80,7 +80,7 @@ env:
 #  deploy: 'true'
 #
 #shared:
-#  prefix_name:   vgt-ol7-fpp
+#  prefix_name:   vgt7-213-fpp
 #  # ---------------------------------------------
 #  network:       hostonly
 #  bridge_nic:    

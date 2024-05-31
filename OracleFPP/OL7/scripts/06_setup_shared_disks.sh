@@ -76,6 +76,7 @@ elif [ "${PROVIDER}" == "virtualbox" ]; then
     LETTER=$(echo "$LETTER" | tr "0-9a-z" "1-9a-z_")
   done
 fi
+/sbin/udevadm control --reload-rules
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Shared partprobe"
@@ -86,21 +87,13 @@ for (( i=1; i<=$SDISKSNUM; i++ ))
 do
   /sbin/partprobe /dev/${DEVICE}${LETTER}1
   /sbin/partprobe /dev/${DEVICE}${LETTER}2
+
+  chown grid:asmadmin /dev/${DEVICE}${LETTER}
+  chown grid:asmadmin /dev/${DEVICE}${LETTER}1
+  chown grid:asmadmin /dev/${DEVICE}${LETTER}2
   LETTER=$(echo "$LETTER" | tr "0-9a-z" "1-9a-z_")
 done
-sleep 10
-/sbin/udevadm control --reload-rules
-sleep 10
-LETTER=`tr 0123456789 abcdefghij <<< $BOX_DISK_NUM`
-SDISKSNUM=$(ls -l /dev/${DEVICE}[${LETTER}-z]|wc -l)
-for (( i=1; i<=$SDISKSNUM; i++ ))
-do
-  /sbin/partprobe /dev/${DEVICE}${LETTER}1
-  /sbin/partprobe /dev/${DEVICE}${LETTER}2
-  LETTER=$(echo "$LETTER" | tr "0-9a-z" "1-9a-z_")
-done
-sleep 10
-/sbin/udevadm control --reload-rules
+
 
 #----------------------------------------------------------
 # EndOfFile

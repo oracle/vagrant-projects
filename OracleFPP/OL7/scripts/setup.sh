@@ -455,13 +455,9 @@ then
   # Setup chrony
   sh /vagrant/scripts/04_setup_chrony.sh
 
-  # Setup shared disks
-  BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
-  sh /vagrant/scripts/05_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
-
   # Setup users
-  sh /vagrant/scripts/06_setup_users.sh
-
+  sh /vagrant/scripts/05_setup_users.sh
+  
   # Setup users password
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: Set root, oracle and grid password"
@@ -469,6 +465,10 @@ then
   echo ${ROOT_PASSWORD}   | passwd --stdin root
   echo ${GRID_PASSWORD}   | passwd --stdin grid
   echo ${ORACLE_PASSWORD} | passwd --stdin oracle
+  
+  # Setup shared disks
+  BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
+  sh /vagrant/scripts/06_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
 
   # unzip grid software 
   echo "-----------------------------------------------------------------"

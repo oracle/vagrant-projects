@@ -26,7 +26,7 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 ## Memory requirement
 
 - Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
-- Deploy OL7 host2 (optional) as Oracle FPP target at least 6Gb are required
+- Deploy OL8 host2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
 
@@ -138,7 +138,7 @@ The following can be customized:
       deploy: 'true'
 
     shared:
-      prefix_name: ol7-fpp
+      prefix_name: vgt8-213-fpp
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
@@ -188,7 +188,7 @@ The following can be customized:
       deploy: 'false'
 
     shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt8-213-fpp
       # ---------------------------------------------
       network:       public
       netmask:       255.255.255.0
@@ -241,7 +241,7 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt8-213-fpp
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
@@ -290,7 +290,7 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt-ol7-fpp
+      prefix_name:   vgt8-213-fpp
       # ---------------------------------------------
       network:       hostonly
       bridge_nic:    br0

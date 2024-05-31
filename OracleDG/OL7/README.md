@@ -107,7 +107,7 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      prefix_name: ol7-dg
+      prefix_name: vgt7-193-dg
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -152,7 +152,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name: vgt-ol7-dg
+      prefix_name: vgt7-193-dg
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------

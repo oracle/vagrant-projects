@@ -1,4 +1,4 @@
-# Oracle Data Guard (DG) on Oracle Linux 7, 8 or 9  Vagrant projects
+# Vagrant projects: Oracle Data Guard (DG) on Oracle Linux 7, 8 or 9
 
 This directory contains Vagrant projects to provision Oracle Data Guard (DG) on Oracle Linux 7, 8 or 9 automatically, using Vagrant and a shell script.
 

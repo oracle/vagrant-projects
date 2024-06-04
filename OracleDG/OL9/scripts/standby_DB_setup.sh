@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      standby_DB_setup.sh
@@ -22,7 +22,7 @@
 #    rcitton     11/06/18 - Creation
 # 
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240603 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
@@ -108,7 +108,7 @@ EOF
 sleep 10
 
 ${DB_HOME}/bin/dgmgrl sys/${SYS_PASSWORD}@${DB_NAME} <<EOF
-ADD DATABASE ${DB_NAME}_STDBY AS CONNECT IDENTIFIER IS ${DB_NAME}_STDBY MAINTAINED AS PHYSICAL;
+ADD DATABASE ${DB_NAME}_STDBY AS CONNECT IDENTIFIER IS ${DB_NAME}_STDBY;
 exit;
 EOF
 sleep 5

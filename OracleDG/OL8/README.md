@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Oracle RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RDBMS (18c, 19c, 21c, 23ai) hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 8 and shell scripts.
+two Oracle RDBMS (21c or 19c) hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 8 and shell scripts.
 ![](images/OracleDG.png)
 
 The virtualization provider can be VirtualBox or KVM/libVirt
@@ -41,11 +41,15 @@ Running two RDBMS nodes at least 6Gb per node are required
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to version (18c, 19c, 21c, 23ai) for Linux x86-64 you need -> "See All", example
+    go to version (21c or 19c) for Linux x86-64 you need -> "See All", example
 
     * Oracle Database 21c (21.3) for Linux x86-64
        LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
        (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
+
+    * Oracle Database 19c (19.3) for Linux x86-64
+       LINUX.X64_193000_db_home.zip (3,059,705,302 bytes)
+       (sha256sum - ba8329c757133da313ed3b6d7f86c5ac42cd9970a28bf2e6233f3235233aa8d8)
 
 ## Customization
 
@@ -107,7 +111,7 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      prefix_name: vgt8-213-dg
+      prefix_name: dg-213-ol8
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -127,8 +131,8 @@ The following can be customized:
       # ---------------------------------------------
       db_name:         DB213H1
       pdb_name:        PDB1
-      cdb:             false
-      adg:             false
+      cdb:             true
+      adg:             true
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
@@ -152,7 +156,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name: vgt8-213-dg
+      prefix_name: dg-213-ol8
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -171,8 +175,8 @@ The following can be customized:
       # ---------------------------------------------
       db_name:         DB213H1
       pdb_name:        PDB1
-      cdb:             false
-      adg:             false
+      cdb:             true
+      adg:             true
       # ---------------------------------------------
 
 ## Running scripts after setup

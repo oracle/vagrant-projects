@@ -1,4 +1,4 @@
-# Oracle Fleet Patching and Provisioning (FPP) Vagrant project on Oracle Linux 7, 8 or 9 for VirtualBox or KVM/libVirt provider
+# Vagrant project: Oracle Fleet Patching and Provisioning (FPP) on Oracle Linux 7, 8 or 9 for VirtualBox or KVM/libVirt provider
 
 This directory contains Vagrant projects to provision Fleet Patching and Provisioning (FPP) on Oracle Linux 7, 8 or 9 automatically, using Vagrant and a shell script.
 

@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RAC nodes (21c), using Vagrant, Oracle Linux 9 and shell scripts.
+two Oracle RAC nodes, using Vagrant, Oracle Linux 9 and shell scripts.
 
 ![](images/OracleRAC.png)
 
@@ -36,24 +36,18 @@ The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects.git`
 2. Change into OracleRAC folder (`/repo clone path/vagrant-projects/RACPack/OracleRAC`)
-3. Download Grid Infrastructure and Database binary from OTN into `./ORCL_software` folder (*)
+3. Make Grid Infrastructure and Database goldimage with support for OL9 (*)
 4. Run `vagrant up`
 5. Connect to the database.
 6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
-(*) Download Grid Infrastructure and Database binary from OTN into `ORCL_software` folder
-https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
+(*) The expecting Oracle software under ORCL_software folder is in the form
 
-    Accept License Agreement
-    go to version (21c) for Linux x86-64 you need -> "See All", example
+    LINUX.X64_<six digit version>_grid_home.zip
+    LINUX.X64_<six digit version>_db_home.zip
 
-    * Oracle Database 21c Grid Infrastructure (21.3) for Linux x86-64
-        LINUX.X64_213000_grid_home.zip (2,422,217,613 bytes)
-        (sha256sum - 070d4471bc067b1290bdcee6b1c1fff2f21329d2839301e334bcb2a3d12353a3)
-
-    * Oracle Database 21c (21.3) for Linux x86-64
-       LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
-       (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
+OL9 works for 
+- Oracle Database 19c Minimum RU: 19.19 (asm_lib_type=NONE)
 
 ## Customization
 
@@ -85,7 +79,7 @@ The following can be customized:
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`:      Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`:     Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
-- `asm_lib_type`:      Oracle ASM filter driver (asmfd) or Oracle ASMlib (asmlib)
+- `asm_lib_type`:      Oracle ASM filter driver (asmfd), Oracle ASMlib (asmlib) or 'NONE'
 - `p1_ratio`:          ASM disks partiton ration (%). Min 10%, Max 80%
 
 #### environment
@@ -127,7 +121,7 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      prefix_name:   vgt9-213-rac
+      prefix_name:   rac-XXX-ol9
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1: 192.168.56.115
@@ -139,15 +133,15 @@ The following can be customized:
       asm_disk_path:
       asm_disk_num:   4
       asm_disk_size: 20
-      asm_lib_type: asmfd
+      asm_lib_type: NONE
       p1_ratio:      80
       # ---------------------------------------------
 
     env:
       provider: virtualbox
       # ---------------------------------------------
-      gi_software:     LINUX.X64_213000_grid_home.zip
-      db_software:     LINUX.X64_213000_db_home.zip
+      gi_software:     LINUX.X64_XXX000_grid_home.zip
+      db_software:     LINUX.X64_XXX000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -160,7 +154,7 @@ The following can be customized:
       nomgmtdb:        true
       orestart:        false
       # ---------------------------------------------
-      db_name:         DB213H1
+      db_name:         DBXXXH1
       pdb_name:        PDB1
       db_type:         RAC
       cdb:             false
@@ -187,7 +181,7 @@ The following can be customized:
       storage_pool_name: Vagrant_KVM_Storage
 
     shared:
-      prefix_name:   vgt9-213-rac
+      prefix_name:   rac-XXX-ol9
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1:      192.168.125.115
@@ -196,7 +190,7 @@ The following can be customized:
       # ---------------------------------------------
       asm_disk_num:   4
       asm_disk_size: 20
-      asm_lib_type: asmfd
+      asm_lib_type: NONE
       p1_ratio:      80
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
@@ -204,8 +198,8 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      gi_software:     LINUX.X64_213000_grid_home.zip
-      db_software:     LINUX.X64_213000_db_home.zip
+      gi_software:     LINUX.X64_XXX000_grid_home.zip
+      db_software:     LINUX.X64_XXX000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       grid_password:   welcome1
@@ -218,7 +212,7 @@ The following can be customized:
       nomgmtdb:        true
       orestart:        false
       # ---------------------------------------------
-      db_name:         DB213H1
+      db_name:         DBXXXH1
       pdb_name:        PDB1
       db_type:         RAC
       cdb:             false

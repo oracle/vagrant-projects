@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RAC nodes (12.2, 18c, 19c, 21c), using Vagrant, Oracle Linux 7 and shell scripts.
+two Oracle RAC nodes (21c, 19c), using Vagrant, Oracle Linux 7 and shell scripts.
 
 ![](images/OracleRAC.png)
 
@@ -45,7 +45,7 @@ The guest VMs are using an "host-Only" network defined as 'vboxnet0'
 https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 
     Accept License Agreement
-    go to version (12.2, 18c, 19c, 21c) for Linux x86-64 you need -> "See All", example
+    go to version (21c, 19c) for Linux x86-64 you need -> "See All", example
 
     * Oracle Database 21c Grid Infrastructure (21.3) for Linux x86-64
         LINUX.X64_213000_grid_home.zip (2,422,217,613 bytes)
@@ -85,7 +85,7 @@ The following can be customized:
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`:      Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`:     Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
-- `asm_lib_type`:      Oracle ASM filter driver (asmfd) or Oracle ASMlib (asmlib)
+- `asm_lib_type`:      Oracle ASM filter driver ('asmfd'), Oracle ASMlib ('asmlib') or 'NONE'
 - `p1_ratio`:          ASM disks partiton ration (%). Min 10%, Max 80%
 
 #### environment
@@ -127,7 +127,7 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      prefix_name:   vgt-ol7-rac
+      prefix_name: rac-213-ol7
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1: 192.168.56.115
@@ -139,7 +139,7 @@ The following can be customized:
       asm_disk_path:
       asm_disk_num:   4
       asm_disk_size: 20
-      asm_lib_type: asmlib
+      asm_lib_type: asmfd
       p1_ratio:      80
       # ---------------------------------------------
 
@@ -163,7 +163,7 @@ The following can be customized:
       db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
-      cdb:             false
+      cdb:             true
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
@@ -187,7 +187,7 @@ The following can be customized:
       storage_pool_name: Vagrant_KVM_Storage
 
     shared:
-      prefix_name:   vgt-ol7-rac
+      prefix_name: rac-213-ol7
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1:      192.168.125.115
@@ -196,7 +196,7 @@ The following can be customized:
       # ---------------------------------------------
       asm_disk_num:   4
       asm_disk_size: 20
-      asm_lib_type: asmlib
+      asm_lib_type: asmfd
       p1_ratio:      80
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
@@ -221,7 +221,7 @@ The following can be customized:
       db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
-      cdb:             false
+      cdb:             true
       # ---------------------------------------------
 
 ## Running scripts after setup

@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      02_install_os_packages.sh
@@ -23,7 +23,7 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20230303 - $Revision: 2.0.2.2 $
+#    20240603 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
@@ -79,11 +79,6 @@ echo -e "${INFO}`date +%F' '%T`: set SELinux to permissive"
 echo "-----------------------------------------------------------------"
 sed -i -e "s|SELINUX=enforcing|SELINUX=permissive|g" /etc/selinux/config
 setenforce permissive
-
-#echo "-----------------------------------------------------------------"
-#echo -e "${INFO}`date +%F' '%T`: Perform yum update"
-#echo "-----------------------------------------------------------------"
-#yum -y update
 
 #----------------------------------------------------------
 # EndOfFile

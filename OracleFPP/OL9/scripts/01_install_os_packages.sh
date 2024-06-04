@@ -23,7 +23,7 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20230303 - $Revision: 2.0.2.2 $
+#    20240603 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
@@ -31,7 +31,7 @@ echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 dnf config-manager --enable ol9_addons
-dnf install -y dnf-utils expect openssl parted tree unzip zip 
+dnf install -y dnf-utils expect openssl parted tree unzip zip
 dnf install -y oracle-database-preinstall-23ai
 
 if [ "${ASM_LIB_TYPE}" == "ASMLIB" ]

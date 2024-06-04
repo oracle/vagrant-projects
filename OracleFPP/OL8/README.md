@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Orale RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant, Oracle Linux 8 and shell scripts.
+one (21c) Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, using Vagrant, Oracle Linux 8 and shell scripts.
 
 ![](images/OracleFPP.png)
 
@@ -37,7 +37,7 @@ one Grid Infrastructure and FPP Server host + (optional) an Oracle FPP target, u
 5. Connect to Oracle FPP Server (node1).
 6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`.
 
-(*) Download Grid Infrastructure and Database binary from OTN into `ORCL_software` folder
+(*) Download Grid Infrastructure and Database binary (21c) from OTN into `ORCL_software` folder
 https://www.oracle.com/database/technologies/oracle-database-software-downloads.html
 
     Accept License Agreement
@@ -50,6 +50,8 @@ https://www.oracle.com/database/technologies/oracle-database-software-downloads.
     * Oracle Database 21c (21.3) for Linux x86-64 (required with 21c FPP)
        LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
        (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
+
+Note: due to ACFS FPP usage, kernel-uek-5.4.17-2011.0.7.el8uek.x86_64 is in use
 
 ## Customization
 
@@ -101,6 +103,7 @@ The following can be customized:
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`     : Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`    : Oracle RAC Automatic Storage Manager virtual disk (max) size in Gb (at least 10)
+- `asm_lib_type`     : ASM library in use (ASMLIB/ASMFD/NONE)
 
 #### environment
 
@@ -111,7 +114,6 @@ The following can be customized:
 - `oracle_password`  : VM Guest oracle password
 - `sys_password`     : Oracled RDBMS SYS password
 - `ora_languages`    : Oracle products languages
-- `asm_lib_type`     : ASM library in use (ASMLIB/AFD)
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):
 
@@ -138,7 +140,7 @@ The following can be customized:
       deploy: 'true'
 
     shared:
-      prefix_name: vgt8-213-fpp
+      prefix_name: fpp-213-ol8
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
@@ -146,6 +148,7 @@ The following can be customized:
       non_rotational: 'on'
       asm_disk_num:   8
       asm_disk_size: 10
+      asm_lib_type: 'NONE'
       storage_pool_name: Vagrant_KVM
       # ---------------------------------------------
 
@@ -188,7 +191,7 @@ The following can be customized:
       deploy: 'false'
 
     shared:
-      prefix_name:   vgt8-213-fpp
+      prefix_name:   fpp-213-ol8
       # ---------------------------------------------
       network:       public
       netmask:       255.255.255.0
@@ -199,6 +202,7 @@ The following can be customized:
       non_rotational: 'on'
       asm_disk_num: 4
       asm_disk_size: 200
+      asm_lib_type: 'NONE'
       storage_pool_name: Vagrant_KVM
       # ---------------------------------------------
 
@@ -241,13 +245,14 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt8-213-fpp
+      prefix_name:   fpp-213-ol8
       # ---------------------------------------------
       network: hostonly
       domain: localdomain
       # ---------------------------------------------
       asm_disk_num:   8
       asm_disk_size: 10
+      asm_lib_type: 'NONE'
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
 
@@ -290,7 +295,7 @@ The following can be customized:
       deploy: 'true'
 
       shared:
-      prefix_name:   vgt8-213-fpp
+      prefix_name:   fpp-213-ol8
       # ---------------------------------------------
       network:       hostonly
       bridge_nic:    br0
@@ -301,6 +306,7 @@ The following can be customized:
       # ---------------------------------------------
       asm_disk_num:   8
       asm_disk_size: 10
+      asm_lib_type: 'NONE'
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
 

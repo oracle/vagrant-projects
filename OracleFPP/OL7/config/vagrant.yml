@@ -24,7 +24,7 @@ host2:
   deploy: 'true'
 
 shared:
-  prefix_name:   vgt-ol7-fpp
+  prefix_name:   fpp-213-ol8
   # ---------------------------------------------
   network:       hostonly
   netmask:       
@@ -37,6 +37,7 @@ shared:
   asm_disk_path: 
   asm_disk_num:   8
   asm_disk_size: 10
+  asm_lib_type: 'NONE'
   # ---------------------------------------------
 
 env:
@@ -80,7 +81,7 @@ env:
 #  deploy: 'true'
 #
 #shared:
-#  prefix_name:   vgt-ol7-fpp
+#  prefix_name:   fpp-213-ol8
 #  # ---------------------------------------------
 #  network:       hostonly
 #  bridge_nic:    
@@ -91,6 +92,7 @@ env:
 #  # ---------------------------------------------
 #  asm_disk_num:   8
 #  asm_disk_size: 10
+#  asm_lib_type: 'NONE'
 #  storage_pool_name: Vagrant_KVM_Storage
 #  # ---------------------------------------------
 #

@@ -26,13 +26,18 @@
 #    20230303 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 dnf config-manager --enable ol8_addons
 dnf install -y dnf-utils expect openssl parted tree unzip zip 
 dnf install -y oracle-database-preinstall-21c
-dnf install -y oracleasm-support
+
+if [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
+  dnf install -y oracleasm-support
+fi
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Add extra OS packages"

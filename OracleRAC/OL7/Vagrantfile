@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2021 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
@@ -23,7 +23,7 @@
 #    rcitton     03/24/20 - Creation
 #
 #    REVISION
-#    20210827 - $Revision: 2.0.2.4 $
+#    20240603 - $Revision: 2.0.2.4 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -69,13 +69,14 @@ var_box = 'oraclelinux/7'
 var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 
 puts ""
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
-puts " Oracle RAC (Real Application Cluster) Vagrant box for KVM/libVirt or VirtualBox  "
-puts " Copyright (c) 1982-2020 Oracle and/or its affiliates                             "
-puts "----------------------------------------------------------------------------------"
-puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                               "
-puts "         RAC Pack, Cloud Innovation and Solution Engineering Team                 "
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "               Oracle RAC (Real Application Cluster)               "
+puts "           Vagrant project for KVM/libVirt or VirtualBox           "
+puts "        Copyright (c) 2020-2024 Oracle and/or its affiliates       "
+puts "-------------------------------------------------------------------"
+puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                "
+puts "         RAC Pack, Cloud Innovation and Solution Engineering Team  "
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
 puts ""
 puts ""
 
@@ -242,10 +243,15 @@ if ( (var_db_type != 'RAC') and (var_db_type != 'RACONE') and (var_db_type != 'S
   puts 'ERROR: db_type option can be RAC, RACONE or SI'
   exit
 end
-if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') )
-  puts 'ERROR: asm_lib_type option can be ASMLIB or ASMFD'
+
+if var_asm_lib_type.to_s.empty?
+ var_asm_lib_type = 'NONE'
+end
+if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') and (var_asm_lib_type != 'NONE') )
+  puts 'ERROR: asm_lib_type option can be ASMLIB, ASMFD or NONE'
   exit
 end
+
 if ! var_p1_ratio.between?(10, 80)
   puts 'ERROR: p1_ratio option can be an integer between 10 and 80'
   exit
@@ -602,13 +608,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # If var_asmlib_type is 'ASMFD', then the running kernel must be UEK4, otherwise ASMFD is not supported due to Grid Infrastructure being version 19.3
-  # It is worth noting that some GI RU later than 19.3 makes UEK5 supported as well, but not UEK6.
+  # If var_asmlib_type is 'ASMFD', then the running kernel must be UEK4, otherwise ASMFD is not supported due to Grid Infrastructure being version 21.3/19.3
+  # It is worth noting that some GI RU later than 21.3/19.3 makes UEK5 supported as well
    if var_asm_lib_type == 'ASMFD'
      config.vm.provision :shell do |shell|
        shell.privileged = true
        shell.inline = <<-SHELL
-       echo "Installing UEK4 kernel (via yum)"
+       echo "Installing UEK4 kernel (via yum) to support 'ASMFD'"
        sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol7.repo; yum install -y kernel-uek-4.1.12 kernel-uek-devel-4.1.12
        echo "Rebooting to make UEK4 the running kernel, a prerequisite for ASMFD"
        SHELL

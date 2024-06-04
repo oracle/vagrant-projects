@@ -22,15 +22,21 @@
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240631 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 yum install -y deltarpm expect tree unzip zip 
-yum install -y oracle-database-preinstall-18c
+yum install -y oracle-database-preinstall-21c
 yum install -y oracleasm-support
+
+if [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
+  yum install -y oracleasm-support
+fi
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Add extra OS packages"

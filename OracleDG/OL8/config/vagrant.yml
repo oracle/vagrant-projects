@@ -1,0 +1,91 @@
+# -----------------------------------------------
+# vagrant.yml for VirtualBox
+# -----------------------------------------------
+host1:
+  vm_name: primary
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.131
+  private_ip: 192.168.200.131
+  u01_disk: ./primary_u01.vdi
+
+host2:
+  vm_name: standby
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.132
+  private_ip: 192.168.200.132
+  u01_disk: ./standby_u01.vdi
+
+env:
+  provider: virtualbox
+  # ---------------------------------------------
+  prefix_name: dg-213-ol8
+  # ---------------------------------------------
+  domain: localdomain
+  # ---------------------------------------------
+  non_rotational: 'on'
+  oradata_disk_path:
+  oradata_disk_num:   2
+  oradata_disk_size: 20
+  # ---------------------------------------------
+  db_software:     LINUX.X64_213000_db_home.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  oracle_password: welcome1
+  sys_password:    welcome1
+  pdb_password:    welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  db_name:         DB213H1
+  pdb_name:        PDB1
+  cdb:             true
+  adg:             true
+  # ---------------------------------------------
+
+
+## -----------------------------------------------
+## vagrant.yml for libVirt
+## -----------------------------------------------
+#host1:
+#  vm_name: primary
+#  mem_size: 8192
+#  cpus: 2
+#  public_ip:  192.168.125.131
+#  private_ip: 192.168.200.131
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#host2:
+#  vm_name: standby
+#  mem_size: 8192
+#  cpus: 2
+#  public_ip:  192.168.125.132
+#  private_ip: 192.168.200.132
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#env:
+#  provider: libvirt
+#  # ---------------------------------------------
+#  prefix_name: dg-213-ol8
+#  # ---------------------------------------------
+#  domain: localdomain
+#  # ---------------------------------------------
+#  oradata_disk_num:   2
+#  oradata_disk_size: 20
+#  storage_pool_name: Vagrant_KVM_Storage
+#  # ---------------------------------------------
+#  db_software:     LINUX.X64_213000_db_home.zip
+#  # ---------------------------------------------
+#  root_password:   welcome1
+#  oracle_password: welcome1
+#  sys_password:    welcome1
+#  pdb_password:    welcome1
+#  # ---------------------------------------------
+#  ora_languages:   en,en_GB
+#  # ---------------------------------------------
+#  db_name:         DB213H1
+#  pdb_name:        PDB1
+#  cdb:             true
+#  adg:             true
+#  # ---------------------------------------------

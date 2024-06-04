@@ -20,7 +20,7 @@ node2:
   u01_disk: ./node2_u01.vdi
 
 shared:
-  prefix_name:   vgt-213-rac
+  prefix_name: rac-213-ol8
   # ---------------------------------------------
   domain  : localdomain
   scan_ip1: 192.168.56.115
@@ -55,7 +55,7 @@ env:
   db_name:         DB213H1
   pdb_name:        PDB1
   db_type:         RAC
-  cdb:             false
+  cdb:             true
   # ---------------------------------------------
 
 
@@ -81,7 +81,7 @@ env:
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #shared:
-#  prefix_name:   vgt-ol8-213
+#  prefix_name: rac-213-ol8
 #  # ---------------------------------------------
 #  domain  : localdomain
 #  scan_ip1: 192.168.125.115

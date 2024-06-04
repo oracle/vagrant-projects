@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      02_install_os_packages.sh
@@ -22,15 +22,20 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240603 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+. /vagrant/config/setup.env
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Install base packages"
 echo "-----------------------------------------------------------------"
 yum install -y deltarpm expect tree unzip zip 
-yum install -y oracle-database-preinstall-19c
-yum install -y oracleasm-support
+yum install -y oracle-database-preinstall-21c
+
+if [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
+  yum install -y oracleasm-support
+fi
 
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Add extra OS packages"

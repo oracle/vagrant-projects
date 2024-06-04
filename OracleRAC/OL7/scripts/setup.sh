@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2021 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      setup.sh - 
@@ -23,7 +23,7 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20210827 - $Revision: 2.0.2.2 $
+#    20240603 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -143,7 +143,8 @@ cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
-else
+elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
 DISKS=`ls -dm /dev/oracleasm/disks/ORCL_DISK*_P1`
 DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
@@ -151,6 +152,15 @@ DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
+EOF
+else
+DISKS=`ls -dm /dev/ORCL_DISK*_p1`
+DISKSFG=`echo $DISKS| tr ', ' ',,'`
+DISKSFG=${DISKSFG}","
+DISKS=`echo $DISKS|tr -d ' '`
+cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
+    oracle.install.asm.diskGroup.disks=${DISKS} \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
 EOF
 fi
 
@@ -251,7 +261,8 @@ cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleafd/disks/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
-else
+elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
 DISKS=`ls -dm /dev/oracleasm/disks/ORCL_DISK*_P1`
 DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
@@ -260,6 +271,16 @@ cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
+EOF
+else
+DISKS=`ls -dm /dev/ORCL_DISK*_p1`
+DISKSFG=`echo $DISKS| tr ', ' ',,'`
+DISKSFG=${DISKSFG}","
+DISKS=`echo $DISKS|tr -d ' '`
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
+    oracle.install.asm.diskGroup.disksWithFailureGroupNames=${DISKSFG} \\
+    oracle.install.asm.diskGroup.disks=${DISKS} \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
 EOF
 fi
 
@@ -580,9 +601,9 @@ then
   exit 1
 fi 
 
-if [ "${ASM_LIB_TYPE}" != "ASMLIB" ] && [ "${ASM_LIB_TYPE}" != "ASMFD" ]
+if [ "${ASM_LIB_TYPE}" != "ASMLIB" ] && [ "${ASM_LIB_TYPE}" != "ASMFD" ] && [ "${ASM_LIB_TYPE}" != "NONE" ]
 then
-  echo -e "${ERROR}`date +%F' '%T`: Parameter 'asm_lib_type' must be 'ASMLIB' or 'ASMFD', exiting...";
+  echo -e "${ERROR}`date +%F' '%T`: Parameter 'asm_lib_type' must be 'ASMLIB', 'ASMFD' or 'NONE', exiting...";
   exit 1
 fi
 
@@ -640,13 +661,8 @@ sh /vagrant/scripts/03_setup_hosts.sh
 # Setup chrony
 sh /vagrant/scripts/04_setup_chrony.sh
 
-# Setup shared disks
-BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
-sh /vagrant/scripts/05_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
-
-
 # Setup users
-sh /vagrant/scripts/06_setup_users.sh
+sh /vagrant/scripts/05_setup_users.sh
 
 # Setup users password
 echo "-----------------------------------------------------------------"
@@ -655,6 +671,10 @@ echo "-----------------------------------------------------------------"
 echo ${ROOT_PASSWORD}   | passwd --stdin root
 echo ${GRID_PASSWORD}   | passwd --stdin grid
 echo ${ORACLE_PASSWORD} | passwd --stdin oracle
+
+# Setup shared disks
+BOX_DISK_NUM=$((BOX_DISK_NUM + 1))
+sh /vagrant/scripts/06_setup_shared_disks.sh $BOX_DISK_NUM $PROVIDER
 
 
 # Actions on node1 only
@@ -709,7 +729,8 @@ then
     echo "-----------------------------------------------------------------"
     sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM $PROVIDER
   fi
-else
+elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
   # Setting-up asmlib disks label
   echo "-----------------------------------------------------------------"
   echo -e "${INFO}`date +%F' '%T`: ASMLib disks label setup"
@@ -766,12 +787,19 @@ then
     echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ASMFD"
     echo "-----------------------------------------------------------------"
     su - grid -c 'sh /vagrant/scripts/12_Make_ASMFD_RECODG.sh'
-  else
+  elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+  then
     # Make RECO DG using ASMLib
     echo "-----------------------------------------------------------------"
     echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ASMLib"
     echo "-----------------------------------------------------------------"
     su - grid -c 'sh /vagrant/scripts/12_Make_ASMLib_RECODG.sh'
+  else
+    # Make RECO DG using ORCL_* devices
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ORCL_* devices"
+    echo "-----------------------------------------------------------------"
+    su - grid -c 'sh /vagrant/scripts/12_Make_RECODG.sh'
   fi
 
   # unzip rdbms software 
@@ -860,12 +888,19 @@ then
     echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ASMFD"
     echo "-----------------------------------------------------------------"
     su - grid -c 'sh /vagrant/scripts/12_Make_ASMFD_RECODG.sh'
-  else
+  elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+  then
     # Make RECO DG using ASMLib
     echo "-----------------------------------------------------------------"
     echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ASMLib"
     echo "-----------------------------------------------------------------"
     su - grid -c 'sh /vagrant/scripts/12_Make_ASMLib_RECODG.sh'
+  else
+    # Make RECO DG using ORCL_* devices
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: Make RECO DG using ORCL_* devices"
+    echo "-----------------------------------------------------------------"
+    su - grid -c 'sh /vagrant/scripts/12_Make_RECODG.sh'
   fi
 
   # unzip rdbms software 

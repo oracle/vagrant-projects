@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      06_setup_users.sh
@@ -18,11 +18,12 @@
 #       Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     06/03/24 - OL9 support
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240603 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
@@ -125,6 +126,15 @@ export ORACLE_SID=${DB_NAME}2
 EOF
 fi
 
+echo "-----------------------------------------------------------------"
+echo -e "${INFO}`date +%F' '%T`: Set user PasswordAuthentication and make sshkey"
+echo "-----------------------------------------------------------------"
+cat << EOL > /etc/ssh/sshd_config.d/90-vagrant.conf
+PasswordAuthentication yes
+UseDNS no
+EOL
+systemctl restart sshd
+ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y >/dev/null 2>&1
 
 #----------------------------------------------------------
 # EndOfFile

@@ -85,7 +85,7 @@ The following can be customized:
 - `oradata_disk_path`: VirtualBox Oradata dbf path
 - `asm_disk_num`:      Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`:     Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
-- `asm_lib_type`:      Oracle ASM filter driver (asmfd) or Oracle ASMlib (asmlib)
+- `asm_lib_type`:      Oracle ASM filter driver ('asmfd'), Oracle ASMlib ('asmlib') or 'NONE'
 - `p1_ratio`:          ASM disks partiton ration (%). Min 10%, Max 80%
 
 #### environment
@@ -127,7 +127,7 @@ The following can be customized:
       u01_disk: ./node2_u01.vdi
 
     shared:
-      prefix_name:   vgt-ol8-rac
+      prefix_name: rac-213-ol8
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1: 192.168.56.115
@@ -163,7 +163,7 @@ The following can be customized:
       db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
-      cdb:             false
+      cdb:             true
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
@@ -187,7 +187,7 @@ The following can be customized:
       storage_pool_name: Vagrant_KVM_Storage
 
     shared:
-      prefix_name:   vgt-ol8-rac
+      prefix_name: rac-213-ol8
       # ---------------------------------------------
       domain:   localdomain
       scan_ip1:      192.168.125.115
@@ -221,7 +221,7 @@ The following can be customized:
       db_name:         DB213H1
       pdb_name:        PDB1
       db_type:         RAC
-      cdb:             false
+      cdb:             true
       # ---------------------------------------------
 
 ## Running scripts after setup

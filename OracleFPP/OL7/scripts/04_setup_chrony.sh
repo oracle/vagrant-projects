@@ -22,12 +22,13 @@
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240631 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup chronyd service"
 echo "-----------------------------------------------------------------"
+
 systemctl enable chronyd
 systemctl restart chronyd
 chronyc -a makestep

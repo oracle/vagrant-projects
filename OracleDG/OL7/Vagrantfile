@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
@@ -23,7 +23,7 @@
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20200923 - $Revision: 2.0.2.3 $
+#    20240603 - $Revision: 2.0.2.5 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -69,13 +69,14 @@ var_box = 'oraclelinux/7'
 var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 
 puts ""
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
-puts " Oracle DG (Database Dataguard) Vagrant box for KVM/libVirt or VirtualBox "
-puts " Copyright (c) 1982-2021 Oracle and/or its affiliates                     "
-puts "--------------------------------------------------------------------------"
-puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                       "
-puts "         RAC Pack, Cloud Innovation and Solution Engineering Team         "
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "                  Oracle DG (Database Dataguard)                   "
+puts "           Vagrant project for KVM/libVirt or VirtualBox           "
+puts "        Copyright (c) 2018-2024 Oracle and/or its affiliates       "
+puts "-------------------------------------------------------------------"
+puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                "
+puts "         RAC Pack, Cloud Innovation and Solution Engineering Team  "
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
 puts ""
 puts ""
 

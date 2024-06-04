@@ -17,6 +17,7 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     06/03/24 - OL9 support
 #    rcitton     03/03/23 - OL8 support + libvirt.graphics_type = "none"
 #    rcitton     08/27/21 - ASMFD support added #335 + ASMFD with libvirt 
 #    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
@@ -243,8 +244,8 @@ if ( (var_db_type != 'RAC') and (var_db_type != 'RACONE') and (var_db_type != 'S
   puts 'ERROR: db_type option can be RAC, RACONE or SI'
   exit
 end
-if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') )
-  puts 'ERROR: asm_lib_type option can be ASMLIB or ASMFD'
+if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') and (var_asm_lib_type != 'NONE') )
+  puts 'ERROR: asm_lib_type option can be ASMLIB, ASMFD or NONE'
   exit
 end
 if ! var_p1_ratio.between?(10, 80)
@@ -617,7 +618,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.provision :shell do |shell|
       shell.privileged = true
       shell.inline = <<-SHELL
-      echo "Installing UEK7 kernel (via yum)"
+      echo "Installing UEK7 kernel (via dnf) to support ASMFD"
       sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol9.repo; dnf install -y kernel-uek-5.15.0-201.135.6.el9uek.x86_64 kernel-uek-devel-5.15.0-201.135.6.el9uek.x86_64
       echo "Rebooting to make UEK7 the running kernel, a prerequisite for ASMFD"
       SHELL
@@ -636,7 +637,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.provision :shell do |shell|
       shell.privileged = true
       shell.inline = <<-SHELL
-      echo "Installing UEK7 kernel (via yum)"
+      echo "Installing UEK7 kernel (via dnf)"
       sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol9.repo; dnf install -y kernel-uek-5.15.0-201.135.6.el9uek.x86_64 kernel-uek-devel-5.15.0-201.135.6.el9uek.x86_64
       echo "Rebooting to make UEK7 the running kernel, a prerequisite for ASMFD"
       SHELL

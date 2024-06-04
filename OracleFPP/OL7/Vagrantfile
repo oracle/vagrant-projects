@@ -2,7 +2,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      vagrantfile
@@ -22,7 +22,7 @@
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20210828 - $Revision: 2.0.2.3 $
+#    20240603 - $Revision: 2.0.2.4 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
  
@@ -68,13 +68,14 @@ var_box = 'oraclelinux/7'
 var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/7.json'
 
 puts ""
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
-puts " Oracle FPP (Fleet Patching and Provisioning) Vagrant box for KVM/libVirt or VirtualBox  "
-puts " Copyright (c) 1982-2021 Oracle and/or its affiliates                                    "
-puts "-----------------------------------------------------------------------------------------"
-puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                                      "
-puts "         RAC Pack, Cloud Innovation and Solution Engineering Team                        "
-puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts "           Oracle FPP (Fleet Patching and Provisioning)           "
+puts "          Vagrant project for KVM/libVirt or VirtualBox           "
+puts "       Copyright (c) 2019-2024 Oracle and/or its affiliates       "
+puts "------------------------------------------------------------------"
+puts " Author: Ruggero Citton <ruggero.citton@oracle.com>               "
+puts "         RAC Pack, Cloud Innovation and Solution Engineering Team "
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
 puts ""
 puts ""
 
@@ -114,6 +115,7 @@ var_vm2_deploy      = params['host2']['deploy']
 #
 var_asm_disk_num    = params['shared']['asm_disk_num']
 var_asm_disk_size   = params['shared']['asm_disk_size']
+var_asm_lib_type    = params['shared']['asm_lib_type']
 # 
 var_gi_software     = params['env']['gi_software']
 var_gi_software_ver = (var_gi_software.to_s.split("_"))[1].to_i
@@ -128,8 +130,7 @@ var_grid_password   = params['env']['grid_password']
 var_oracle_password = params['env']['oracle_password']
 var_sys_password    = params['env']['sys_password']
 #
-var_asm_lib_type    = 'ASMLIB'
-#
+
 
 # -----------------------------------------------------------------
 # Provider specific checks
@@ -179,9 +180,9 @@ if var_provider_name == 'libvirt'
 end
 if var_provider_name == 'virtualbox'
   var_group           = "/" + var_prefix_name
-  var_vm1_u01_disk       = params['host1']['u01_disk']
-  var_vm2_u01_disk       = params['host2']['u01_disk']
-  var_non_rotational     = params['shared']['non_rotational']
+  var_vm1_u01_disk    = params['host1']['u01_disk']
+  var_vm2_u01_disk    = params['host2']['u01_disk']
+  var_non_rotational  = params['shared']['non_rotational']
   var_asm_disk_path   = params['shared']['asm_disk_path']
 
   if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
@@ -215,8 +216,11 @@ if ( (var_vm2_deploy.upcase != 'TRUE') and (var_vm2_deploy.upcase != 'FALSE') )
   exit
 end
 
-if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') )
-  puts 'ERROR: asm_lib_type option can be ASMLIB or ASMFD'
+if var_asm_lib_type.to_s.empty?
+ var_asm_lib_type = 'NONE'
+end
+if ( (var_asm_lib_type != 'ASMLIB') and (var_asm_lib_type != 'ASMFD') and (var_asm_lib_type != 'NONE') )
+  puts 'ERROR: asm_lib_type option can be ASMLIB, ASMFD or NONE'
   exit
 end
 
@@ -316,6 +320,12 @@ if var_gi_software_ver_major.to_i > 19
     puts "ERROR: db_software is required but it does not exist"
     exit
   end
+end
+
+var_gi_software_ver_major = var_gi_software_ver.digits.to_a[5].to_s + var_gi_software_ver.digits.to_a[4].to_s
+if var_gi_software_ver_major.to_i < 19
+  puts "ERROR: on OL7 gi_software version must be at least 19c"
+  exit
 end
 
 if ( (var_network != 'hostonly') and (var_network != 'public') )
@@ -604,7 +614,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     shell.inline = <<-SHELL
     echo "Installing UEK4 kernel (via yum)"
     sed -i '/enabled=0/c\\enabled=1' /etc/yum.repos.d/uek-ol7.repo; yum install -y kernel-uek-4.1.12 kernel-uek-devel-4.1.12
-    echo "Rebooting to make UEK4 the running kernel, a prerequisite for ASMFD"
+    echo "Rebooting to make UEK4 the running kernel, a prerequisite for ACFS"
     SHELL
     shell.reboot = true
   end

@@ -23,7 +23,7 @@
 #    rcitton     10/01/19 - Creation
 #
 #    REVISION
-#    20200330 - $Revision: 2.0.2.1 $
+#    20240631 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -103,7 +103,8 @@ cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
-else
+elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
 DISKS=`ls -dm /dev/oracleasm/disks/ORCL_DISK*_P1`
 DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
@@ -111,6 +112,15 @@ DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
+EOF
+else
+DISKS=`ls -dm /dev/ORCL_DISK*_p1`
+DISKSFG=`echo $DISKS| tr ', ' ',,'`
+DISKSFG=${DISKSFG}","
+DISKS=`echo $DISKS|tr -d ' '`
+cat >> /vagrant/scripts/09_gi_installation.sh <<EOF
+    oracle.install.asm.diskGroup.disks=${DISKS} \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
 EOF
 fi
 
@@ -128,7 +138,7 @@ EOF
 make_11_gi_config() {
 cat > /vagrant/scripts/11_gi_config.sh <<EOF
 . /vagrant/config/setup.env
-${GI_HOME}/gridSetup.sh -silent -executeConfigTools \\
+${GI_HOME}/gridSetup.sh -ignorePrereq -waitforcompletion -silent -executeConfigTools \\
     -responseFile ${GI_HOME}/install/response/gridsetup.rsp \\
     INVENTORY_LOCATION=${ORA_INVENTORY} \\
     SELECTED_LANGUAGES=${ORA_LANGUAGES} \\
@@ -188,7 +198,8 @@ cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_*,AFD:* \\
     oracle.install.asm.configureAFD=true \\
 EOF
-else
+elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+then
 DISKS=`ls -dm /dev/oracleasm/disks/ORCL_DISK*_P1`
 DISKSFG=`echo $DISKS| tr ', ' ',,'`
 DISKSFG=${DISKSFG}","
@@ -196,6 +207,15 @@ DISKS=`echo $DISKS|tr -d ' '`
 cat >> /vagrant/scripts/11_gi_config.sh <<EOF
     oracle.install.asm.diskGroup.disks=${DISKS} \\
     oracle.install.asm.diskGroup.diskDiscoveryString=/dev/oracleasm/disks/ORCL_* \\
+EOF
+else
+DISKS=`ls -dm /dev/ORCL_DISK*_p1`
+DISKSFG=`echo $DISKS| tr ', ' ',,'`
+DISKSFG=${DISKSFG}","
+DISKS=`echo $DISKS|tr -d ' '`
+cat >> /vagrant/scripts/11_gi_config.sh <<EOF
+    oracle.install.asm.diskGroup.disks=${DISKS} \\
+    oracle.install.asm.diskGroup.diskDiscoveryString=/dev/ORCL_* \\
 EOF
 fi
 
@@ -320,6 +340,11 @@ fi
 # due to UEK4 install and reboot, mount is required
 mount -t vboxsf vagrant /vagrant
 
+if [ `hostname` == "${VM2_NAME}" ]
+then
+  sleep 10
+fi
+
 cat <<EOL > /vagrant/config/setup.env
 #----------------------------------------------------------
 # Env Variables
@@ -411,9 +436,9 @@ echo "-----------------------------------------------------------------"
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Checking parameters"
 echo "-----------------------------------------------------------------"
-if [ "${ASM_LIB_TYPE}" != "ASMLIB" ] && [ "${ASM_LIB_TYPE}" != "ASMFD" ]
+if [ "${ASM_LIB_TYPE}" != "ASMLIB" ] && [ "${ASM_LIB_TYPE}" != "ASMFD" ] && [ "${ASM_LIB_TYPE}" != "NONE" ]
 then
-  echo -e "${ERROR}`date +%F' '%T`: Parameter 'asm_lib_type' must be 'ASMLIB' or 'ASMFD', exiting...";
+  echo -e "${ERROR}`date +%F' '%T`: Parameter 'asm_lib_type' must be 'ASMLIB', 'ASMFD' or 'NONE', exiting...";
   exit 1
 fi
 
@@ -500,12 +525,17 @@ then
     echo -e "${INFO}`date +%F' '%T`: ASMFD disks label setup"
     echo "-----------------------------------------------------------------"
     sh /vagrant/scripts/08_asmfd_label_disk.sh $BOX_DISK_NUM $PROVIDER
-  else
+  elif [ "${ASM_LIB_TYPE}" == "ASMLIB" ]
+  then
     # Setting-up asmfd disks label
     echo "-----------------------------------------------------------------"
     echo -e "${INFO}`date +%F' '%T`: ASMLib disks label setup"
     echo "-----------------------------------------------------------------"
     sh /vagrant/scripts/08_asmlib_label_disk.sh $BOX_DISK_NUM $PROVIDER
+  else
+    echo "-----------------------------------------------------------------"
+    echo -e "${INFO}`date +%F' '%T`: ASMFD or ASMLib not in use"
+    echo "-----------------------------------------------------------------"
   fi
   # ---------------------------------------------------------------------
   # ---------------------------------------------------------------------
@@ -603,7 +633,7 @@ then
   sh /vagrant/scripts/04_setup_chrony.sh
     
   # Setup users
-  sh /vagrant/scripts/06_setup_users.sh
+  sh /vagrant/scripts/05_setup_users.sh
   
   # Setup users password
   echo "-----------------------------------------------------------------"

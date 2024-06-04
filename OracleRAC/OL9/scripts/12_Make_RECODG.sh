@@ -1,4 +1,4 @@
-#!/usr/bin/expect -f
+#!/bin/bash
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #
 # LICENSE UPL 1.0
@@ -6,10 +6,10 @@
 # Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
-#      07_setup_user_equ.expect
+#      12_Make_RECODG.sh
 #
 #    DESCRIPTION
-#      Setup users equivalences
+#      Make RECO DG
 #
 #    NOTES
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -25,22 +25,34 @@
 #    20240603 - $Revision: 2.0.2.1 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
-set timeout 20
-set username [lindex $argv 0]
-set password [lindex $argv 1]
-set node1    [lindex $argv 2]
-set node2    [lindex $argv 3]
-set path     [lindex $argv 4]
+. /vagrant/config/setup.env
+export ORACLE_HOME=${GI_HOME}
+if [ "${ORESTART}" == "false" ]
+then
+  export ORACLE_SID=+ASM1
+else
+  export ORACLE_SID=+ASM
+fi
 
-spawn $path -user $username -hosts "$node1 $node2" -noPromptPassphrase -advanced
+DISKS_STRING=""
+declare -a DEVICES
+for device in /dev/ORCL_DISK*_p2
+do
+  DEVICES=("${dev[@]}" "$device")
+  DISK=$(basename "$DEVICES")
+  DISKS_STRING=${DISKS_STRING}"DISK '"${DEVICES}"' NAME "${DISK}" "
+done
 
-expect "Do you want to continue and let the script make the above mentioned changes (yes/no)?" { send "yes\n" }
-expect  "password:" { send "$password\n" }
-expect  "password:" { send "$password\n" }
-expect  "password:" { send "$password\n" }
-expect  "password:" { send "$password\n" }
-expect { default {} }
-
+${GI_HOME}/bin/sqlplus / as sysasm <<EOF
+CREATE DISKGROUP RECO NORMAL REDUNDANCY 
+ ${DISKS_STRING}
+ ATTRIBUTE 
+   'compatible.asm'='${GI_VERSION}', 
+   'compatible.rdbms'='${DB_VERSION}',
+   'sector_size'='512',
+   'AU_SIZE'='4M',
+   'content.type'='recovery';
+EOF
 #----------------------------------------------------------
 # EndOfFile
 #----------------------------------------------------------

@@ -3,7 +3,7 @@
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) - Oracle RAC Pack, Cloud Innovation and Solution Engineering Team
 
 This directory contains Vagrant build files to provision automatically
-two Oracle RDBMS (18c, 19c, 21c, 23ai) hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 9 and shell scripts.
+two Oracle RDBMS hosts configured with Oracle Data Guard, using Vagrant, Oracle Linux 9 and shell scripts.
 ![](images/OracleDG.png)
 
 The virtualization provider can be VirtualBox or KVM/libVirt
@@ -32,20 +32,17 @@ Running two RDBMS nodes at least 6Gb per node are required
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects.git`
 2. Change into OracleDG folder (`/repo clone path/vagrant-projects/RACPack/OracleDG`)
-3. Download Database binary from OTN into `./ORCL_software` folder (*)
+3. Make Database goldimage with support for OL9 (*)
 4. Run `vagrant up`
 5. Connect the hosts issuing: `vagrant ssh host1/2`.
 6. You can shut down the VM via the usual `vagrant halt` and the start it up again via `vagrant up`
 
-(*) Download Database binary from OTN into `ORCL_software` folder
-https://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
+(*) The expecting Oracle software under ORCL_software folder is in the form
 
-    Accept License Agreement
-    go to version (18c, 19c, 21c, 23ai) for Linux x86-64 you need -> "See All", example
+    LINUX.X64_<six digit version>_db_home.zip
 
-    * Oracle Database 21c (21.3) for Linux x86-64
-       LINUX.X64_213000_db_home.zip (3,109,225,519 bytes)
-       (sha256sum - c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916)
+OL9 works for 
+- Oracle RDBMS 19c Minimum RU: 19.19
 
 ## Customization
 
@@ -107,7 +104,7 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      prefix_name: vgt9-213-dg
+      prefix_name: dg-xxx-ol9
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -116,7 +113,7 @@ The following can be customized:
       oradata_disk_num:   2
       oradata_disk_size: 20
       # ---------------------------------------------
-      db_software: LINUX.X64_213000_db_home.zip
+      db_software: LINUX.X64_XXX000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       oracle_password: welcome1
@@ -125,10 +122,10 @@ The following can be customized:
       # ---------------------------------------------
       ora_languages:   en,en_GB
       # ---------------------------------------------
-      db_name:         DB213H1
+      db_name:         DBXXXH1
       pdb_name:        PDB1
-      cdb:             false
-      adg:             false
+      cdb:             true
+      adg:             true
       # ---------------------------------------------
 
 #### KVM/libVirt provider Example:
@@ -152,7 +149,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name: vgt9-213-dg
+      prefix_name: dg-xxx-ol9
       # ---------------------------------------------
       domain: localdomain
       # ---------------------------------------------
@@ -160,7 +157,7 @@ The following can be customized:
       oradata_disk_size: 20
       storage_pool_name: Vagrant_KVM_Storage
       # ---------------------------------------------
-      db_software:     LINUX.X64_213000_db_home.zip
+      db_software:     LINUX.X64_XXX000_db_home.zip
       # ---------------------------------------------
       root_password:   welcome1
       oracle_password: welcome1
@@ -169,10 +166,10 @@ The following can be customized:
       # ---------------------------------------------
       ora_languages:   en,en_GB
       # ---------------------------------------------
-      db_name:         DB213H1
+      db_name:         DBXXXH1
       pdb_name:        PDB1
-      cdb:             false
-      adg:             false
+      cdb:             true
+      adg:             true
       # ---------------------------------------------
 
 ## Running scripts after setup

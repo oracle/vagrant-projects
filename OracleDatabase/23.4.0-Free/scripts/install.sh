@@ -65,7 +65,7 @@ fi
 echo 'INSTALLER: Oracle software installed'
 
 # Auto generate ORACLE PWD if not passed in
-export ORACLE_PWD=${ORACLE_PWD:-"$(openssl rand -base64 9)1"}
+export ORACLE_PWD=${ORACLE_PWD:-"$(openssl rand -hex 8)1"}
 
 # Create database
 cfg_file='/etc/sysconfig/oracle-free-23ai.conf'

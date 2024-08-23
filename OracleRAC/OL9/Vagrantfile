@@ -124,6 +124,8 @@ var_gi_software_ver = (var_gi_software.split("_"))[1].to_i
 var_db_software     = params['env']['db_software']
 var_db_software_ver = (var_db_software.split("_"))[1].to_i
 #
+var_skip_check      = params['env']['skip_check']
+#
 var_ora_languages   = params['env']['ora_languages']
 #
 var_root_password   = params['env']['root_password']
@@ -344,13 +346,21 @@ end
 
 path = "./ORCL_software/" + var_gi_software
 if ! File.exist?(path)
-  puts "ERROR: gi_software does not exist"
-  exit
+  if (var_skip_check == false)
+   puts "ERROR: gi_software does not exist"
+   exit
+  else
+    puts "WARNING: gi_software does not exist"
+  end
 end
 path = "./ORCL_software/" + var_db_software
 if ! File.exist?(path)
-  puts "ERROR: db_software does not exist"
-  exit
+  if (var_skip_check == false)
+   puts "ERROR: db_software does not exist"
+   exit
+  else
+    puts "WARNING: db_software does not exist"
+  end
 end
 
 var_gi_software_ver_major = var_gi_software_ver.digits.to_a[5].to_s + var_gi_software_ver.digits.to_a[4].to_s

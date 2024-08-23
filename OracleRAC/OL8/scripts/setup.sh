@@ -442,6 +442,7 @@ EOF
 # ---------------------------------------------------------------------
 # due to UEK install and reboot, mount is required
 if [ "${PROVIDER}" == "virtualbox" ]; then
+  sleep 60
   mount -t vboxsf vagrant /vagrant
 fi
 

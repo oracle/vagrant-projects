@@ -441,7 +441,10 @@ EOF
 # MAIN
 # ---------------------------------------------------------------------
 # due to UEK4 install and reboot, mount is required
-mount -t vboxsf vagrant /vagrant
+if [ "${PROVIDER}" == "virtualbox" ]; then
+  sleep 60
+  mount -t vboxsf vagrant /vagrant
+fi
 
 if [[ `hostname` == ${VM2_NAME} || (`hostname` == ${VM1_NAME} && "${ORESTART}" == "true") ]]
 then

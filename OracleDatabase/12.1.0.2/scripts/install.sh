@@ -16,6 +16,39 @@ set -e
 
 echo 'INSTALLER: Started up'
 
+# verify that database installers are present and valid
+echo 'INSTALLER: Verifying database installer files'
+
+case "$ORACLE_EDITION" in
+  'EE')
+    digest_file='db_installer-EE.sha256'
+    installer_zips='linuxamd64_12102_database_?of2.zip'
+    ;;
+  'SE2')
+    digest_file='db_installer-SE2.sha256'
+    installer_zips='linuxamd64_12102_database_se2_?of2.zip'
+    ;;
+  *)
+    echo "INSTALLER: Invalid ORACLE_EDITION ${ORACLE_EDITION}. Must be EE or SE2. Exiting."
+    exit 1
+    ;;
+esac
+
+sha256sum --check /vagrant/"${digest_file}" || {
+  cat << EOF
+
+INSTALLER: Database installer files missing or invalid.
+           Destroy this VM (vagrant destroy), then
+           make sure that the database installer files
+           are in the same directory as the Vagrantfile,
+           and that their SHA-256 digests match the
+           values in the ${digest_file} file,
+           before running vagrant up again.
+
+EOF
+  exit 1
+}
+
 # get up to date
 yum upgrade -y
 
@@ -55,18 +88,7 @@ echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
 
-case "$ORACLE_EDITION" in
-  "EE")
-    unzip '/vagrant/linuxamd64_12102_database_?of2.zip' -d /tmp
-    ;;
-  "SE2")
-    unzip '/vagrant/linuxamd64_12102_database_se2_?of2.zip' -d /tmp
-    ;;
-  *)
-    echo "INSTALLER: Invalid ORACLE_EDITION $ORACLE_EDITION. Must be EE or SE2. Exiting."
-    exit 1
-    ;;
-esac
+unzip /vagrant/"${installer_zips}" -d /tmp
 
 cp /vagrant/ora-response/db_install.rsp.tmpl /tmp/db_install.rsp
 sed -i -e "s|###ORACLE_BASE###|$ORACLE_BASE|g" /tmp/db_install.rsp

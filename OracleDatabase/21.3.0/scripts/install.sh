@@ -16,6 +16,24 @@ set -Eeuo pipefail
 
 echo 'INSTALLER: Started up'
 
+# verify that database installer is present and valid
+echo 'INSTALLER: Verifying database installer file'
+
+sha256sum --check /vagrant/db_installer.sha256 || {
+  cat << EOF
+
+INSTALLER: Database installer file missing or invalid.
+           Destroy this VM (vagrant destroy), then
+           make sure that the database installer file
+           is in the same directory as the Vagrantfile,
+           and that its SHA-256 digest matches the
+           value in the db_installer.sha256 file,
+           before running vagrant up again.
+
+EOF
+  exit 1
+}
+
 # get up to date
 dnf upgrade -y
 

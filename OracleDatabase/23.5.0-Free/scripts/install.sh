@@ -16,6 +16,33 @@ set -Eeuo pipefail
 
 echo 'INSTALLER: Started up'
 
+# if the database installer exists, set parameter to keep it
+# otherwise, download it
+db_installer='oracle-database-free-23ai-1.0-1.el9.x86_64.rpm'
+
+if [[ -f /vagrant/"${db_installer}" ]]; then
+  KEEP_DB_INSTALLER='true'
+else
+  echo 'INSTALLER: Downloading Oracle Database software'
+  curl -Ls -o /vagrant/"${db_installer}" \
+       https://download.oracle.com/otn-pub/otn_software/db-free/"${db_installer}"
+fi
+
+# verify that database installer is valid
+echo 'INSTALLER: Verifying database installer file'
+
+sha256sum --check /vagrant/db_installer.sha256 || {
+  cat << EOF
+
+INSTALLER: The database installer file is invalid.
+           Destroy this VM (vagrant destroy) and delete the
+           ${db_installer}
+           file before running vagrant up again.
+
+EOF
+  exit 1
+}
+
 # get up to date
 dnf upgrade -y
 
@@ -48,14 +75,6 @@ EOF
 echo 'INSTALLER: Environment variables set'
 
 # Install Oracle
-# if installer doesn't exist, download it
-db_installer='oracle-database-free-23ai-1.0-1.el9.x86_64.rpm'
-if [[ ! -f /vagrant/"${db_installer}" ]]; then
-  echo 'INSTALLER: Downloading Oracle Database software'
-  curl -Ls -o /vagrant/"${db_installer}" \
-       https://download.oracle.com/otn-pub/otn_software/db-free/"${db_installer}"
-fi
-
 dnf -y install /vagrant/"${db_installer}"
 
 if [[ "${KEEP_DB_INSTALLER,,}" == 'false' ]]; then

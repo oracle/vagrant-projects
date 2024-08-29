@@ -1,0 +1,499 @@
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+#
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# https://oss.oracle.com/licenses/upl.
+#
+# Since: August, 2024
+# Author: ruggero.citton@oracle.com
+# Description: Creates an Oracle Distributed Database (OGDD) Vagrant virtual machine.
+# Optional plugins:
+#     vagrant-env (use .env files for configuration)
+#     vagrant-proxyconf (if you don't have direct access to the Internet)
+#         see https://github.com/tmatilai/vagrant-proxyconf for configuration
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+  
+### -------------------------------------------------------------------
+### Disclaimer:
+###
+### EXCEPT WHERE EXPRESSLY PROVIDED OTHERWISE, THE INFORMATION, SOFTWARE,
+### PROVIDED ON AN \"AS IS\" AND \"AS AVAILABLE\" BASIS. ORACLE EXPRESSLY DISCLAIMS
+### ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT
+### LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+### PURPOSE AND NON-INFRINGEMENT. ORACLE MAKES NO WARRANTY THAT: (A) THE RESULTS
+### THAT MAY BE OBTAINED FROM THE USE OF THE SOFTWARE WILL BE ACCURATE OR
+### RELIABLE; OR (B) THE INFORMATION, OR OTHER MATERIAL OBTAINED WILL MEET YOUR
+### EXPECTATIONS. ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE DOWNLOADED OR
+### OTHERWISE OBTAINED IS DONE AT YOUR OWN DISCRETION AND RISK. ORACLE SHALL HAVE
+### NO RESPONSIBILITY FOR ANY DAMAGE TO YOUR COMPUTER SYSTEM OR LOSS OF DATA THAT
+### RESULTS FROM THE DOWNLOAD OF ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE.
+###
+### ORACLE RESERVES THE RIGHT TO MAKE CHANGES OR UPDATES TO THE SOFTWARE AT ANY
+### TIME WITHOUT NOTICE.
+###
+### Limitation of Liability:
+###
+### IN NO EVENT SHALL ORACLE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+### SPECIAL OR CONSEQUENTIAL DAMAGES, OR DAMAGES FOR LOSS OF PROFITS, REVENUE,
+### DATA OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN ACTION IN
+### CONTRACT OR TORT, ARISING FROM YOUR ACCESS TO, OR USE OF, THE SOFTWARE.
+### -------------------------------------------------------------------
+### This script is NOT supported by Oracle World Wide Technical Support. 
+### The script has been tested and appears to work as intended. 
+### -------------------------------------------------------------------
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+require 'ipaddr'
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+puts ""
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts " Oracle Globally Distributed DB Vagrant box for KVM/libVirt or VirtualBox "
+puts " Copyright (c) 2024 Oracle and/or its affiliates                          "
+puts "--------------------------------------------------------------------------"
+puts " Author: Ruggero Citton <ruggero.citton@oracle.com>                       "
+puts "         RAC Pack, Cloud Innovation and Solution Engineering Team         "
+puts "│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│"
+puts ""
+puts ""
+
+# Vagrant Boxes Source Definition
+var_box = 'oraclelinux/8'
+var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8.json'
+
+# UI object for printing information
+ui = Vagrant::UI::Prefixed.new(Vagrant::UI::Colored.new, "vagrant")
+
+# -----------------------------------------------------------------
+# Variables
+# -----------------------------------------------------------------
+params = YAML.load_file 'config/vagrant.yml'
+#
+var_provider_name   = params['env']['provider']
+#
+var_prefix_name     = params['env']['prefix_name']
+#
+var_network         = params['env']['network']
+var_bridge_nic      = params['env']['bridge_nic']
+var_netmask         = params['env']['netmask']
+var_gateway         = params['env']['gateway']
+var_dns_public_ip   = params['env']['dns_public_ip']
+var_domain          = params['env']['domain']
+#
+var_vm1_name        = params['host1']['vm_name']
+var_vm1_mem_size    = params['host1']['mem_size']
+var_vm1_cpus        = params['host1']['cpus']
+var_vm1_public_ip   = params['host1']['public_ip']
+# 
+var_oradata_disk_num   = params['env']['oradata_disk_num']
+var_oradata_disk_size  = params['env']['oradata_disk_size']
+#
+var_root_password   = params['env']['root_password']
+var_sharding_secret = params['env']['sharding_secret']
+#
+var_podman_registry_uri      = params['env']['podman_registry_uri']
+var_podman_registry_user     = params['env']['podman_registry_user']
+var_podman_registry_password = params['env']['podman_registry_password']
+#
+var_sidb_image = params['env']['sidb_image']
+var_gsm_image  = params['env']['gsm_image']
+
+# -----------------------------------------------------------------
+# Provider Specific checks
+# -----------------------------------------------------------------
+if ( (var_provider_name != 'libvirt') and (var_provider_name != 'virtualbox') )
+  puts "ERROR: 'provider' option can be 'libvirt' or 'virtualbox'" 
+  exit
+else
+  provider = (var_provider_name).to_sym
+  puts "--------------------"
+  puts "Detected #{provider}"
+  puts "--------------------"
+end
+
+# Base Settings
+if var_provider_name == 'virtualbox'
+  box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+  var_vm1_name = var_prefix_name + "-" + var_vm1_name
+elsif var_provider_name == 'libvirt'
+  box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
+  ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+else 
+  puts "Not supported #{provider}, exiting..."
+  exit
+end
+
+## Storage Setup
+if var_provider_name == 'libvirt'
+  var_vm1_storage     = params['host1']['storage_pool_name']
+  var_oradata_storage = params['env']['storage_pool_name']
+
+  if var_vm1_storage.to_s.empty?
+    var_vm1_storage = "default"
+  end
+  if var_oradata_storage.to_s.empty?
+    var_oradata_storage = "default"
+  end
+end
+if var_provider_name == 'virtualbox'
+  var_group           = "/" + var_prefix_name
+  var_vm1_u01_disk       = params['host1']['sc_disk']
+  var_non_rotational     = "on"
+  var_oradata_disk_path  = params['env']['oradata_disk_path']
+
+  if var_oradata_disk_path.to_s.empty?
+    var_oradata_disk_path = "./"
+  else
+    var_oradata_disk_path = var_oradata_disk_path + "/"
+  end
+  if var_vm1_u01_disk.to_s.empty?
+    var_vm1_u01_disk = "./storage_container.vdi"
+  end
+end
+
+# -----------------------------------------------------------------
+# Variables check
+# -----------------------------------------------------------------
+class String
+  def is_ip?
+    !!IPAddr.new(self) rescue false
+  end
+end
+
+if !var_prefix_name.match? /\A[0-9a-zA-Z-]{1,14}\z/
+  puts 'ERROR: prefix_name \'' + var_prefix_name + '\' option can be any combination'
+  puts '  {1..13 chars} of lower and uppercase alphanumeric characters (a - z, A - Z, 0 - 9), and hyphen(-)'
+  exit
+end
+
+if var_vm1_mem_size.to_i < 32768
+  puts 'ERROR: vm1_mem_size option can not be less then 32 Gb'
+  exit
+end
+
+if var_oradata_disk_size.to_i < 10
+  puts 'ERROR: asm_disk_size option can not be less then 10 Gb'
+  exit
+end
+
+if ( (var_network != 'hostonly') and (var_network != 'public') )
+  puts "ERROR: network option can be 'public' or 'hostonly'"
+  exit
+end
+if (var_provider_name == 'libvirt')
+  if ( (var_network == 'public') and (var_bridge_nic.to_s.empty?))
+    puts "ERROR: bridge_nic is empty"
+    exit
+  end
+end
+
+if var_network == 'public'
+  if var_gateway.to_s.empty?
+   puts "ERROR: Using public network gateway must be defined"
+   exit
+  end
+  if var_netmask.to_s.empty?
+    puts "ERROR: Using public network netmask must be defined"
+    exit
+  end
+  if var_dns_public_ip.to_s.empty?
+    puts "ERROR: Using public network var_dns_public_ip must be defined"
+    exit
+  end
+
+  if ! var_netmask.is_ip?
+    puts "ERROR: netmask is not a valid IP address"
+    exit
+  end
+  if ! var_gateway.is_ip?
+    puts "ERROR: gateway is not a valid IP address"
+    exit
+  end
+  if ! var_dns_public_ip.is_ip?
+    puts "ERROR: var_dns_public_ip is not a valid IP address"
+    exit
+  end
+end
+
+if ! var_vm1_public_ip.is_ip?
+  puts 'ERROR: public_ip for host1 is not a valid IP address'
+  exit
+end
+
+if var_root_password.to_s.empty?
+ puts "ERROR: root_password is not defined"
+ exit
+end
+if var_sharding_secret.to_s.empty?
+ puts "ERROR: sharding_secret is not defined"
+ exit 
+end
+
+if var_oradata_disk_num.to_i < 2
+  puts 'ERROR: oradata_disk_num option can not be less then 2'
+  exit
+end
+#------------------------------------------------------------------
+
+# Install required Vagrant plugin
+unless Vagrant.has_plugin?("vagrant-reload")
+  puts 'Installing vagrant-reload Plugin...'
+  system('vagrant plugin install vagrant-reload')
+end
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+
+if var_provider_name == 'libvirt'
+  unless Vagrant.has_plugin?("vagrant-libvirt")
+    puts 'Installing vagrant-libvirt Plugin...'
+    system('vagrant plugin install vagrant-libvirt')
+  end
+  unless Vagrant.has_plugin?("vagrant-kvm")
+    puts 'Installing vagrant-kvm Plugin...'
+    system('vagrant plugin install vagrant-kvm')
+  end
+end
+
+
+# Get host time zone for setting VM time zone
+offset_sec = Time.now.gmt_offset
+if (offset_sec % (60 * 60)) == 0
+  offset_hr = ((offset_sec / 60) / 60)
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+  var_system_timezone = 'Etc/GMT' + timezone_suffix
+else
+  # if host time zone isn't an integer hour offset, fall back to UTC
+  var_system_timezone = 'UTC'
+end
+
+# Get user/password if registry is defined
+if (Dir.glob("#{File.dirname(__FILE__)}/.vagrant/machines/#{var_vm1_name}/#{provider}/*").empty? or ARGV[1] == 'provision') and ARGV[0] != "destroy" and ARGV[0] != "ssh"
+  unless var_podman_registry_uri.to_s.empty?
+    if var_podman_registry_user.to_s.empty?
+      puts "Please insert your username for '" + var_podman_registry_uri.to_s + "' \n"
+      print "Username: "
+      var_podman_registry_user = STDIN.gets.chomp
+    end
+  end
+
+  unless var_podman_registry_user.to_s.empty?
+    if var_podman_registry_password.to_s.empty?
+      puts "\nPlease insert '" + var_podman_registry_user.to_s + "' password for '" + var_podman_registry_uri.to_s + "' \n"
+      print "Password: "
+      var_podman_registry_password = STDIN.noecho(&:gets).chomp
+    end
+  end
+
+  print "\n"
+
+  unless var_podman_registry_uri.to_s.empty?
+    if var_podman_registry_user.to_s.empty?
+     puts "ERROR: Username must be defined"
+     exit
+    end
+  end
+
+  unless var_podman_registry_user.to_s.empty?
+    if var_podman_registry_password.to_s.empty?
+     puts "ERROR: Password must be defined"
+     exit
+    end
+  end
+end
+
+
+# VMs definition
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = var_box
+  config.vm.box_url = var_url
+
+  if var_provider_name == 'virtualbox'
+    config.vm.box_version = ">= 7.8.142"
+  end
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  config.vm.box_check_update = false
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    ui.info "Getting Proxy Configuration from Host..."
+    has_proxy = false
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTP proxy: " + proxy
+        config.proxy.http = proxy
+        has_proxy = true
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTPS proxy: " + proxy
+        config.proxy.https = proxy
+        has_proxy = true
+        break
+      end
+    end
+
+    if has_proxy
+      # Only consider no_proxy if we have proxies defined.
+      no_proxy = ""
+      ["no_proxy", "NO_PROXY"].each do |proxy_var|
+        if ENV[proxy_var]
+          no_proxy = ENV[proxy_var]
+          ui.info "No proxy: " + no_proxy
+          no_proxy += ","
+          break
+        end
+      end
+      config.proxy.no_proxy = no_proxy + "localhost,127.0.0.1"
+    end
+  else
+    ["http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        ui.warn 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
+        break
+      end
+    end
+  end
+
+  if var_provider_name == 'libvirt'
+    # vm host1
+    config.vm.define :host1 do |host1|
+      host1.vm.hostname = var_vm1_name
+      if (var_network == 'hostonly')
+        host1.vm.network "private_network", :libvirt__network_name => "vgt-hostonly_network", ip: var_vm1_public_ip
+      end
+      if (var_network == 'public')
+        host1.vm.network :public_network,
+          :dev  => var_bridge_nic,
+          :mode => "bridge",
+          :type => "bridge",
+          ip: var_vm1_public_ip, netmask: var_netmask
+      end
+      host1.vm.provider :libvirt do |libvirt|
+        libvirt.default_prefix = var_prefix_name
+        libvirt.driver = "kvm"
+        libvirt.memory = var_vm1_mem_size
+        libvirt.cpus   = var_vm1_cpus
+
+        libvirt.storage_pool_name = var_vm1_storage
+        disk_num = 0
+        while disk_num < box_disks_num do
+          libvirt.storage :file,
+            #:path => '',       # automatically chosen if unspecified!
+            #:device => 'vdb',  # automatically chosen if unspecified!
+            #:type => 'qcow2'   # defaults to 'qcow2' if unspecified!
+            :size => '100G'      # defaults to 10G if unspecified!
+          disk_num += 1
+        end
+    
+        # Making oradata disks
+        libvirt.storage_pool_name = var_oradata_storage
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do 
+          oradata_disk_size = var_oradata_disk_size.to_s + "G"
+            libvirt.storage :file,
+              #:path => '',                 # automatically chosen if unspecified!
+              #:device => 'vdb',            # automatically chosen if unspecified!
+              :size => oradata_disk_size,  # defaults to 10G if unspecified!
+              :cache => 'none',
+              :type => 'raw'                # defaults to 'qcow2' if unspecified!
+          disk_num += 1
+          num += 1
+        end
+      end
+    end
+  end
+
+  if var_provider_name == 'virtualbox'
+    # vm host1
+    config.vm.define :host1 do |host1|
+      host1.vm.hostname = var_vm1_name
+      if (var_network == 'hostonly')
+        host1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+      end
+      if (var_network == 'public')
+        host1.vm.network "public_network", ip: var_vm1_public_ip, :netmask => var_netmask, gateway: var_gateway
+      end
+      host1.vm.provider :virtualbox do |vb|
+        vb.name   = var_vm1_name
+        vb.memory = var_vm1_mem_size
+        vb.cpus   = var_vm1_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+    
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
+        end
+
+        # Make u01 vdisk
+        unless File.exist?(var_vm1_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
+
+        # Making oradata disks
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do 
+          oradata_disk = var_oradata_disk_path + "oradata_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(oradata_disk)
+            vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
+           disk_num += 1
+           num += 1
+        end
+      end
+    end
+  end
+
+  # Enable ssh password authentication
+  config.vm.provision "shell", inline: <<-SHELL
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+    /bin/systemctl restart sshd
+  SHELL
+
+  # Enable provisioning with a shell script
+  config.vm.provision "shell", path: "scripts/setup.sh", env: {
+      "PROVIDER"                 => var_provider_name,
+      "BOX_DISK_NUM"             => box_disks_num,
+      "VM1_NAME"                 => var_vm1_name,
+      "SYSTEM_TIMEZONE"          => var_system_timezone,
+      "PREFIX_NAME"              => var_prefix_name,
+      "NODE1_PUBLIC_IP"          => var_vm1_public_ip,
+      "DNS_PUBLIC_IP"            => var_dns_public_ip,
+      "DOMAIN_NAME"              => var_domain,
+      "ROOT_PASSWORD"            => var_root_password,
+      "SHARDING_SECRET"          => var_sharding_secret,
+      "PODMAN_REGISTRY_URI"      => var_podman_registry_uri,
+      "PODMAN_REGISTRY_USER"     => var_podman_registry_user,
+      "PODMAN_REGISTRY_PASSWORD" => var_podman_registry_password,
+      "SIDB_IMAGE"               => var_sidb_image,
+      "GSM_IMAGE"                => var_gsm_image,
+  }
+
+end
+#----------------------------------------------------------
+# EndOfFile
+#----------------------------------------------------------
+

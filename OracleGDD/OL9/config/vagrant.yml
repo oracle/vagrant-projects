@@ -1,0 +1,75 @@
+# -----------------------------------------------
+# vagrant.yml for VirtualBox
+# -----------------------------------------------
+host1:
+  vm_name: host1
+  mem_size: 32768
+  cpus: 2
+  public_ip:  192.168.56.60
+  sc_disk: ./storage_container.vdi
+
+env:
+  provider: virtualbox
+  # ---------------------------------------------
+  prefix_name: vgt-235-gdd
+  # ---------------------------------------------
+  network:     hostonly
+  netmask:     
+  gateway:     
+  domain:      localdomain
+  # ---------------------------------------------
+  dns_public_ip: 192.168.178.1
+  # ---------------------------------------------
+  oradata_disk_path:
+  oradata_disk_num:   2
+  oradata_disk_size: 20
+  # ---------------------------------------------
+  root_password:   welcome1
+  sharding_secret: welcome1
+  # ---------------------------------------------
+  podman_registry_uri: container-registry.oracle.com
+  podman_registry_user:
+  podman_registry_password:
+  # ---------------------------------------------
+  sidb_image: container-registry.oracle.com/database/free
+  gsm_image: container-registry.oracle.com/database/gsm:latest
+  # ---------------------------------------------
+
+## -----------------------------------------------
+## vagrant.yml for libVirt
+## -----------------------------------------------
+#host1:
+#  vm_name: host1
+#  mem_size: 32768
+#  cpus: 2
+#  public_ip:  192.168.125.60
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#env:
+#  provider: libvirt
+#  # ---------------------------------------------
+#  prefix_name: vgt-235-gdd
+#  # ---------------------------------------------
+#  network:     hostonly
+#  netmask:     
+#  gateway:     
+#  dns_public_ip: 
+#  domain:      localdomain
+#  bridge_nic:    
+#  # ---------------------------------------------
+#  dns_public_ip: 192.168.178.1
+#  # ---------------------------------------------
+#  storage_pool_name: Vagrant_KVM_Storage
+#  oradata_disk_num:   2
+#  oradata_disk_size: 20
+#  # ---------------------------------------------
+#  root_password:   welcome1
+#  sharding_secret: welcome1
+#  # ---------------------------------------------
+#  podman_registry_uri: container-registry.oracle.com
+#  podman_registry_user:
+#  podman_registry_password:
+#  # ---------------------------------------------
+#  sidb_image: container-registry.oracle.com/database/free
+#  gsm_image: container-registry.oracle.com/database/gsm:latest
+#  # ---------------------------------------------

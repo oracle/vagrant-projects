@@ -1,5 +1,7 @@
 # Vagrant project to set up Oracle Cloud Native Environment on Oracle Linux 8
 
+Due to major changes in OCNE 2.0 release this Vagrant project is not updated yet for OCNE 2 and deploys the latest OCNE 1.* release.
+
 This Vagrant project will deploy and configure the following components:
 
 - One or more control plane nodes (one by default, 3 in HA mode)

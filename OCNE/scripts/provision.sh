@@ -269,8 +269,8 @@ setup_repos() {
 
   if [[ ${OPERATOR} == 1 ]]; then
       echo_do sudo dnf install -y oracle-olcne-release-el8
-      echo_do sudo dnf config-manager --enable ol8_olcne16 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
-      echo_do sudo dnf config-manager --disable ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
+      echo_do sudo dnf config-manager --enable ol8_olcne19 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+      echo_do sudo dnf config-manager --disable ol8_olcne18 ol8_olcne17 ol8_olcne16 ol8_olcne15 ol8_olcne14 ol8_olcne13 ol8_olcne12
   fi
 
   # Optional extra repo

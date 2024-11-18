@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018-2024 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      06_setup_users.sh
@@ -18,11 +18,12 @@
 #       Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     11/18/24 - ORestart fix
 #    rcitton     03/30/20 - VBox libvirt & kvm support
 #    rcitton     11/06/18 - Creation
 #
 #    REVISION
-#    20240603 - $Revision: 2.0.2.1 $
+#    20241118 - $Revision: 2.0.2.2 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
@@ -95,34 +96,56 @@ chmod -R ug+rw /u01
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Set user env"
 echo "-----------------------------------------------------------------"
-if [ `hostname` == ${NODE1_HOSTNAME} ]
-then
-  cat >> /home/grid/.bash_profile << EOF
+if [ `hostname` == ${NODE1_HOSTNAME} ]; then
+  if [ ${ORESTART} == "false" ]; then
+    cat >> /home/grid/.bash_profile << EOF
 export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 export ORACLE_SID=+ASM1
 EOF
-
-  cat >> /home/oracle/.bash_profile << EOF
+    cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_HOME=${DB_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 export ORACLE_SID=${DB_NAME}1
 EOF
+  else
+    cat >> /home/grid/.bash_profile << EOF
+export ORACLE_HOME=${GI_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=+ASM
+EOF
+    cat >> /home/oracle/.bash_profile << EOF
+export ORACLE_HOME=${DB_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=${DB_NAME}
+EOF
+  fi
 fi
 
-if [ `hostname` == ${NODE2_HOSTNAME} ]
-then
-  cat >> /home/grid/.bash_profile << EOF
+if [ `hostname` == ${NODE2_HOSTNAME} ]; then
+  if [ ${ORESTART} == "false" ]; then
+    cat >> /home/grid/.bash_profile << EOF
 export ORACLE_HOME=${GI_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 export ORACLE_SID=+ASM2
 EOF
-
-  cat >> /home/oracle/.bash_profile << EOF
+    cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_HOME=${DB_HOME}
 export PATH=\$ORACLE_HOME/bin:$PATH
 export ORACLE_SID=${DB_NAME}2
 EOF
+  else
+    cat >> /home/grid/.bash_profile << EOF
+export ORACLE_HOME=${GI_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=+ASM
+EOF
+    cat >> /home/oracle/.bash_profile << EOF
+export ORACLE_HOME=${DB_HOME}
+export PATH=\$ORACLE_HOME/bin:$PATH
+export ORACLE_SID=${DB_NAME}
+EOF
+  fi
 fi
 
 

@@ -307,6 +307,13 @@ then
 ${DB_HOME}/database/runInstaller -ignorePrereq -waitforcompletion -silent \\
         -responseFile ${DB_HOME}/database/response/db_install.rsp \\
 EOF
+elif  [ "${DB_MAJOR}" == "19" ]
+then
+  cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
+export CV_ASSUME_DISTID=OEL7.8
+${DB_HOME}/runInstaller -ignorePrereq -waitforcompletion -silent \\
+        -responseFile ${DB_HOME}/install/response/db_install.rsp \\
+EOF
 else
   cat >> /vagrant/scripts/13_RDBMS_software_installation.sh <<EOF
 ${DB_HOME}/runInstaller -ignorePrereq -waitforcompletion -silent \\

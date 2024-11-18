@@ -17,6 +17,7 @@
 #      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
 #
 #    MODIFIED   (MM/DD/YY)
+#    rcitton     11/18/24 - +19c support
 #    rcitton     03/03/23 - OL8 support + libvirt.graphics_type = "none"
 #    rcitton     08/27/21 - ASMFD support added #335 + ASMFD with libvirt 
 #    rcitton     09/23/20 - Latest OL7 (7.8.142) box for VirtualBox  is having only one disk
@@ -24,7 +25,7 @@
 #    rcitton     03/24/20 - Creation
 #
 #    REVISION
-#    20240603 - $Revision: 2.0.2.5 $
+#    20241118 - $Revision: 2.0.2.6 $
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 
@@ -369,8 +370,8 @@ if ! File.exist?(path)
 end
 
 var_gi_software_ver_major = var_gi_software_ver.digits.to_a[5].to_s + var_gi_software_ver.digits.to_a[4].to_s
-if var_gi_software_ver_major.to_i < 21
-  puts "ERROR: gi_software version must be 21c"
+if var_gi_software_ver_major.to_i < 19
+  puts "ERROR: gi_software version must be 19c or higher"
   exit
 end
 

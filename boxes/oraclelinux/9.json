@@ -4,6 +4,36 @@
   "name": "oraclelinux/9",
   "versions": [
     {
+      "version": "9.5.649",
+      "status": "active",
+      "release_date": "22-Nov-2024",
+      "description_html": "<ul>\n<li>Releasing 9.5.649</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.5.649",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U5_x86_64-vagrant-virtualbox-b649.box",
+        "checksum": "a8cfcbedb65d5e61c821caecc9ed112afbf56fd01430f219a5aaa9b55392d355",
+        "checksum_type": "sha256",
+        "size": 629427761,
+        "kernel": "5.15.0-302.167.6.el9uek.x86_64"
+      }]
+    },
+    {
+      "version": "9.5.651",
+      "status": "active",
+      "release_date": "22-Nov-2024",
+      "description_html": "<ul>\n<li>Releasing 9.5.651</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.5.651",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U5_x86_64-vagrant-libvirt-b651.box",
+        "checksum": "d8c7f9d9f2c7d753f749d404f52dc065831cddf82b4bb55f34f56fcc03dc3045",
+        "checksum_type": "sha256",
+        "size": 542136573,
+        "kernel": "5.15.0-302.167.6.el9uek.x86_64"
+      }]
+    },
+    {
       "version": "9.4.633",
       "status": "active",
       "release_date": "25-Oct-2024",

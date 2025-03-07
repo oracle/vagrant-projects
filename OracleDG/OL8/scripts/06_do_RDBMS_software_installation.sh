@@ -3,7 +3,7 @@
 #
 # LICENSE UPL 1.0
 #
-# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1982-2025 Oracle and/or its affiliates. All rights reserved.
 #
 #    NAME
 #      06_do_RDBMS_software_installation
@@ -18,8 +18,9 @@
 #       ruggero.citton@oracle.com
 #
 #    MODIFIED   (MM/DD/YY)
-#    rcitton     03/30/20 - VBox libvirt & kvm support
-#    rcitton     11/06/18 - Creation
+#    doverbyh    03/07/2025 - 19c support
+#    rcitton     03/30/2020 - VBox libvirt & kvm support
+#    rcitton     11/06/2018 - Creation
 # 
 #    REVISION
 #    20240603 - $Revision: 2.0.2.1 $
@@ -36,6 +37,9 @@ unzip -oq /vagrant/ORCL_software/${DB_SOFTWARE}
 echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Installing RDBMS software"
 echo "-----------------------------------------------------------------"
+if [ "${DB_MAJOR}" == "19" ]; then
+  export CV_ASSUME_DISTID=OEL7.8
+fi
 
 ${DB_HOME}/runInstaller -ignorePrereq -waitforcompletion -silent \
         -responseFile ${DB_HOME}/install/response/db_install.rsp \

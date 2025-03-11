@@ -102,7 +102,7 @@ SID_LIST_LISTENER =
   (SID_LIST =
     (SID_DESC =
       (GLOBAL_DBNAME = ${DB_NAME}_DGMGRL)
-      (DB_HOME = ${DB_HOME})
+      (ORACLE_HOME = ${DB_HOME})
       (SID_NAME = ${DB_NAME})
     )
   )
@@ -127,7 +127,7 @@ SID_LIST_LISTENER =
   (SID_LIST =
     (SID_DESC =
       (GLOBAL_DBNAME = ${DB_NAME}_STDBY_DGMGRL)
-      (DB_HOME = ${DB_HOME})
+      (ORACLE_HOME = ${DB_HOME})
       (SID_NAME = ${DB_NAME})
     )
   )

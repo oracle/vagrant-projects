@@ -1,0 +1,22 @@
+{
+  "description": "Oracle Linux 8 aarch64",
+  "short_description": "Oracle Linux 8 aarch64",
+  "name": "oraclelinux/8-aarch64",
+  "versions": [
+    {
+      "version": "8.10.125",
+      "status": "active",
+      "release_date": "16-Mar-2025",
+      "description_html": "<ul>\n<li>Releasing 8.10.125</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.10.125",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8-aarch64/OL8U10_aarch64-vagrant-virtualbox-b125.box",
+        "checksum": "4dee0c6446ce9fe2093f0eb696696b945bf5044ee8dd61e53df3864fb20607cd",
+        "checksum_type": "sha256",
+        "size": 670245809,
+        "kernel": "5.15.0-306.177.4.el8uek.aarch64"
+      }]
+    }
+  ]
+}

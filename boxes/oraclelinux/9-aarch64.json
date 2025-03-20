@@ -1,0 +1,22 @@
+{
+  "description": "Oracle Linux 9 aarch64",
+  "short_description": "Oracle Linux 9 aarch64",
+  "name": "oraclelinux/9-aarch64",
+  "versions": [
+    {
+      "version": "9.5.129",
+      "status": "active",
+      "release_date": "17-Mar-2025",
+      "description_html": "<ul>\n<li>Releasing 9.5.129</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.5.129",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U5_aarch64-vagrant-virtualbox-b129.box",
+        "checksum": "afcce734f624eeca31c72efd1f5d67f0937f1cb774288a97636b42420ac65422",
+        "checksum_type": "sha256",
+        "size": 515743933,
+        "kernel": "5.15.0-306.177.4.el9uek.aarch64"
+      }]
+    }
+  ]
+}

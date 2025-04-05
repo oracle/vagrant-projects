@@ -86,7 +86,7 @@ The following can be customized:
 - `asm_disk_num`:      Oracle RAC Automatic Storage Manager virtual disk number (min 4)
 - `asm_disk_size`:     Oracle RAC Automatic Storage Manager virtual disk size in Gb (at least 10)
 - `asm_lib_type`:      Oracle ASM filter driver ('asmfd'), Oracle ASMlib ('asmlib') or 'NONE'
-- `p1_ratio`:          ASM disks partiton ration (%). Min 10%, Max 80%
+- `p1_ratio`:          ASM disks partition ration (%). Min 10%, Max 80%
 
 #### environment
 

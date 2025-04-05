@@ -237,7 +237,7 @@ if ( (var_cdb != true) and (var_cdb != false) )
 end
 
 if ( (var_orestart == true) and (var_db_type != 'SI'))
-  puts 'ERROR: orestart option supports ony Single Instance database'
+  puts 'ERROR: orestart option supports only Single Instance database'
   exit
 end
 

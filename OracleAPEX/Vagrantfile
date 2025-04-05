@@ -154,7 +154,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
        "SYSTEM_TIMEZONE"     => SYSTEM_TIMEZONE
     }
 
-  # Provision Oracle Application Expresss on the first run
+  # Provision Oracle Application Express on the first run
   config.vm.provision "shell", path: "scripts/apex.sh"
   # Provision Oracle Rest Data Services on the first run
   config.vm.provision "shell", path: "scripts/ords.sh"

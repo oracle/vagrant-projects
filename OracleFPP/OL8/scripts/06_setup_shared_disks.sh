@@ -9,7 +9,7 @@
 #      05_setup_shared_disks.sh 
 #
 #    DESCRIPTION
-#      Setting-up shared disks partions & udev rules
+#      Setting-up shared disks partitions & udev rules
 #
 #    NOTES
 #      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -27,7 +27,7 @@
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 . /vagrant/config/setup.env
 echo "-----------------------------------------------------------------"
-echo -e "${INFO}`date +%F' '%T`: Setting-up shared disks partions"
+echo -e "${INFO}`date +%F' '%T`: Setting-up shared disks partitions"
 echo "-----------------------------------------------------------------"
 BOX_DISK_NUM=$1
 PROVIDER=$2

@@ -25,7 +25,7 @@ When installed, this Vagrantfile will make use of the following third party Vagr
 proxies in the guest VMs if you need to access the Internet through proxy. See
 plugin documentation for the configuration.
 
-To intall Vagrant plugins run:
+To install Vagrant plugins run:
 ```
 vagrant plugin install <name>...
 ```

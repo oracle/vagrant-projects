@@ -29,7 +29,7 @@ do
       shift; shift
       ;;
     "--dev")
-      # Developper release
+      # Developer release
       Repo="kubernetes_developer"
       YumOpts=""
       shift

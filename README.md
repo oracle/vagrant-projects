@@ -74,4 +74,4 @@ Released under the Universal Permissive License v1.0 as shown at
 
 ## Feedback
 
-Please provide feedback of any kind via Github issues on this repository.
+Please provide feedback of any kind via GitHub issues on this repository.

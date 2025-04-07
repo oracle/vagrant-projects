@@ -108,7 +108,7 @@ ${LOCAL_NETWORK}.101     oshard-gsm2.example.com         oshard-gsm2
 EOF
 "
 
-# Create required directries
+# Create required directories
 
 mkdir -p ${PODMANVOLLOC}/scripts
 chown -R 54321:54321 ${PODMANVOLLOC}/scripts

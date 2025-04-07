@@ -7,7 +7,7 @@
 # Since: August, 2022
 # Author: simon.coter@oracle.com
 # Description: Setup the Oracle Container Registry Mirror
-# Manual steps avaialble at https://docs.oracle.com/en/operating-systems/oracle-linux/podman/podman-UsingContainerRegistries.html#podman-ocr-local-mirror
+# Manual steps available at https://docs.oracle.com/en/operating-systems/oracle-linux/podman/podman-UsingContainerRegistries.html#podman-ocr-local-mirror
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #

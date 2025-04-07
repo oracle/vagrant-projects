@@ -47,7 +47,7 @@ cat > /tmp/init_standby.ora <<EOF
 EOF
 
 echo "-----------------------------------------------------------------"
-echo -e "${INFO}`date +%F' '%T`: Making auxillary instance"
+echo -e "${INFO}`date +%F' '%T`: Making auxiliary instance"
 echo "-----------------------------------------------------------------"
 export ORACLE_SID=${DB_NAME}
 ${DB_HOME}/bin/sqlplus / as sysdba <<EOF

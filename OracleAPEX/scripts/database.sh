@@ -53,7 +53,7 @@ sed -i -e "s|###ORACLE_PWD###|$ORACLE_PWD|g" /etc/sysconfig/oracle-xe-18c.conf
 . /home/oracle/.bashrc
 su - oracle -c "mkdir -p $ORACLE_BASE/admin"
 
-# start listener and datbase configuration
+# start listener and database configuration
 /etc/init.d/oracle-xe-18c configure
 
 echo 'INSTALLER: Database created'

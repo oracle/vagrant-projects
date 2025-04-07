@@ -7,7 +7,7 @@
 # Since: August, 2022
 # Author: simon.coter@oracle.com
 # Description: Setup the Yum mirror configuration
-# Manual steps avaialble at https://docs.oracle.com/en/learn/local_yum-mirror_linux_8/index.html#introduction
+# Manual steps available at https://docs.oracle.com/en/learn/local_yum-mirror_linux_8/index.html#introduction
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 #

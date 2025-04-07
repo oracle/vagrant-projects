@@ -9,7 +9,7 @@
 #      03_setup_oradata_disks.sh 
 #
 #    DESCRIPTION
-#      Setting-up shared disks partions & udev rules
+#      Setting-up shared disks partitions & udev rules
 #
 #    NOTES
 #       DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
@@ -26,7 +26,7 @@
 #
 #│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
 echo "-----------------------------------------------------------------"
-echo -e "${INFO}`date +%F' '%T`: Setting-up oradata disks partions"
+echo -e "${INFO}`date +%F' '%T`: Setting-up oradata disks partitions"
 echo "-----------------------------------------------------------------"
 BOX_DISK_NUM=$1
 PROVIDER=$2

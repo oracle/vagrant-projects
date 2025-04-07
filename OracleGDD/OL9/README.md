@@ -180,7 +180,7 @@ To run scripts in a specific order, prefix the file names with a number, e.g., `
           </dhcp>
         </ip>
       </network>
-- If you are behing a proxy, set the following env variables
+- If you are behind a proxy, set the following env variables
 
 
     #### (Linux/MacOSX)

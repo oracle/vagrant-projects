@@ -161,6 +161,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network "forwarded_port", guest: VM_LISTENER_PORT, host: VM_LISTENER_PORT
   config.vm.network "forwarded_port", guest: VM_EM_EXPRESS_PORT, host: VM_EM_EXPRESS_PORT
 
+  # PL/SQL Debugger Enablement in Virtualized Environments
+  # If you want to run Oracle Database inside a container engine locally installed
+  # like VirtualBox or docker, you will need to have that engine create
+  # a Private or Bridge Network so that the database can "see" the debugger
+  # callback port on your host (where your IDE is running)
+  # Uncommenting this will create a second virtual network adapter on this
+  # network (which you must create separately using your engine hardware manager)
+  # and it will set the address of the adapter to the ip below.
+  #config.vm.network "private_network", ip: "192.168.56.14"
+
   # Provision everything on the first run
   config.vm.provision "shell", path: "scripts/install.sh", env:
     {

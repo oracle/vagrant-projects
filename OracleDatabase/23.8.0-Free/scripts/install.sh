@@ -18,7 +18,7 @@ echo 'INSTALLER: Started up'
 
 # if the database installer exists, set parameter to keep it
 # otherwise, download it
-db_installer='oracle-database-free-23ai-1.0-1.el9.x86_64.rpm'
+db_installer='oracle-database-free-23ai-23.8-1.el9.x86_64.rpm'
 
 if [[ -f /vagrant/"${db_installer}" ]]; then
   KEEP_DB_INSTALLER='true'

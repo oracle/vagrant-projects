@@ -1,3 +1,0 @@
-*.sh	text eol=lf
-*.sha256	text eol=lf
-*.tmpl	text eol=lf

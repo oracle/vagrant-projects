@@ -16,22 +16,35 @@ set -Eeuo pipefail
 
 echo 'INSTALLER: Started up'
 
+# get version to install
+db_versions=/vagrant/db_versions.csv
+
+if [[ ! -f "${db_versions}" || ! -r "${db_versions}" ]]; then
+  echo "INSTALLER: Error reading ${db_versions}. Exiting."
+  exit 1
+fi
+
+version_record=$(grep "^${DB_VERSION,,}," "${db_versions}") || {
+  echo "INSTALLER: Version ${DB_VERSION} not found in ${db_versions}. Exiting."
+  exit 1
+}
+
+# shellcheck disable=SC2034
+IFS=',' read -r version baseurl db_installer sha256 <<< "${version_record}"
+
 # if the database installer exists, set parameter to keep it
 # otherwise, download it
-db_installer='oracle-database-free-23ai-23.8-1.el9.x86_64.rpm'
-
 if [[ -f /vagrant/"${db_installer}" ]]; then
   KEEP_DB_INSTALLER='true'
 else
   echo 'INSTALLER: Downloading Oracle Database software'
-  curl -Ls -o /vagrant/"${db_installer}" \
-       https://download.oracle.com/otn-pub/otn_software/db-free/"${db_installer}"
+  curl -Ls -o /vagrant/"${db_installer}" "${baseurl}${db_installer}"
 fi
 
 # verify that database installer is valid
 echo 'INSTALLER: Verifying database installer file'
 
-sha256sum --check /vagrant/db_installer.sha256 || {
+if [[ $(sha256sum /vagrant/"${db_installer}" | awk '{print $1}') != "${sha256}" ]]; then
   cat << EOF
 
 INSTALLER: The database installer file is invalid.
@@ -41,7 +54,7 @@ INSTALLER: The database installer file is invalid.
 
 EOF
   exit 1
-}
+fi
 
 # get up to date
 dnf upgrade -y

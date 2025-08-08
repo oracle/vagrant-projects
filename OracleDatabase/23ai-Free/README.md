@@ -1,6 +1,6 @@
-# oracle23c-free-vagrant
+# oracle23ai-free-vagrant
 
-This Vagrant project provisions Oracle Database automatically, using Vagrant, an Oracle Linux 8 box and a shell script.
+This Vagrant project provisions Oracle Database 23ai Free automatically, using Vagrant, an Oracle Linux 9 box and a shell script. By default, it installs the latest available version of the database software, but it can be configured to install any available version (see [Configuration](#configuration)).
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ makes configuration much easier
 ## Getting started
 
 1. Clone this repository `git clone https://github.com/oracle/vagrant-projects`
-2. Change into the `vagrant-projects/OracleDatabase/23.3.0-Free` directory
+2. Change into the `vagrant-projects/OracleDatabase/23ai-Free` directory
 3. Run `vagrant up`
    1. The first time you run this it will provision everything and may take a while. Ensure you have a good internet connection as the scripts will update the VM to the latest via `dnf`.
    2. The installation can be customized, if desired (see [Configuration](#configuration)).
@@ -28,7 +28,7 @@ The default database connection parameters are:
 * PDB: `FREEPDB1`
 * Database passwords are auto-generated and printed on install
 
-These parameters can be customized, if desired (see [Configuration](#configuration)).
+Some of these parameters can be customized, if desired (see [Configuration](#configuration)).
 
 ## Resetting password
 
@@ -64,8 +64,8 @@ Parameters are considered in the following order (first one wins):
 
 ### VM parameters
 
-* `VM_NAME` (default: `oracle23c-free-vagrant`): VM name.
-* `VM_MEMORY` (default: `2300`): memory for the VM (in MB, 2300 MB is ~2.25 GB).
+* `VM_NAME` (default: `oracle23ai-free-vagrant`): VM name.
+* `VM_MEMORY` (default: `2300`): Memory for the VM (in MB, 2300 MB is ~2.25 GB).
 * `VM_SYSTEM_TIMEZONE` (default: host time zone (if possible)): VM time zone.
   * The system time zone is used by the database for SYSDATE/SYSTIMESTAMP.
   * The guest time zone will be set to the host time zone when the host time zone is a full hour offset from GMT.
@@ -74,10 +74,11 @@ Parameters are considered in the following order (first one wins):
 
 ### Oracle Database parameters
 
-* `VM_KEEP_DB_INSTALLER` (default: `false`): save database installer RPM file for reuse when VM is rebuilt.
-* `VM_ORACLE_CHARACTERSET` (default: `AL32UTF8`): database character set.
+* `VM_DB_VERSION` (default: `latest`): Database version to install. Must be one of the versions listed in the `db_versions.csv` file.
+* `VM_KEEP_DB_INSTALLER` (default: `false`): Save the database installer RPM file for reuse when VM is rebuilt.
+* `VM_ORACLE_CHARACTERSET` (default: `AL32UTF8`): Database character set.
 * `VM_LISTENER_PORT` (default: `1521`): Listener port.
-* `VM_ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts.
+* `VM_ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts. **Important: Database creation will fail if the password contains spaces or special characters.**
 
 ## Optional plugins
 

@@ -1,39 +1,38 @@
+---
 # Oracle Database 23ai Free configuration file
 #
-# Requires vagrant-env plugin
-#
-# This file will be overwritten on updates, so it is recommended to make
-# a copy of this file called .env.local, then make changes in .env.local.
+# This file will be overwritten on updates, so it is recommended to make a copy
+# of this file called config.local.yaml, then make changes in config.local.yaml.
 #
 # To change a parameter, uncomment it and set it to the desired value.
 # All commented parameters will retain their default values.
 
 # VM name
-# VM_NAME='oracle23ai-free-vagrant'
+#VM_NAME: 'oracle23ai-free-vagrant'
 
 # Memory for the VM (in MB, 2300 MB is ~2.25 GB)
-# VM_MEMORY=2300
+#VM_MEMORY: 2300
 
 # VM time zone
 # If not specified, will be set to match host time zone (if possible)
 # Can use time zone name (e.g., 'America/Los_Angeles')
 # or an offset from GMT (e.g., 'Etc/GMT-2')
-# VM_SYSTEM_TIMEZONE=
+#VM_SYSTEM_TIMEZONE: ''
 
 # Database version to install; default is the latest available
 # Must be one of the versions listed in the db_versions.csv file
-# VM_DB_VERSION='latest'
+#VM_DB_VERSION: 'latest'
 
 # Save database installer RPM file for reuse when VM is rebuilt
-# VM_KEEP_DB_INSTALLER=false
+#VM_KEEP_DB_INSTALLER: false
 
 # Database character set
-# VM_ORACLE_CHARACTERSET='AL32UTF8'
+#VM_ORACLE_CHARACTERSET: 'AL32UTF8'
 
 # Listener port
-# VM_LISTENER_PORT=1521
+#VM_LISTENER_PORT: 1521
 
 # Oracle Database password for SYS, SYSTEM and PDBADMIN accounts
 # If left blank, the password will be generated automatically
 # Database creation will fail if the password contains spaces or special characters
-# VM_ORACLE_PWD=
+#VM_ORACLE_PWD: ''

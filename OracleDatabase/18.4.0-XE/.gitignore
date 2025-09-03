@@ -1,2 +1,2 @@
 *.rpm
-.env.local*
+config.local*.yaml

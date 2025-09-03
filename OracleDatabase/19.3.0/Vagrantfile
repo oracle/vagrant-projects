@@ -6,8 +6,7 @@
 # Since: July, 2018
 # Author: gerald.venzl@oracle.com
 # Description: Creates an Oracle database Vagrant virtual machine.
-# Optional plugins:
-#     vagrant-env (use .env files for configuration)
+# Optional plugin:
 #     vagrant-proxyconf (if you don't have direct access to the Internet)
 #         see https://github.com/tmatilai/vagrant-proxyconf for configuration
 #
@@ -16,6 +15,7 @@
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
+require 'yaml'
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
@@ -29,9 +29,13 @@ ui = Vagrant::UI::Prefixed.new(Vagrant::UI::Colored.new, "vagrant")
 
 # Define constants
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # Use vagrant-env plugin if available
-  if Vagrant.has_plugin?("vagrant-env")
-    config.env.load(".env.local", ".env") # enable the plugin
+  # Load configuration parameters into environment
+  ['config.local.yaml', 'config.yaml'].each do |f|
+    cfg = File.file?(f) ? YAML.safe_load_file(f, freeze: true) : {}
+    cfg && cfg.each do |key, value|
+      key = key.upcase
+      (!ENV[key] || ENV[key].empty?) && ENV[key] = value.to_s
+    end
   end
 
   # VM name

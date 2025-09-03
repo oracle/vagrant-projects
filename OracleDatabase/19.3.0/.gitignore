@@ -1,1 +1,1 @@
-.env.local*
+config.local*.yaml

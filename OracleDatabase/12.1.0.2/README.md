@@ -4,9 +4,7 @@ This Vagrant project provisions Oracle Database automatically, using Vagrant, an
 
 ## Prerequisites
 
-1. Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM.
-2. The [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is optional but
-makes configuration much easier
+Read the [prerequisites in the top level README](../../README.md#prerequisites) to set up Vagrant with either VirtualBox or KVM.
 
 ## Getting started
 
@@ -57,14 +55,13 @@ There are three ways to set parameters:
 
 1. Update the `Vagrantfile`. This is straightforward; the downside is that you will lose changes when you update this repository.
 2. Use environment variables. It might be difficult to remember the parameters used when the VM was instantiated.
-3. Use the `.env`/`.env.local` files (requires
-[vagrant-env](https://github.com/gosuri/vagrant-env) plugin). You can configure your installation by editing the `.env` file, but `.env` will be overwritten on updates, so it's better to make a copy of `.env` called `.env.local`, then make changes in `.env.local`. The `.env.local` file won't be overwritten when you update this repository and it won't mark your Git tree as changed (you won't accidentally commit your local configuration!).
+3. Use the `config.yaml`/`config.local.yaml` files. You can configure your installation by editing the `config.yaml` file, but `config.yaml` will be overwritten on updates, so it's better to make a copy of `config.yaml` called `config.local.yaml`, then make changes in `config.local.yaml`. The `config.local.yaml` file won't be overwritten when you update this repository and it won't mark your Git tree as changed (you won't accidentally commit your local configuration!).
 
 Parameters are considered in the following order (first one wins):
 
 1. Environment variables
-2. `.env.local` (if it exists and the  [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is installed)
-3. `.env` (if the [vagrant-env](https://github.com/gosuri/vagrant-env) plugin is installed)
+2. `config.local.yaml` (if it exists)
+3. `config.yaml`
 4. `Vagrantfile` definitions
 
 ### VM parameters
@@ -89,12 +86,10 @@ Parameters are considered in the following order (first one wins):
 * `VM_EM_EXPRESS_PORT` (default: `5500`): EM Express port.
 * `VM_ORACLE_PWD` (default: automatically generated): Oracle Database password for the SYS, SYSTEM and PDBADMIN accounts.
 
-## Optional plugins
+## Optional plugin
 
-When installed, this Vagrant project will make use of the following third party Vagrant plugins:
+When installed, this Vagrant project will make use of the following third party Vagrant plugin:
 
-* [vagrant-env](https://github.com/gosuri/vagrant-env): loads environment
-variables from .env files;
 * [vagrant-proxyconf](https://github.com/tmatilai/vagrant-proxyconf): set
 proxies in the guest VM if you need to access the Internet through a proxy. See
 the plugin documentation for configuration.

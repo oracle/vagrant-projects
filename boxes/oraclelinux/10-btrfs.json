@@ -1,0 +1,37 @@
+{
+  "description": "Oracle Linux 10 (Btrfs)",
+  "short_description": "Oracle Linux 10 (Btrfs)",
+  "name": "oraclelinux/10-btrfs",
+  "versions": [
+    {
+      "version": "OL10U0_x86_64-vagrant-btrfs-virtualbox-b683",
+      "status": "active",
+      "release_date": "28-Aug-2025",
+      "description_html": "<ul>\n<li>Releasing OL10U0_x86_64-vagrant-btrfs-virtualbox-b683</li>\n</ul>\n",
+      "description_markdown": "* Releasing OL10U0_x86_64-vagrant-btrfs-virtualbox-b683",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol1/OL10U0_x86_64-vagrant-btrfs-virtualbox-b683.box",
+        "checksum": "d5421456ef26a8dd36f5a87aba20c71a97bb2c3c313a7a356020d2676a9a5482",
+        "checksum_type": "sha256",
+        "size": 530400965,
+        "kernel": "6.12.0-102.36.5.2.el10uek.x86_64"
+      }]
+    },
+    {
+      "version": "OL10U0_x86_64-vagrant-btrfs-libvirt-b685",
+      "status": "active",
+      "release_date": "28-Aug-2025",
+      "description_html": "<ul>\n<li>Releasing OL10U0_x86_64-vagrant-btrfs-libvirt-b685</li>\n</ul>\n",
+      "description_markdown": "* Releasing OL10U0_x86_64-vagrant-btrfs-libvirt-b685",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol1/OL10U0_x86_64-vagrant-btrfs-libvirt-b685.box",
+        "checksum": "44a2c708830dff00b0d6f501f27b37d27554ca098d2932c2fd7a1ff636d7cccd",
+        "checksum_type": "sha256",
+        "size": 551899558,
+        "kernel": "6.12.0-102.36.5.2.el10uek.x86_64"
+      }]
+    }
+  ]
+}

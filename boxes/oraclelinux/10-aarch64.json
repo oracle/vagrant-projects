@@ -1,0 +1,22 @@
+{
+  "description": "Oracle Linux 10 aarch64",
+  "short_description": "Oracle Linux 10 aarch64",
+  "name": "oraclelinux/10-aarch64",
+  "versions": [
+    {
+      "version": "OL10U0_aarch64-vagrant-virtualbox-b147",
+      "status": "active",
+      "release_date": "30-Aug-2025",
+      "description_html": "<ul>\n<li>Releasing OL10U0_aarch64-vagrant-virtualbox-b147</li>\n</ul>\n",
+      "description_markdown": "* Releasing OL10U0_aarch64-vagrant-virtualbox-b147",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol1-aarch64/OL10U0_aarch64-vagrant-virtualbox-b147.box",
+        "checksum": "9778fdd76eabed383007e44a2456169c215fb085360c997c44ecca8caa59b751",
+        "checksum_type": "sha256",
+        "size": 801998314,
+        "kernel": "6.12.0-102.36.5.2.el10uek.aarch64"
+      }]
+    }
+  ]
+}

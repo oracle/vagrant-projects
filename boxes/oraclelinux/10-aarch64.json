@@ -4,11 +4,11 @@
   "name": "oraclelinux/10-aarch64",
   "versions": [
     {
-      "version": "OL10U0_aarch64-vagrant-virtualbox-b147",
+      "version": "10.0.147",
       "status": "active",
       "release_date": "30-Aug-2025",
-      "description_html": "<ul>\n<li>Releasing OL10U0_aarch64-vagrant-virtualbox-b147</li>\n</ul>\n",
-      "description_markdown": "* Releasing OL10U0_aarch64-vagrant-virtualbox-b147",
+      "description_html": "<ul>\n<li>Releasing 10.0.147</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.0.147",
       "providers": [{
         "name": "virtualbox",
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol10-aarch64/OL10U0_aarch64-vagrant-virtualbox-b147.box",

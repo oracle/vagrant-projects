@@ -4,11 +4,11 @@
   "name": "oraclelinux/10",
   "versions": [
     {
-      "version": "OL10U0_x86_64-vagrant-virtualbox-b682",
+      "version": "10.0.682",
       "status": "active",
       "release_date": "28-Aug-2025",
-      "description_html": "<ul>\n<li>Releasing OL10U0_x86_64-vagrant-virtualbox-b682</li>\n</ul>\n",
-      "description_markdown": "* Releasing OL10U0_x86_64-vagrant-virtualbox-b682",
+      "description_html": "<ul>\n<li>Releasing 10.0.682</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.0.682",
       "providers": [{
         "name": "virtualbox",
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U0_x86_64-vagrant-virtualbox-b682.box",
@@ -19,11 +19,11 @@
       }]
     },
     {
-      "version": "OL10U0_x86_64-vagrant-libvirt-b684",
+      "version": "10.0.684",
       "status": "active",
       "release_date": "28-Aug-2025",
-      "description_html": "<ul>\n<li>Releasing OL10U0_x86_64-vagrant-libvirt-b684</li>\n</ul>\n",
-      "description_markdown": "* Releasing OL10U0_x86_64-vagrant-libvirt-b684",
+      "description_html": "<ul>\n<li>Releasing 10.0.684</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.0.684",
       "providers": [{
         "name": "libvirt",
         "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U0_x86_64-vagrant-libvirt-b684.box",

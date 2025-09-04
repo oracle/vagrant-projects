@@ -11,7 +11,7 @@
       "description_markdown": "* Releasing OL10U0_aarch64-vagrant-virtualbox-b147",
       "providers": [{
         "name": "virtualbox",
-        "url": "https://yum.oracle.com/boxes/oraclelinux/ol1-aarch64/OL10U0_aarch64-vagrant-virtualbox-b147.box",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10-aarch64/OL10U0_aarch64-vagrant-virtualbox-b147.box",
         "checksum": "9778fdd76eabed383007e44a2456169c215fb085360c997c44ecca8caa59b751",
         "checksum_type": "sha256",
         "size": 801998314,

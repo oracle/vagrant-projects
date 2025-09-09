@@ -1,0 +1,37 @@
+{
+  "description": "Oracle Linux 10",
+  "short_description": "Oracle Linux 10",
+  "name": "oraclelinux/10",
+  "versions": [
+    {
+      "version": "10.0.682",
+      "status": "active",
+      "release_date": "28-Aug-2025",
+      "description_html": "<ul>\n<li>Releasing 10.0.682</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.0.682",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U0_x86_64-vagrant-virtualbox-b682.box",
+        "checksum": "060cd505a33938661bb3c7dad0d4fffbc1801f57267dcaa87d3f5c542bb1be29",
+        "checksum_type": "sha256",
+        "size": 953886735,
+        "kernel": "6.12.0-102.36.5.2.el10uek.x86_64"
+      }]
+    },
+    {
+      "version": "10.0.684",
+      "status": "active",
+      "release_date": "28-Aug-2025",
+      "description_html": "<ul>\n<li>Releasing 10.0.684</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.0.684",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U0_x86_64-vagrant-libvirt-b684.box",
+        "checksum": "c0808977959d91703f4eb1448ecd96911a61c39540d0b004712b0f90162b1441",
+        "checksum_type": "sha256",
+        "size": 986336366,
+        "kernel": "6.12.0-102.36.5.2.el10uek.x86_64"
+      }]
+    }
+  ]
+}

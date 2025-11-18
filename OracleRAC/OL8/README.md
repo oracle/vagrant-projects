@@ -4,7 +4,6 @@
 
 This directory contains Vagrant build files to provision automatically
 two Oracle RAC nodes (21c), using Vagrant, Oracle Linux 8 and shell scripts.
-(It has been tested and it works with 19.23 gold images & ASMLib too)
 
 ![](images/OracleRAC.png)
 

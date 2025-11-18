@@ -582,6 +582,9 @@ echo "-----------------------------------------------------------------"
 echo -e "${INFO}`date +%F' '%T`: Setup the environment variables"
 echo "-----------------------------------------------------------------"
 . /vagrant/config/setup.env
+chmod 700 /root
+sed -i 's/^\s*#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+systemctl restart sshd
 
 
 # ---------------------------------------------------------------------

@@ -4,6 +4,21 @@
   "name": "oraclelinux/8-aarch64",
   "versions": [
     {
+      "version": "8.10.164",
+      "status": "active",
+      "release_date": "21-Jan-2026",
+      "description_html": "<ul>\n<li>Releasing 8.10.164</li>\n</ul>\n",
+      "description_markdown": "* Releasing 8.10.164",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol8-aarch64/OL8U10_aarch64-vagrant-virtualbox-b164.box",
+        "checksum": "2b6517c9acfbb2373fdb86c41ae5217fd45f14e933bce3eb441ba4b618d5afd0",
+        "checksum_type": "sha256",
+        "size": 677535520,
+        "kernel": "5.15.0-316.196.4.1.el8uek.aarch64"
+      }]
+    },
+    {
       "version": "8.10.125",
       "status": "active",
       "release_date": "16-Mar-2025",

@@ -4,6 +4,36 @@
   "name": "oraclelinux/10-btrfs",
   "versions": [
     {
+      "version": "10.1.691",
+      "status": "active",
+      "release_date": "19-Jan-2026",
+      "description_html": "<ul>\n<li>Releasing 10.1.691</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.1.691",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U1_x86_64-vagrant-btrfs-virtualbox-b691.box",
+        "checksum": "63c2a5eb91857fd90723937c04e44688cfc500f72031a153d199c9628b04703a",
+        "checksum_type": "sha256",
+        "size": 559591105,
+        "kernel": "6.12.0-107.59.3.3.el10uek.x86_64"
+      }]
+    },
+    {
+      "version": "10.1.693",
+      "status": "active",
+      "release_date": "19-Jan-2026",
+      "description_html": "<ul>\n<li>Releasing 10.1.693</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.1.693",
+      "providers": [{
+        "name": "libvirt",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10/OL10U1_x86_64-vagrant-btrfs-libvirt-b693.box",
+        "checksum": "a535bfdfd79ba4b6304ebf78892de3399ba145aedd2d2ae5a087d684b1175631",
+        "checksum_type": "sha256",
+        "size": 581465383,
+        "kernel": "6.12.0-107.59.3.3.el10uek.x86_64"
+      }]
+    },
+    {
       "version": "10.0.683",
       "status": "active",
       "release_date": "28-Aug-2025",

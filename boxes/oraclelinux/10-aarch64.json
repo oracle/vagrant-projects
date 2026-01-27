@@ -4,6 +4,21 @@
   "name": "oraclelinux/10-aarch64",
   "versions": [
     {
+      "version": "10.1.156",
+      "status": "active",
+      "release_date": "19-Jan-2026",
+      "description_html": "<ul>\n<li>Releasing 10.1.156</li>\n</ul>\n",
+      "description_markdown": "* Releasing 10.1.156",
+      "providers": [{
+        "name": "virtualbox",
+        "url": "https://yum.oracle.com/boxes/oraclelinux/ol10-aarch64/OL10U1_aarch64-vagrant-virtualbox-b156.box",
+        "checksum": "c022fbe9ded33eacaff952b95905696a09ce8f3324cc8cd07bae1744271511e6",
+        "checksum_type": "sha256",
+        "size": 846952699,
+        "kernel": "6.12.0-107.59.3.3.el10uek.aarch64"
+      }]
+    },
+    {
       "version": "10.0.147",
       "status": "active",
       "release_date": "30-Aug-2025",

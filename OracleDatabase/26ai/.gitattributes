@@ -1,0 +1,2 @@
+*.sh	text eol=lf
+*.cksum	text eol=lf

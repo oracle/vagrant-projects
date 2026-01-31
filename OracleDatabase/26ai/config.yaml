@@ -1,0 +1,45 @@
+---
+# Oracle AI Database 26ai configuration file
+#
+# This file will be overwritten on updates, so it is recommended to make a copy
+# of this file called config.local.yaml, then make changes in config.local.yaml.
+#
+# To change a parameter, uncomment it and set it to the desired value.
+# All commented parameters will retain their default values.
+
+# VM name
+#VM_NAME: 'oracle-26ai-vagrant'
+
+# Memory for the VM (in MB, 2560 MB = 2.5 GB)
+#VM_MEMORY: 2560
+
+# VM time zone
+# If not specified, will be set to match host time zone (if possible)
+# Can use time zone name (e.g., 'America/Los_Angeles')
+# or an offset from GMT (e.g., 'Etc/GMT-2')
+#VM_SYSTEM_TIMEZONE: ''
+
+# Oracle base directory
+#VM_ORACLE_BASE: '/opt/oracle'
+
+# Oracle home directory
+#VM_ORACLE_HOME: '/opt/oracle/product/26ai/dbhome_1'
+
+# Enable read-only Oracle home
+#VM_RO_ORACLE_HOME: false
+
+# Oracle SID
+#VM_ORACLE_SID: 'ORCLCDB'
+
+# PDB name
+#VM_ORACLE_PDB: 'ORCLPDB1'
+
+# Database character set
+#VM_ORACLE_CHARACTERSET: 'AL32UTF8'
+
+# Listener port
+#VM_LISTENER_PORT: 1521
+
+# Oracle Database password for SYS, SYSTEM and PDBADMIN accounts
+# If left blank, the password will be generated automatically
+#VM_ORACLE_PWD: ''

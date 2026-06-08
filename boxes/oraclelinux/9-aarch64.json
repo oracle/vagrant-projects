@@ -4,19 +4,38 @@
   "name": "oraclelinux/9-aarch64",
   "versions": [
     {
+      "version": "9.7.176",
+      "status": "active",
+      "release_date": "28-May-2026",
+      "description_html": "<ul>\n<li>Releasing 9.7.176</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.7.176",
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U7_aarch64-vagrant-virtualbox-b176.box",
+          "checksum": "6c0325146259920c35e069fe3b69fe77b3f0e1a262f54478b14671b05aba70d7",
+          "checksum_type": "sha256",
+          "size": 779203006,
+          "kernel": "6.12.0-202.76.4.4.el9uek.aarch64"
+        }
+      ]
+    },
+    {
       "version": "9.7.160",
       "status": "active",
       "release_date": "21-Jan-2026",
       "description_html": "<ul>\n<li>Releasing 9.7.160</li>\n</ul>\n",
       "description_markdown": "* Releasing 9.7.160",
-      "providers": [{
-        "name": "virtualbox",
-        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U7_aarch64-vagrant-virtualbox-b160.box",
-        "checksum": "a78890e1229cf5f43d7cb151b010d1892a9140d4b0758f8bb519842afcc27f92",
-        "checksum_type": "sha256",
-        "size": 748247952,
-        "kernel": "6.12.0-107.59.3.3.el9uek.aarch64"
-      }]
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U7_aarch64-vagrant-virtualbox-b160.box",
+          "checksum": "a78890e1229cf5f43d7cb151b010d1892a9140d4b0758f8bb519842afcc27f92",
+          "checksum_type": "sha256",
+          "size": 748247952,
+          "kernel": "6.12.0-107.59.3.3.el9uek.aarch64"
+        }
+      ]
     },
     {
       "version": "9.6.151",
@@ -24,14 +43,16 @@
       "release_date": "31-Aug-2025",
       "description_html": "<ul>\n<li>Releasing 9.6.151</li>\n</ul>\n",
       "description_markdown": "* Releasing 9.6.151",
-      "providers": [{
-        "name": "virtualbox",
-        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U6_aarch64-vagrant-virtualbox-b151.box",
-        "checksum": "e2ce46eb22fdaef44948722c46230b704a652eec8fa3f15338787b3a5e36e160",
-        "checksum_type": "sha256",
-        "size": 741255957,
-        "kernel": "6.12.0-102.36.5.2.el9uek.aarch64"
-      }]
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U6_aarch64-vagrant-virtualbox-b151.box",
+          "checksum": "e2ce46eb22fdaef44948722c46230b704a652eec8fa3f15338787b3a5e36e160",
+          "checksum_type": "sha256",
+          "size": 741255957,
+          "kernel": "6.12.0-102.36.5.2.el9uek.aarch64"
+        }
+      ]
     },
     {
       "version": "9.5.129",
@@ -39,14 +60,16 @@
       "release_date": "17-Mar-2025",
       "description_html": "<ul>\n<li>Releasing 9.5.129</li>\n</ul>\n",
       "description_markdown": "* Releasing 9.5.129",
-      "providers": [{
-        "name": "virtualbox",
-        "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U5_aarch64-vagrant-virtualbox-b129.box",
-        "checksum": "afcce734f624eeca31c72efd1f5d67f0937f1cb774288a97636b42420ac65422",
-        "checksum_type": "sha256",
-        "size": 515743933,
-        "kernel": "5.15.0-306.177.4.el9uek.aarch64"
-      }]
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9-aarch64/OL9U5_aarch64-vagrant-virtualbox-b129.box",
+          "checksum": "afcce734f624eeca31c72efd1f5d67f0937f1cb774288a97636b42420ac65422",
+          "checksum_type": "sha256",
+          "size": 515743933,
+          "kernel": "5.15.0-306.177.4.el9uek.aarch64"
+        }
+      ]
     }
   ]
 }

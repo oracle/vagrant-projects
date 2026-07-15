@@ -4,6 +4,40 @@
   "name": "oraclelinux/9-btrfs",
   "versions": [
     {
+      "version": "9.8.713",
+      "status": "active",
+      "release_date": "07-Jul-2026",
+      "description_html": "<ul>\n<li>Releasing 9.8.713</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.8.713",
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U8_x86_64-vagrant-btrfs-virtualbox-b713.box",
+          "checksum": "f264583ce956efe6a96f54a0a58d146327f317b0b5877d1369d79ff051f7f371",
+          "checksum_type": "sha256",
+          "size": 754934162,
+          "kernel": "6.12.0-204.92.4.2.el9uek.x86_64"
+        }
+      ]
+    },
+    {
+      "version": "9.8.715",
+      "status": "active",
+      "release_date": "07-Jul-2026",
+      "description_html": "<ul>\n<li>Releasing 9.8.715</li>\n</ul>\n",
+      "description_markdown": "* Releasing 9.8.715",
+      "providers": [
+        {
+          "name": "libvirt",
+          "url": "https://yum.oracle.com/boxes/oraclelinux/ol9/OL9U8_x86_64-vagrant-btrfs-libvirt-b715.box",
+          "checksum": "04313321f4fb5182258b4ae1e6ec8e33b9e8bbd846b987d3db1bd92d1c3fabf7",
+          "checksum_type": "sha256",
+          "size": 544253437,
+          "kernel": "6.12.0-204.92.4.2.el9uek.x86_64"
+        }
+      ]
+    },
+    {
       "version": "9.7.705",
       "status": "active",
       "release_date": "27-May-2026",

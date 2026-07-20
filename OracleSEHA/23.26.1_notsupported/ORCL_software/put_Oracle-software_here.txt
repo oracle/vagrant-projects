@@ -1,6 +1,0 @@
-The expected Oracle software for this SEHA project is:
-LINUX.X64_2326100_grid_home.zip
-LINUX.X64_2326100_db_home.zip
-
-It will be visible inside the VM below this path:
-    /vagrant/ORCL_software/

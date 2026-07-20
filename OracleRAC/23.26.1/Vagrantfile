@@ -50,7 +50,10 @@ puts ""
 
 # --------------------------- Helpers -----------------------------------------
 def fatal(msg)
-  warn "ERROR: #{msg}"
+  # NOTE: use $stderr.puts, not Kernel#warn. Vagrant evaluates the Vagrantfile
+  # with $VERBOSE = nil, which makes `warn` a silent no-op — so a `fatal` would
+  # exit 1 with no message and `vagrant up` would look like it does nothing.
+  $stderr.puts "ERROR: #{msg}"
   exit 1
 end
 

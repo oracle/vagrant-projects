@@ -75,7 +75,7 @@ env:
 
   # Optional Release Update. 21.3 already ships SEHA, so patching is opt-in:
   # set BOTH keys to patch the GI and DB homes, or leave both out to install at
-  # base release. Each zip needs an entry in db_installer.cksum.
+  # base release. Each zip needs an entry in db_installer.sha256.
   #opatch_software:   p6880880_210000_Linux-x86-64.zip
   #gi_ru_software:    p<bug-number>_210000_Linux-x86-64.zip
 

@@ -17,6 +17,8 @@
 
 require 'yaml'
 require 'ipaddr'
+require 'shellwords'
+require 'digest'
 
 VAGRANTFILE_API_VERSION = "2"
 
@@ -77,18 +79,128 @@ def fetch_optional(hash, *path, default: nil)
   node.nil? ? default : node
 end
 
-def verify_checksum_entry(checksum_path, installer)
-  return false unless File.exist?(checksum_path)
+# Cross-platform lookup for an executable on the host PATH. Uses Ruby rather
+# than a POSIX `command -v` / `which` subshell, which does not exist on a
+# Windows host (and prints "The system cannot find the path specified.").
+def host_command?(name)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(File::PATH_SEPARATOR) : ['']
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+    next false if dir.empty?
+    exts.any? { |ext| File.file?(File.join(dir, name + ext)) }
+  end
+end
 
+# Full integrity check of an installer zip against db_installer.sha256, run on
+# the HOST before any VM boots. Catches a truncated / corrupt / wrong-download
+# zip in seconds — instead of after OS packages, /u01 LVM and disk allocation
+# inside the guest, by which point a bad unzip may already have filled the host
+# disk mid-extraction. Uses SHA-256 via Ruby's built-in Digest, so it needs no
+# external tool and runs identically on Windows, macOS and Linux hosts.
+# Returns nil on success, or a human-readable error string.
+def checksum_error(checksum_path, zip_path, installer)
+  return "installer zip not found: #{zip_path}" unless File.exist?(zip_path)
+  return "checksum manifest not found: #{checksum_path}" unless File.exist?(checksum_path)
+
+  expected_sha = nil
   File.foreach(checksum_path) do |line|
     line = line.strip
     next if line.empty? || line.start_with?('#')
 
-    parts = line.split(/\s+/, 3)
-    next unless parts.length == 3
-    return true if File.basename(parts[2]) == installer
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    if File.basename(parts[1]) == installer
+      expected_sha = parts[0]
+      break
+    end
   end
-  false
+  return "no checksum entry for '#{installer}' found in #{checksum_path}\n  Run:  sha256sum ORCL_software/#{installer}  (Windows: Get-FileHash -Algorithm SHA256 ORCL_software\\#{installer})  and add the result to the manifest." unless expected_sha
+
+  unless expected_sha =~ /\A[0-9a-fA-F]{64}\z/
+    return "invalid checksum entry for '#{installer}' in #{checksum_path} (expected a 64-hex-character SHA-256 digest)"
+  end
+
+  # SHA-256 of the whole file, computed with Ruby's built-in Digest — no
+  # external cksum / sha256sum binary needed, so the same check runs on every host.
+  actual_sha = Digest::SHA256.file(zip_path).hexdigest
+  unless actual_sha.downcase == expected_sha.downcase
+    return "checksum verification failed for #{zip_path}\n" \
+           "  expected sha256=#{expected_sha.downcase} (from #{checksum_path})\n" \
+           "  got      sha256=#{actual_sha}\n" \
+           "  The file differs from the manifest — re-download it, or refresh its\n" \
+           "  entry:  sha256sum ORCL_software/#{installer}"
+  end
+
+  # A matching hash only proves the file is unchanged since the manifest was
+  # written — not that it is a whole zip. Reading the central directory is
+  # near-instant even on a multi-GB zip and catches the two ways an Oracle
+  # download actually goes wrong: truncated, or an HTML error page saved under a
+  # .zip name. Best-effort: skip quietly if unzip is not on the host. Runs unzip
+  # without a shell (array form + File::NULL) so it works on Windows too; only an
+  # actual non-zero exit (ran == false) is treated as corruption, a launch
+  # failure (nil) is ignored.
+  if host_command?('unzip')
+    ran = begin
+            system('unzip', '-qql', zip_path, out: File::NULL, err: File::NULL)
+          rescue StandardError
+            nil
+          end
+    if ran == false
+      return "#{zip_path} matches its checksum but is not a readable zip archive —\n" \
+             "  the download is truncated or corrupt. Re-download it and refresh its\n" \
+             "  entry in #{checksum_path}."
+    end
+  end
+
+  nil
+end
+
+# Cheap identity fingerprint of the installer + manifest (size + mtime of each).
+# Used to decide whether a previous verification still holds without re-reading
+# the multi-GB zip. Returns nil if either file is missing — verification itself
+# then produces the real, specific error.
+def installer_fingerprint(zip_path, checksum_path)
+  return nil unless File.exist?(zip_path) && File.exist?(checksum_path)
+  z = File.stat(zip_path)
+  m = File.stat(checksum_path)
+  "#{z.size}:#{z.mtime.to_i}:#{m.size}:#{m.mtime.to_i}"
+end
+
+# Verify the installer against the manifest, but pay the whole-file cksum read at
+# most once. Two layers of caching:
+#   * ENV guard  — skip within a single process (Vagrant evaluates the Vagrantfile
+#     several times per command).
+#   * on-disk stamp — skip across separate 'vagrant up' invocations while neither
+#     the zip nor the manifest has changed. Keeps fail-fast on the first run (and
+#     whenever either file changes) yet makes every later run instant.
+# The stamp uses size+mtime as a cheap identity cache (not the SHA-256 itself) —
+# it is a convenience cache, not a tamper boundary.
+def verify_installer!(checksum_path, zip_path, installer, label)
+  guard = "__RAC_INSTALLER_VERIFIED_#{installer}"
+  return if ENV[guard]
+
+  stamp_path  = File.join(File.dirname(zip_path), ".#{installer}.verified")
+  fingerprint = installer_fingerprint(zip_path, checksum_path)
+  if fingerprint && File.file?(stamp_path) && File.read(stamp_path).strip == fingerprint
+    ENV[guard] = '1'
+    return
+  end
+
+  puts "Verifying #{label} '#{installer}' against #{File.basename(checksum_path)}"
+  puts "  (reads the full zip — may take up to a minute for a multi-GB installer)..."
+  $stdout.flush
+  if (err = checksum_error(checksum_path, zip_path, installer))
+    fatal err
+  end
+  puts "  #{installer}: checksum OK"
+
+  # Record the fingerprint so subsequent 'vagrant up' runs skip the re-read.
+  # Best-effort: a read-only project dir must not fail an otherwise-good verify.
+  begin
+    File.write(stamp_path, "#{fingerprint}\n") if fingerprint
+  rescue StandardError
+    # ignore — verification already passed; caching is optional
+  end
+  ENV[guard] = '1'
 end
 
 # --------------------------- Config load -------------------------------------
@@ -129,6 +241,10 @@ var_asm_disk_size   = fetch_required(params, 'env', 'asm_disk_size').to_i
 var_p1_ratio        = fetch_required(params, 'env', 'p1_ratio').to_i
 var_gi_software     = fetch_required(params, 'env', 'gi_software')
 var_db_software     = fetch_required(params, 'env', 'db_software')
+# Optional: patching is opt-in. Set both keys to apply a Release Update to the
+# GI and DB homes, or neither to install both at base release.
+var_opatch_software = fetch_optional(params, 'env', 'opatch_software', default: '').to_s
+var_gi_ru_software  = fetch_optional(params, 'env', 'gi_ru_software',  default: '').to_s
 var_ora_languages   = fetch_required(params, 'env', 'ora_languages')
 
 # Passwords can be overridden from the environment for CI/test use.
@@ -176,6 +292,11 @@ if var_orestart == true && var_db_type != 'SI'
   fatal "'env.orestart'=true supports only db_type='SI' (got: '#{var_db_type}')"
 end
 
+# Both RU zips or neither: the shipped OPatch is too old to apply a modern RU.
+if var_opatch_software.empty? ^ var_gi_ru_software.empty?
+  fatal "'env.opatch_software' and 'env.gi_ru_software' must be set together (opatch_software: '#{var_opatch_software}', gi_ru_software: '#{var_gi_ru_software}')"
+end
+
 fatal "'env.p1_ratio' must be between 10 and 80 (got: #{var_p1_ratio})"  unless (10..80).cover?(var_p1_ratio)
 fatal "'env.asm_disk_num' must be >= 4 (got: #{var_asm_disk_num})"       if var_asm_disk_num  < 4
 fatal "'env.asm_disk_size' must be >= 10 GB (got: #{var_asm_disk_size})" if var_asm_disk_size < 10
@@ -215,10 +336,18 @@ unless var_db_software.start_with?(EXPECTED_DB_SOFTWARE_PREFIX)
   fatal "'env.db_software' (#{var_db_software}) does not match this project (expected prefix: #{EXPECTED_DB_SOFTWARE_PREFIX})"
 end
 
-checksum_path = File.expand_path('./db_installer.cksum', __dir__)
+checksum_path = File.expand_path('./db_installer.sha256', __dir__)
 fatal "installer checksum file not found: #{checksum_path}" unless File.exist?(checksum_path)
-fatal "no checksum entry for '#{var_gi_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_gi_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_gi_software)
-fatal "no checksum entry for '#{var_db_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_db_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_db_software)
+verify_installer!(checksum_path, gi_zip_path, var_gi_software, 'GI installer')
+verify_installer!(checksum_path, db_zip_path, var_db_software, 'DB installer')
+
+# The RU pair is optional, but once configured it gets the same treatment as
+# the base installers: present on disk, and pinned in the checksum manifest.
+[var_opatch_software, var_gi_ru_software].reject(&:empty?).each do |ru_zip|
+  ru_zip_path = File.expand_path("./ORCL_software/#{ru_zip}", __dir__)
+  fatal "patch zip not found: #{ru_zip_path}\n  Place it into ORCL_software/, or remove 'env.opatch_software' and 'env.gi_ru_software' to install at base release." unless File.exist?(ru_zip_path)
+  verify_installer!(checksum_path, ru_zip_path, ru_zip, 'patch')
+end
 
 # --------------------------- Provider setup ----------------------------------
 provider = var_provider_name.to_sym
@@ -229,7 +358,7 @@ box_disks_num = 1
 ENV['VAGRANT_NO_PARALLEL'] = 'yes' if var_provider_name == 'libvirt'
 
 begin
-  boxes_out = `vagrant box list 2>/dev/null`
+  boxes_out = IO.popen(['vagrant', 'box', 'list'], err: File::NULL, &:read).to_s
   have_box  = boxes_out.lines.any? { |l| l.include?("#{BOX_NAME} (#{var_provider_name},") }
   unless have_box
     puts "NOTE: '#{BOX_NAME}' is not cached for provider '#{var_provider_name}'."
@@ -343,8 +472,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           libvirt.graphics_type     = 'none'
           libvirt.storage_pool_name = vm_storage
 
-          # u01 disk
-          libvirt.storage :file, size: '100G'
+          # u01 disk. The serial is how 02_setup_u01.sh identifies this disk:
+          # the guest's vd<letter> order does not reliably follow the attachment
+          # order, so the disk has to carry its own identity or a node can end
+          # up putting /u01 on a shared ASM disk.
+          libvirt.storage :file, size: '100G', serial: 'u01_disk'
 
           # shared ASM disks
           libvirt.storage_pool_name = var_asm_storage
@@ -487,6 +619,8 @@ EOF
     'SCAN_IP3'         => var_scan_ip3,
     'GI_SOFTWARE'      => var_gi_software,
     'DB_SOFTWARE'      => var_db_software,
+    'OPATCH_SOFTWARE'  => var_opatch_software,
+    'GI_RU_SOFTWARE'   => var_gi_ru_software,
     'GI_VERSION'       => GI_VERSION,
     'DB_VERSION'       => DB_VERSION,
     'DB_MAJOR'         => DB_MAJOR,

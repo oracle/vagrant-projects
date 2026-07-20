@@ -7,7 +7,7 @@ The code in this directory can build either:
 - a **two-node Grid Infrastructure cluster** with a `RAC`, `RACONE`, or `SI` database, or
 - a **single-node Oracle Restart** lab when `orestart=true`.
 
-The implementation is opinionated and explicit: it validates installer payloads before boot, re-verifies checksums before unzip, lays out `/u01` on its own disk, creates shared ASM storage, performs silent GI and RDBMS installs, runs `dbca`, and then executes optional post-provision hooks from `userscripts/`.
+The implementation is opinionated and explicit: it validates installer payloads before boot, re-verifies every installer checksum on `node1` before it lays down any Oracle software, lays out `/u01` on its own disk, creates shared ASM storage, performs silent GI and RDBMS installs, runs `dbca`, and then executes optional post-provision hooks from `userscripts/`.
 
 ![Topology](.images/OracleRAC.png)
 
@@ -23,6 +23,7 @@ The implementation is opinionated and explicit: it validates installer payloads 
 | Operating system | Uses the `oraclelinux/7` Vagrant box |
 | Cluster shape | **2 nodes** in cluster mode, **1 node** in Oracle Restart mode |
 | GI / DB version | Oracle Grid Infrastructure **19.3.0.0** and Database **19.3.0.0** |
+| Release Update | **Optional** — set `env.opatch_software` + `env.gi_ru_software` to patch the GI and DB homes |
 | Storage model | Dedicated `/u01` disk per node, shared ASM disks split into `P1` and `P2` |
 | ASM device exposure | udev-backed `/dev/ORCL_DISK<n>_p1` and `/dev/ORCL_DISK<n>_p2` |
 | Diskgroups | `DATA` on `P1` partitions, `RECO` on `P2` partitions |
@@ -92,7 +93,7 @@ When `env.orestart=true`, `host2` is skipped entirely.
 | Provider | Choose `virtualbox` or `libvirt` in [`config/vagrant.yml`](config/vagrant.yml) |
 | Vagrant plugins | The `Vagrantfile` auto-installs `vagrant-reload`, `vagrant-proxyconf`, and `vagrant-libvirt` when needed |
 | Oracle installers | Download the Oracle Database 19c Enterprise Edition installer zip from [Oracle](https://www.oracle.com/database/technologies/oracle19c-linux-downloads.html) under [`ORCL_software/`](ORCL_software/) |
-| Checksum manifest | [`db_installer.cksum`](db_installer.cksum) must contain POSIX `cksum` entries for both zips |
+| Checksum manifest | [`db_installer.sha256`](db_installer.sha256) must contain POSIX `cksum` entries for both zips |
 | libvirt networking | The code expects libvirt networks named `vgt-hostonly_network` and `vgt-private_network` |
 | libvirt file sharing | The project tree is mounted into guests via **NFS** at `/vagrant` |
 | Host sizing | Defaults are `8192` MB RAM and `2` vCPU per node, plus one `100G` `/u01` disk per node and `4 x 20G` shared ASM disks |
@@ -105,25 +106,31 @@ Required payload:
 
 | File | Required | Checked by |
 | --- | --- | --- |
-| `ORCL_software/LINUX.X64_193000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
-| `ORCL_software/LINUX.X64_193000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
+| `ORCL_software/LINUX.X64_193000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/LINUX.X64_193000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/p6880880_190000_Linux-x86-64.zip` (OPatch) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 verification |
+| `ORCL_software/p<bug-number>_190000_Linux-x86-64.zip` (GI RU) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 verification |
 
 The `Vagrantfile` rejects installer names that do not start with `LINUX.X64_193`, which prevents accidentally pointing this 19c lab at a different major release.
 
-The repository already ships a [`db_installer.cksum`](db_installer.cksum) manifest. If your downloaded zips differ, regenerate the entries:
+The repository already ships a [`db_installer.sha256`](db_installer.sha256) manifest. If your downloaded zips differ, regenerate the entries:
 
 ```bash
-cksum ORCL_software/LINUX.X64_193000_grid_home.zip
-cksum ORCL_software/LINUX.X64_193000_db_home.zip
+sha256sum ORCL_software/LINUX.X64_193000_grid_home.zip
+sha256sum ORCL_software/LINUX.X64_193000_db_home.zip
 ```
 
-Then update [`db_installer.cksum`](db_installer.cksum). The shipped examples use `/vagrant/<zipname>` in the third field, and the verifier matches on the basename.
+> On **Windows PowerShell**, `sha256sum` is not available — use `Get-FileHash -Algorithm SHA256 ORCL_software\<zip>` instead (the digest is the `Hash` column; upper- or lower-case both match).
+
+Then update [`db_installer.sha256`](db_installer.sha256). The shipped examples use `/vagrant/<zipname>` in the second field, and the verifier matches on the basename.
+
+Applying a Release Update is opt-in. Leave `env.opatch_software` and `env.gi_ru_software` unset and both homes are installed at base release. Set **both** — they are validated as a pair, because the OPatch shipped in the homes is too old to apply a modern RU — and add a SHA-256 entry for each zip to the manifest. The GI RU is a combo patch that carries the RDBMS home patch as well, so one RU zip covers both homes and there is no separate Database RU.
 
 ## 🚀 Quick Start
 
 1. Review and, if necessary, edit [`config/vagrant.yml`](config/vagrant.yml).
 2. Place both Oracle 19c installer zips under [`ORCL_software/`](ORCL_software/).
-3. Confirm [`db_installer.cksum`](db_installer.cksum) matches your installer files.
+3. Confirm [`db_installer.sha256`](db_installer.sha256) matches your installer files.
 4. Launch the lab:
 
    ```bash
@@ -213,6 +220,8 @@ ASM device exposure:
 | `env.ora_languages` | `en,en_GB` | Passed into GI and DB silent installers |
 | `env.gi_software` | `LINUX.X64_193000_grid_home.zip` | Must start with `LINUX.X64_193` |
 | `env.db_software` | `LINUX.X64_193000_db_home.zip` | Must start with `LINUX.X64_193` |
+| `env.opatch_software` | *(unset)* | Optional; OPatch zip, required if applying an RU |
+| `env.gi_ru_software` | *(unset)* | Optional; GI RU zip (a combo patch that also carries the DB home patch) |
 
 ### Credentials
 
@@ -262,7 +271,7 @@ libvirt notes:
 
 ## 🔄 Provisioning Pipeline
 
-The orchestration entrypoint is [`scripts/setup.sh`](scripts/setup.sh). It writes `/etc/opt/oracle-rac/setup.env`, sources [`scripts/_common.sh`](scripts/_common.sh), and runs the numbered steps below.
+The orchestration entrypoint is [`scripts/setup.sh`](scripts/setup.sh). It writes `/etc/opt/oracle-rac/setup.env`, sources [`scripts/_common.sh`](scripts/_common.sh), verifies every installer checksum in one pass on `node1` as soon as the OS packages are in place, and runs the numbered steps below.
 
 | Step | Script | Purpose |
 | --- | --- | --- |
@@ -273,16 +282,17 @@ The orchestration entrypoint is [`scripts/setup.sh`](scripts/setup.sh). It write
 | 04 | [`scripts/04_setup_chrony.sh`](scripts/04_setup_chrony.sh) | Enables `chronyd` so GI CTSS runs in observer mode |
 | 05 | [`scripts/05_setup_users.sh`](scripts/05_setup_users.sh) | Creates OS groups/users, shell limits, Oracle homes, and managed `.bash_profile` files |
 | 06 | [`scripts/06_setup_shared_disks.sh`](scripts/06_setup_shared_disks.sh) | Partitions shared disks, installs udev rules, and exposes Oracle ASM device names |
-| 07 | [`scripts/07_extract_gi.sh`](scripts/07_extract_gi.sh) | Re-verifies GI zip checksum and unpacks the Grid home |
+| 07 | [`scripts/07_extract_gi.sh`](scripts/07_extract_gi.sh) | Unpacks the Grid home, and stages the RU when one is configured |
 | 08 | [`scripts/08_setup_user_equ.sh`](scripts/08_setup_user_equ.sh) | Builds SSH equivalence for `grid`, `oracle`, and later `root` |
-| 10 | [`scripts/10_gi_installation.sh`](scripts/10_gi_installation.sh) | Runs `gridSetup.sh` in silent install mode |
-| 11 | [`scripts/11_gi_root.sh`](scripts/11_gi_root.sh) | Runs `orainstRoot.sh` and `root.sh` locally and remotely |
+| 10 | [`scripts/10_gi_installation.sh`](scripts/10_gi_installation.sh) | Runs `gridSetup.sh` in silent install mode, with `-applyRU` when an RU is configured |
+| 11 | [`scripts/11_gi_root.sh`](scripts/11_gi_root.sh) | Runs `root.sh` locally and remotely, plus `orainstRoot.sh` on each node when OUI generated it (it does not when an RU is configured, since the inventory pointer already exists) |
 | 12 | [`scripts/12_gi_config.sh`](scripts/12_gi_config.sh) | Executes `gridSetup.sh -executeConfigTools` |
 | 13 | [`scripts/13_make_reco_dg.sh`](scripts/13_make_reco_dg.sh) | Creates the `RECO` diskgroup from `P2` partitions |
-| 14 | [`scripts/14_extract_db.sh`](scripts/14_extract_db.sh) | Re-verifies DB zip checksum and unpacks the RDBMS home |
+| 14 | [`scripts/14_extract_db.sh`](scripts/14_extract_db.sh) | Unpacks the RDBMS home |
 | 15 | [`scripts/15_db_software_installation.sh`](scripts/15_db_software_installation.sh) | Runs silent, software-only RDBMS install |
-| 16 | [`scripts/16_create_database.sh`](scripts/16_create_database.sh) | Runs `dbca` to create the configured database |
-| 17 | [`scripts/17_check_database.sh`](scripts/17_check_database.sh) | Validates the database through `srvctl` |
+| 16 | [`scripts/16_patch_db_home.sh`](scripts/16_patch_db_home.sh) | Applies the RU to the RDBMS home via `opatchauto`; a no-op without an RU |
+| 17 | [`scripts/17_create_database.sh`](scripts/17_create_database.sh) | Runs `dbca` to create the configured database |
+| 18 | [`scripts/18_check_database.sh`](scripts/18_check_database.sh) | Validates the database through `srvctl` |
 
 
 Execution nuance:
@@ -290,6 +300,11 @@ Execution nuance:
 - in clustered mode, `node2` owns initial shared-disk partitioning while `node1` drives GI and DB install
 - for VirtualBox, the machines are defined in `host2`, then `host1` order so the above works with an ordinary `vagrant up`
 - in Oracle Restart mode, the single remaining node performs the full flow
+- every installer zip is checksum-verified up front, immediately after step 01: the zips are the one input that can be silently wrong, and a bad download should fail the run in minutes rather than an hour in, halfway through a GI or DB install. Step 01 comes first only because the integrity check needs `unzip`
+- only `node1` runs that check: it owns every extract and install, and both nodes read the same zips from the same `/vagrant` synced folder, so re-reading several GB on `node2` would buy nothing
+- the two homes are patched by different mechanisms: the Grid home in place at install time by `gridSetup.sh -applyRU`, the RDBMS home afterwards by `opatchauto`
+- the RDBMS home is patched before the database is created, so `opatchauto` never has to bring one down, and only once `runInstaller` has pushed the home to both nodes — `opatchauto` builds a cluster-wide topology and fails if a node lacks the home
+- the staged patch tree lives outside the Oracle homes, so each node stages its own copy rather than receiving it with the pushed home
 - shell scripts run with `errexit`, `nounset`, `pipefail`, and a shared ERR trap that prints the failing command and line number
 - installer exit code `6` is treated as success-with-warnings where Oracle tools commonly behave that way
 
@@ -302,7 +317,7 @@ Execution nuance:
 | Process list hygiene | `chpasswd` reads passwords from stdin; SSH equivalence passes the password through `RAC_USER_PASSWORD` instead of argv |
 | Account bootstrap | `grid` and `oracle` are created with locked passwords first, then assigned real passwords later |
 | Root SSH exposure | `PermitRootLogin yes` is enabled only for bootstrap, then reverted to `PermitRootLogin prohibit-password` |
-| Installer integrity | ZIP files are checked by filename policy, manifest presence, and guest-side `cksum` before extraction |
+| Installer integrity | ZIP files are checked by filename policy, manifest presence, and host-side SHA-256 before boot |
 
 Important distinction:
 
@@ -330,7 +345,7 @@ Guidelines:
 | --- | --- |
 | [`Vagrantfile`](Vagrantfile) | VM definitions, validation, provider-specific wiring, env injection |
 | [`config/vagrant.yml`](config/vagrant.yml) | All configurable lab settings |
-| [`db_installer.cksum`](db_installer.cksum) | POSIX `cksum` manifest for GI and DB installer zips |
+| [`db_installer.sha256`](db_installer.sha256) | POSIX `cksum` manifest for the GI and DB installer zips, plus the OPatch/RU zips when an RU is configured |
 | [`scripts/setup.sh`](scripts/setup.sh) | Main orchestration entrypoint |
 | [`scripts/_common.sh`](scripts/_common.sh) | Shared strict-mode helpers, logging, checksum verification, device utilities |
 | [`scripts/`](scripts/) | Numbered provisioning stages from OS prep through DB validation |
@@ -360,4 +375,4 @@ In cluster mode, repeat the `srvctl` checks on `host2` if you want to confirm bo
 
 ## ✅ Bottom Line
 
-This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.cksum`](db_installer.cksum), and the two installer zips aligned, the rest of the lab is intentionally automated.
+This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.sha256`](db_installer.sha256), and the two installer zips aligned, the rest of the lab is intentionally automated.

@@ -56,13 +56,13 @@ The build is intentionally SEHA-only:
    ORCL_software/p39036936_190000_Linux-x86-64.zip
    ```
 
-3. Confirm `db_installer.cksum` matches the installers:
+3. Confirm `db_installer.sha256` matches the installers:
 
    ```bash
-   cksum ORCL_software/LINUX.X64_193000_grid_home.zip
-   cksum ORCL_software/LINUX.X64_193000_db_home.zip
-   cksum ORCL_software/p6880880_190000_Linux-x86-64.zip
-   cksum ORCL_software/p39036936_190000_Linux-x86-64.zip
+   sha256sum ORCL_software/LINUX.X64_193000_grid_home.zip
+   sha256sum ORCL_software/LINUX.X64_193000_db_home.zip
+   sha256sum ORCL_software/p6880880_190000_Linux-x86-64.zip
+   sha256sum ORCL_software/p39036936_190000_Linux-x86-64.zip
    ```
 
    RU patching is part of the clean provisioning flow. The required OPatch is

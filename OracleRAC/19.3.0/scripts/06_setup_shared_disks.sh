@@ -153,10 +153,12 @@ fi
 # Resolve each ASM disk to its real /dev path now, since on virtualbox the
 # kernel may discover SATA targets out of port order and so /dev/sd<letter>
 # does not necessarily follow the attachment-index order.
+# The serials match the Vagrantfile's 'serial: asm_disk_<n>' (1-based), which is
+# also what the udev rules below key on.
 asm_devices=()
 for ((i = 0; i < ASM_DISK_NUM; i++)); do
   pos=$((first_idx + i))
-  asm_devices+=("$(resolve_disk_device "${pos}" "${provider}")")
+  asm_devices+=("$(resolve_disk_device "${pos}" "${provider}" "asm_disk_$((i + 1))")")
 done
 
 if [[ "${partition_here}" == "true" ]]; then

@@ -4,15 +4,14 @@
 # Copyright (c) 1982-2026 Oracle and/or its affiliates. All rights reserved.
 #
 # 14_extract_db.sh
-#   Verify and extract the RDBMS zip into DB_HOME. Runs as root so it can
-#   chown the result to oracle:oinstall.
+#   Extract the RDBMS zip into DB_HOME. Runs as root so it can chown the result
+#   to oracle:oinstall. The Vagrantfile has already verified every installer checksum
+#   by the time this runs.
 #------------------------------------------------------------------------------
 . /vagrant/scripts/_common.sh
 require_root
 require_var DB_HOME
 require_var DB_SOFTWARE
-
-verify_installer_cksum "${DB_SOFTWARE}"
 
 log_section "Extracting ${DB_SOFTWARE} into ${DB_HOME}"
 mkdir -p "${DB_HOME}"

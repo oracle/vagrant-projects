@@ -86,6 +86,9 @@ install -d -m 0700 "${SETUP_ENV_DIR}"
 
     write_env_export GI_SOFTWARE       "${GI_SOFTWARE}"
     write_env_export DB_SOFTWARE       "${DB_SOFTWARE}"
+    # Optional: empty unless an RU is configured in config/vagrant.yml.
+    write_env_export OPATCH_SOFTWARE   "${OPATCH_SOFTWARE:-}"
+    write_env_export GI_RU_SOFTWARE    "${GI_RU_SOFTWARE:-}"
     write_env_export GI_VERSION        "${GI_VERSION}"
     write_env_export DB_VERSION        "${DB_VERSION}"
     write_env_export DB_MAJOR          "${DB_MAJOR}"
@@ -169,6 +172,13 @@ if [[ "${PROVIDER}" == "virtualbox" ]] && ! mountpoint -q /vagrant; then
   mount -t vboxsf vagrant /vagrant
 fi
 
+# Vagrant sets the guest hostname at boot, before any provisioner, and nothing
+# below changes it — so this is already accurate here, and the install block
+# near the end of this script reuses it rather than re-deriving it.
+current_host="$(hostname -s)"
+is_node1="false"
+[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
+
 log_section "Fixing locale warnings"
 for line in 'LANG=en_US.utf-8' 'LC_ALL=en_US.utf-8'; do
   grep -qxF "${line}" /etc/environment || echo "${line}" >> /etc/environment
@@ -212,10 +222,6 @@ log_section "Setting up shared ASM disks"
 SHARED_DISK_OFFSET=$((BOX_DISK_NUM + 1))
 bash "${SCRIPT_DIR}/06_setup_shared_disks.sh" "${SHARED_DISK_OFFSET}" "${PROVIDER}"
 
-current_host="$(hostname -s)"
-is_node1="false"
-[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
-
 # -------------------- node1 only (cluster) OR node1 (orestart) -------
 if [[ "${is_node1}" == "true" && "${ORESTART}" == "false" ]] \
    || [[ "${ORESTART}" == "true" ]]; then
@@ -258,11 +264,22 @@ if [[ "${is_node1}" == "true" && "${ORESTART}" == "false" ]] \
     ssh -o StrictHostKeyChecking=no "root@${VM2_NAME}" "bash ${DB_HOME}/root.sh"
   fi
 
+  # Patch before the database exists, so opatchauto never has to bring one down.
+  # runInstaller already pushed the home to node2 and root.sh registered it
+  # there, which is what opatchauto needs to build its cluster topology.
+  log_section "Patching RDBMS home on ${VM1_NAME}"
+  bash "${SCRIPT_DIR}/16_patch_db_home.sh"
+  if [[ "${ORESTART}" == "false" ]]; then
+    log_section "Patching RDBMS home on ${VM2_NAME}"
+    ssh -o StrictHostKeyChecking=no "root@${VM2_NAME}" \
+      "bash ${SCRIPT_DIR}/16_patch_db_home.sh"
+  fi
+
   log_section "Creating database ${DB_NAME}"
-  su - oracle -c "bash ${SCRIPT_DIR}/16_create_database.sh"
+  su - oracle -c "bash ${SCRIPT_DIR}/17_create_database.sh"
 
   log_section "Checking database"
-  su - oracle -c "bash ${SCRIPT_DIR}/17_check_database.sh"
+  su - oracle -c "bash ${SCRIPT_DIR}/18_check_database.sh"
 fi
 
 # Run user-defined post-setup scripts on every node.

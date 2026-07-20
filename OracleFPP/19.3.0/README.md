@@ -112,6 +112,15 @@ The following can be customized:
 - `oracle_password`  : VM Guest oracle password
 - `sys_password`     : Oracled RDBMS SYS password
 - `ora_languages`    : Oracle products languages
+- `opatch_software`  : Optional. OPatch zip (`p6880880_190000_Linux-x86-64.zip`); required if applying a Release Update
+- `gi_ru_software`   : Optional. GI Release Update zip; patches the GI home (19c has no separate RDBMS home here)
+
+Applying a Release Update is opt-in. Leave `opatch_software` and `gi_ru_software` unset and the GI home is
+installed at base release. Set **both** — they are validated as a pair, because the OPatch shipped in the
+home is too old to apply a modern RU — and add a SHA-256 entry for each zip to `db_installer.sha256`. The GI
+home is patched in place at install time by `gridSetup.sh -applyRU`. Unlike 21c and later, 19c has no
+separate RDBMS home on the FPP server — its GIMR is configured inline by `gridSetup.sh` — so the GI home is
+the only home patched here; the `db_software` zip is staged for `rhpctl import image`, not installed.
 
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):

@@ -8,7 +8,7 @@ The build is intentionally SEHA-only: a **two-node Grid Infrastructure cluster**
 
 The implementation is opinionated and explicit: it verifies every installer payload up front, lays out `/u01` on its own disk, creates shared ASM storage, performs silent GI and RDBMS installs, creates the database, sets the SEHA failover node list, and then executes optional post-provision hooks from `userscripts/`.
 
-![Topology](.images/OracleRAC.png)
+![Topology](.images/OracleSEHA.png)
 
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) — RAC Pack, Cloud Innovation and Solution Engineering Team
 
@@ -106,7 +106,7 @@ Both nodes are always created.
 | Provider | Choose `virtualbox` or `libvirt` in [`config/vagrant.yml`](config/vagrant.yml) |
 | Vagrant plugins | The `Vagrantfile` auto-installs `vagrant-reload`, `vagrant-proxyconf`, and `vagrant-libvirt` when needed |
 | Oracle installers | Download the Oracle Database 21c installer zips (installed as **SE2**) from [Oracle](https://www.oracle.com/database/technologies/oracle21c-linux-downloads.html) under [`ORCL_software/`](ORCL_software/) |
-| Checksum manifest | [`db_installer.cksum`](db_installer.cksum) must contain POSIX `cksum` entries for both zips |
+| Checksum manifest | [`db_installer.sha256`](db_installer.sha256) must contain POSIX `cksum` entries for both zips |
 | libvirt networking | The code expects libvirt networks named `vgt-hostonly_network` and `vgt-private_network` |
 | libvirt file sharing | The project tree is mounted into guests via **NFS** at `/vagrant` |
 | Host sizing | Defaults are `8192` MB RAM and `2` vCPU per node, plus one `100G` `/u01` disk per node and `4 x 20G` shared ASM disks |
@@ -119,27 +119,29 @@ Required payload:
 
 | File | Required | Checked by |
 | --- | --- | --- |
-| `ORCL_software/LINUX.X64_213000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
-| `ORCL_software/LINUX.X64_213000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
-| `ORCL_software/p6880880_210000_Linux-x86-64.zip` (OPatch) | Only if applying an RU | Presence + manifest entry + guest-side `cksum` |
-| `ORCL_software/p<bug>_210000_Linux-x86-64.zip` (GI RU) | Only if applying an RU | Presence + manifest entry + guest-side `cksum` |
+| `ORCL_software/LINUX.X64_213000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/LINUX.X64_213000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/p6880880_210000_Linux-x86-64.zip` (OPatch) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 |
+| `ORCL_software/p<bug>_210000_Linux-x86-64.zip` (GI RU) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 |
 
 The `Vagrantfile` rejects installer names that do not start with `LINUX.X64_213`, which prevents accidentally pointing this 21c lab at a different major release.
 
-The repository already ships a [`db_installer.cksum`](db_installer.cksum) manifest. If your downloaded zips differ, regenerate the entries:
+The repository already ships a [`db_installer.sha256`](db_installer.sha256) manifest. If your downloaded zips differ, regenerate the entries:
 
 ```bash
-cksum ORCL_software/LINUX.X64_213000_grid_home.zip
-cksum ORCL_software/LINUX.X64_213000_db_home.zip
+sha256sum ORCL_software/LINUX.X64_213000_grid_home.zip
+sha256sum ORCL_software/LINUX.X64_213000_db_home.zip
 ```
 
-Then update [`db_installer.cksum`](db_installer.cksum). The shipped examples use `/vagrant/<zipname>` in the third field, and the verifier matches on the basename.
+> On **Windows PowerShell**, `sha256sum` is not available — use `Get-FileHash -Algorithm SHA256 ORCL_software\<zip>` instead (the digest is the `Hash` column; upper- or lower-case both match).
+
+Then update [`db_installer.sha256`](db_installer.sha256). The shipped examples use `/vagrant/<zipname>` in the second field, and the verifier matches on the basename.
 
 ## 🚀 Quick Start
 
 1. Review and, if necessary, edit [`config/vagrant.yml`](config/vagrant.yml).
 2. Place both Oracle 21c installer zips under [`ORCL_software/`](ORCL_software/).
-3. Confirm [`db_installer.cksum`](db_installer.cksum) matches your installer files.
+3. Confirm [`db_installer.sha256`](db_installer.sha256) matches your installer files.
 4. Launch the lab:
 
    ```bash
@@ -314,7 +316,7 @@ Execution nuance:
 | Process list hygiene | `chpasswd` reads passwords from stdin; SSH equivalence passes the password through `RAC_USER_PASSWORD` instead of argv |
 | Account bootstrap | `grid` and `oracle` are created with locked passwords first, then assigned real passwords later |
 | Root SSH exposure | `PermitRootLogin yes` is enabled only for bootstrap, then reverted to `PermitRootLogin prohibit-password` |
-| Installer integrity | ZIP files are checked by filename policy, manifest presence, and guest-side `cksum` before extraction |
+| Installer integrity | ZIP files are checked by filename policy, manifest presence, and host-side SHA-256 before boot |
 
 Important distinction:
 
@@ -342,7 +344,7 @@ Guidelines:
 | --- | --- |
 | [`Vagrantfile`](Vagrantfile) | VM definitions, validation, provider-specific wiring, env injection |
 | [`config/vagrant.yml`](config/vagrant.yml) | All configurable lab settings |
-| [`db_installer.cksum`](db_installer.cksum) | POSIX `cksum` manifest for GI and DB installer zips |
+| [`db_installer.sha256`](db_installer.sha256) | POSIX `cksum` manifest for GI and DB installer zips |
 | [`scripts/setup.sh`](scripts/setup.sh) | Main orchestration entrypoint |
 | [`scripts/_common.sh`](scripts/_common.sh) | Shared strict-mode helpers, logging, checksum verification, device utilities |
 | [`scripts/`](scripts/) | Numbered provisioning stages from OS prep through DB validation |
@@ -374,4 +376,4 @@ checks from `host2` to confirm both nodes see the same cluster resources.
 
 ## ✅ Bottom Line
 
-This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.cksum`](db_installer.cksum), and the two installer zips aligned, the rest of the lab is intentionally automated.
+This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.sha256`](db_installer.sha256), and the two installer zips aligned, the rest of the lab is intentionally automated.

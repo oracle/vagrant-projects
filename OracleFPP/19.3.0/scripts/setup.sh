@@ -74,6 +74,10 @@ install -d -m 0700 "${SETUP_ENV_DIR}"
     printf '\n'
 
     write_env_export GI_SOFTWARE       "${GI_SOFTWARE}"
+    write_env_export DB_SOFTWARE       "${DB_SOFTWARE}"
+    # Optional: empty unless an RU is configured in config/vagrant.yml.
+    write_env_export OPATCH_SOFTWARE   "${OPATCH_SOFTWARE:-}"
+    write_env_export GI_RU_SOFTWARE    "${GI_RU_SOFTWARE:-}"
     write_env_export GI_VERSION        "${GI_VERSION}"
     printf '\n'
 
@@ -143,6 +147,13 @@ if [[ "${PROVIDER}" == "virtualbox" ]] && ! mountpoint -q /vagrant; then
   mount -t vboxsf vagrant /vagrant
 fi
 
+# Vagrant sets the guest hostname at boot, before any provisioner, and nothing
+# below changes it — so this is already accurate here, and the FPP server block
+# further down reuses it rather than re-deriving it.
+current_host="$(hostname -s)"
+is_node1="false"
+[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
+
 log_section "Fixing locale warnings"
 for line in 'LANG=en_US.utf-8' 'LC_ALL=en_US.utf-8'; do
   grep -qxF "${line}" /etc/environment || echo "${line}" >> /etc/environment
@@ -181,10 +192,6 @@ log_section "Setting root, grid and oracle account passwords"
 printf 'root:%s\n'   "${ROOT_PASSWORD}"   | chpasswd
 printf 'grid:%s\n'   "${GRID_PASSWORD}"   | chpasswd
 printf 'oracle:%s\n' "${ORACLE_PASSWORD}" | chpasswd
-
-current_host="$(hostname -s)"
-is_node1="false"
-[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
 
 # -------------------- node1 only -------
 if [[ "${is_node1}" == "true" ]]; then

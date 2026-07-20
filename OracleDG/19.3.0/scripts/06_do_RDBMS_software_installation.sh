@@ -6,7 +6,7 @@
 # 06_do_RDBMS_software_installation.sh
 #   Extracts the Oracle Home zip into DB_HOME and runs the silent installer
 #   (software-only install). Verifies the installer against the project's
-#   db_installer.cksum manifest before extraction.
+#   db_installer.sha256 manifest before extraction.
 #
 #   Runs as the oracle user.
 #------------------------------------------------------------------------------
@@ -24,50 +24,9 @@ require_var ORA_INVENTORY
 require_var ORA_LANGUAGES
 
 zip_path="/vagrant/ORCL_software/${DB_SOFTWARE}"
-checksum_path="/vagrant/db_installer.cksum"
-if [[ ! -f "${zip_path}" ]]; then
-  log_error "installer zip not found at ${zip_path}"
-  exit 1
-fi
 
-if [[ ! -f "${checksum_path}" ]]; then
-  log_error "installer checksum file not found at ${checksum_path}"
-  exit 1
-fi
-
-expected_crc=''
-expected_size=''
-expected_name=''
-
-while IFS= read -r line; do
-  [[ -z "${line}" || "${line}" == \#* ]] && continue
-
-  IFS=' ' read -r entry_crc entry_size entry_name <<< "${line}"
-  if [[ "${entry_name##*/}" == "${DB_SOFTWARE}" ]]; then
-    expected_crc="${entry_crc}"
-    expected_size="${entry_size}"
-    expected_name="${entry_name}"
-    break
-  fi
-done < "${checksum_path}"
-
-if [[ -z "${expected_crc}" || -z "${expected_size}" ]]; then
-  log_error "no checksum entry for ${DB_SOFTWARE} found in ${checksum_path}"
-  exit 1
-fi
-
-if ! [[ "${expected_crc}" =~ ^[0-9]+$ && "${expected_size}" =~ ^[0-9]+$ ]]; then
-  log_error "invalid checksum entry for ${DB_SOFTWARE} in ${checksum_path}"
-  exit 1
-fi
-
-log_section "Verifying ${DB_SOFTWARE} against ${checksum_path}"
-IFS=' ' read -r actual_crc actual_size _ < <(cksum "${zip_path}")
-if [[ "${actual_crc}" != "${expected_crc}" || "${actual_size}" != "${expected_size}" ]]; then
-  log_error "checksum verification failed for ${zip_path} (expected crc=${expected_crc} size=${expected_size} from ${expected_name}, got crc=${actual_crc} size=${actual_size})"
-  exit 1
-fi
-log_success "Installer checksum verified"
+# The installer is verified against db_installer.sha256 on the host (Vagrantfile,
+# verify_installer!) before this VM ever boots, so it is not re-checked here.
 
 log_section "Extracting ${DB_SOFTWARE} into ${DB_HOME}"
 mkdir -p "${DB_HOME}"

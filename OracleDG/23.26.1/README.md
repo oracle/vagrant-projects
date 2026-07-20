@@ -43,7 +43,7 @@
 ORCL_software/LINUX.X64_2326100_db_home.zip
 ```
 
-The `Vagrantfile` stops early if the installer is missing, if `db_installer.cksum` is missing, or if the configured zip has no matching checksum entry. During the guest install step, the project also verifies the zip's `cksum` CRC and byte count against `db_installer.cksum` before extracting it.
+The `Vagrantfile` stops early if the installer is missing, if `db_installer.sha256` is missing, or if the configured zip has no matching checksum entry. During the guest install step, the project also verifies the zip's `cksum` CRC and byte count against `db_installer.sha256` before extracting it.
 
 ## 📦 Resource Profile
 
@@ -94,10 +94,32 @@ All project configuration lives in `config/vagrant.yml`.
 | `env` | `prefix_name`, `domain` | VM naming and DNS domain |
 | `env` | `oradata_disk_num`, `oradata_disk_size` | Oradata disk layout |
 | `env` | `db_software` | Installer zip filename under `ORCL_software/` |
+| `env` | `opatch_software`, `db_ru_software` | Optional Release Update — see below |
 | `env` | `db_name`, `pdb_name` | CDB and PDB naming |
 | `env` | `cdb` | Enable or disable CDB mode |
 | `env` | `adg` | Open standby in Active Data Guard mode |
 | `env` | `*_password` | Root, oracle, SYS, and PDB passwords |
+
+### 🩹 Optional patching (Release Update)
+
+Patching is opt-in. Set **both** keys in `env` to apply a Database Release
+Update to the RDBMS home, or leave both unset to install at base release:
+
+```yaml
+env:
+  opatch_software:   p6880880_230000_Linux-x86-64.zip   # OPatch (bug 6880880)
+  db_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
+```
+
+- Both zips go under `ORCL_software/` and need an entry in `db_installer.sha256`
+  (`sha256sum ORCL_software/<zip>`), same as the base installer.
+- The RU is applied with `opatch apply` on **both** the primary and the standby,
+  **before** the database is created — no instance is running when the binary
+  patch goes on, and both nodes reach the same patch level before redo flows.
+- Data Guard runs a single-instance database with no Grid Infrastructure, so the
+  home is patched directly (no `opatchauto`). This is why the key is
+  `db_ru_software` (a standalone Database RU), not the `gi_ru_software` combo
+  patch used by the RAC/FPP projects.
 
 ## 🔐 Credentials
 

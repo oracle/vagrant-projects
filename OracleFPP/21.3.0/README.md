@@ -112,6 +112,15 @@ The following can be customized:
 - `oracle_password`  : VM Guest oracle password
 - `sys_password`     : Oracled RDBMS SYS password
 - `ora_languages`    : Oracle products languages
+- `opatch_software`  : Optional. OPatch zip (`p6880880_210000_Linux-x86-64.zip`); required if applying a Release Update
+- `gi_ru_software`   : Optional. GI Release Update zip; a combo patch that also carries the RDBMS home patch
+
+Applying a Release Update is opt-in. Leave `opatch_software` and `gi_ru_software` unset and both the GI
+and RDBMS homes are installed at base release. Set **both** — they are validated as a pair, because the
+OPatch shipped in the homes is too old to apply a modern RU — and add a SHA-256 entry for each zip to
+`db_installer.sha256`. The GI RU is a combo patch that carries the RDBMS home patch as well, so one zip
+covers both homes and there is no separate Database RU. The GI home is patched in place at install time
+by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before the GIMR is created.
 
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):

@@ -68,6 +68,13 @@ env:
   gi_software:       LINUX.X64_2326100_grid_home.zip
   db_software:       LINUX.X64_2326100_db_home.zip
 
+  # Optional Release Update. Patching is opt-in: set BOTH keys to patch the GI
+  # and DB homes, or leave both out to install at base release. The GI RU is a
+  # combo patch that carries the DB home patch too, so there is no separate
+  # Database RU. Each zip needs an entry in db_installer.sha256.
+  #opatch_software:   p6880880_230000_Linux-x86-64.zip
+  #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
+
   # Credentials — DISTINCT DEMO PLACEHOLDERS. Change these before real use.
   root_password:     DemoRoot_1
   grid_password:     DemoGrid_1
@@ -117,6 +124,9 @@ env:
 #  storage_pool_name: Vagrant_KVM_Storage
 #  gi_software:       LINUX.X64_2326100_grid_home.zip
 #  db_software:       LINUX.X64_2326100_db_home.zip
+#  # Optional Release Update — set both keys, or neither. See notes above.
+#  #opatch_software:   p6880880_230000_Linux-x86-64.zip
+#  #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
 #  root_password:     DemoRoot_1
 #  grid_password:     DemoGrid_1
 #  oracle_password:   DemoOra_1

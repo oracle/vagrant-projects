@@ -1,0 +1,24 @@
+# Populate this manifest with the SHA-256 of each Oracle installer zip
+# before running `vagrant up`. The guest-side provisioner verifies the SHA-256
+# against these entries before extracting the zip into GI_HOME / DB_HOME.
+#
+# Example:
+#   sha256sum ORCL_software/LINUX.X64_213000_grid_home.zip
+#   sha256sum ORCL_software/LINUX.X64_213000_db_home.zip
+#
+# Then copy the output here, replacing the example path with /vagrant/...
+# Expected filenames:
+#   /vagrant/LINUX.X64_213000_grid_home.zip
+#   /vagrant/LINUX.X64_213000_db_home.zip
+#
+# A Release Update is optional for 21c, which already ships SEHA. If you set
+# env.opatch_software and env.gi_ru_software in config/vagrant.yml, add an entry
+# for each of those zips here too, e.g.:
+#   sha256sum ORCL_software/p6880880_210000_Linux-x86-64.zip
+#   /vagrant/p6880880_210000_Linux-x86-64.zip
+#   /vagrant/p<bug-number>_210000_Linux-x86-64.zip
+#
+# Format (one entry per line):
+#   <sha256>  /vagrant/<installer-zip>
+c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916  /vagrant/LINUX.X64_213000_db_home.zip
+070d4471bc067b1290bdcee6b1c1fff2f21329d2839301e334bcb2a3d12353a3  /vagrant/LINUX.X64_213000_grid_home.zip

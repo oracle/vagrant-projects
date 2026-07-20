@@ -17,6 +17,8 @@
 
 require 'yaml'
 require 'ipaddr'
+require 'shellwords'
+require 'digest'
 
 VAGRANTFILE_API_VERSION = "2"
 
@@ -79,18 +81,128 @@ def fetch_optional(hash, *path, default: nil)
   node.nil? ? default : node
 end
 
-def verify_checksum_entry(checksum_path, installer)
-  return false unless File.exist?(checksum_path)
+# Cross-platform lookup for an executable on the host PATH. Uses Ruby rather
+# than a POSIX `command -v` / `which` subshell, which does not exist on a
+# Windows host (and prints "The system cannot find the path specified.").
+def host_command?(name)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(File::PATH_SEPARATOR) : ['']
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+    next false if dir.empty?
+    exts.any? { |ext| File.file?(File.join(dir, name + ext)) }
+  end
+end
 
+# Full integrity check of an installer zip against db_installer.sha256, run on
+# the HOST before any VM boots. Catches a truncated / corrupt / wrong-download
+# zip in seconds — instead of after OS packages, /u01 LVM and disk allocation
+# inside the guest, by which point a bad unzip may already have filled the host
+# disk mid-extraction. Uses SHA-256 via Ruby's built-in Digest, so it needs no
+# external tool and runs identically on Windows, macOS and Linux hosts.
+# Returns nil on success, or a human-readable error string.
+def checksum_error(checksum_path, zip_path, installer)
+  return "installer zip not found: #{zip_path}" unless File.exist?(zip_path)
+  return "checksum manifest not found: #{checksum_path}" unless File.exist?(checksum_path)
+
+  expected_sha = nil
   File.foreach(checksum_path) do |line|
     line = line.strip
     next if line.empty? || line.start_with?('#')
 
-    parts = line.split(/\s+/, 3)
-    next unless parts.length == 3
-    return true if File.basename(parts[2]) == installer
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    if File.basename(parts[1]) == installer
+      expected_sha = parts[0]
+      break
+    end
   end
-  false
+  return "no checksum entry for '#{installer}' found in #{checksum_path}\n  Run:  sha256sum ORCL_software/#{installer}  (Windows: Get-FileHash -Algorithm SHA256 ORCL_software\\#{installer})  and add the result to the manifest." unless expected_sha
+
+  unless expected_sha =~ /\A[0-9a-fA-F]{64}\z/
+    return "invalid checksum entry for '#{installer}' in #{checksum_path} (expected a 64-hex-character SHA-256 digest)"
+  end
+
+  # SHA-256 of the whole file, computed with Ruby's built-in Digest — no
+  # external cksum / sha256sum binary needed, so the same check runs on every host.
+  actual_sha = Digest::SHA256.file(zip_path).hexdigest
+  unless actual_sha.downcase == expected_sha.downcase
+    return "checksum verification failed for #{zip_path}\n" \
+           "  expected sha256=#{expected_sha.downcase} (from #{checksum_path})\n" \
+           "  got      sha256=#{actual_sha}\n" \
+           "  The file differs from the manifest — re-download it, or refresh its\n" \
+           "  entry:  sha256sum ORCL_software/#{installer}"
+  end
+
+  # A matching hash only proves the file is unchanged since the manifest was
+  # written — not that it is a whole zip. Reading the central directory is
+  # near-instant even on a multi-GB zip and catches the two ways an Oracle
+  # download actually goes wrong: truncated, or an HTML error page saved under a
+  # .zip name. Best-effort: skip quietly if unzip is not on the host. Runs unzip
+  # without a shell (array form + File::NULL) so it works on Windows too; only an
+  # actual non-zero exit (ran == false) is treated as corruption, a launch
+  # failure (nil) is ignored.
+  if host_command?('unzip')
+    ran = begin
+            system('unzip', '-qql', zip_path, out: File::NULL, err: File::NULL)
+          rescue StandardError
+            nil
+          end
+    if ran == false
+      return "#{zip_path} matches its checksum but is not a readable zip archive —\n" \
+             "  the download is truncated or corrupt. Re-download it and refresh its\n" \
+             "  entry in #{checksum_path}."
+    end
+  end
+
+  nil
+end
+
+# Cheap identity fingerprint of the installer + manifest (size + mtime of each).
+# Used to decide whether a previous verification still holds without re-reading
+# the multi-GB zip. Returns nil if either file is missing — verification itself
+# then produces the real, specific error.
+def installer_fingerprint(zip_path, checksum_path)
+  return nil unless File.exist?(zip_path) && File.exist?(checksum_path)
+  z = File.stat(zip_path)
+  m = File.stat(checksum_path)
+  "#{z.size}:#{z.mtime.to_i}:#{m.size}:#{m.mtime.to_i}"
+end
+
+# Verify the installer against the manifest, but pay the whole-file cksum read at
+# most once. Two layers of caching:
+#   * ENV guard  — skip within a single process (Vagrant evaluates the Vagrantfile
+#     several times per command).
+#   * on-disk stamp — skip across separate 'vagrant up' invocations while neither
+#     the zip nor the manifest has changed. Keeps fail-fast on the first run (and
+#     whenever either file changes) yet makes every later run instant.
+# The stamp uses size+mtime as a cheap identity cache (not the SHA-256 itself) —
+# it is a convenience cache, not a tamper boundary.
+def verify_installer!(checksum_path, zip_path, installer, label)
+  guard = "__SEHA_INSTALLER_VERIFIED_#{installer}"
+  return if ENV[guard]
+
+  stamp_path  = File.join(File.dirname(zip_path), ".#{installer}.verified")
+  fingerprint = installer_fingerprint(zip_path, checksum_path)
+  if fingerprint && File.file?(stamp_path) && File.read(stamp_path).strip == fingerprint
+    ENV[guard] = '1'
+    return
+  end
+
+  puts "Verifying #{label} '#{installer}' against #{File.basename(checksum_path)}"
+  puts "  (reads the full zip — may take up to a minute for a multi-GB installer)..."
+  $stdout.flush
+  if (err = checksum_error(checksum_path, zip_path, installer))
+    fatal err
+  end
+  puts "  #{installer}: checksum OK"
+
+  # Record the fingerprint so subsequent 'vagrant up' runs skip the re-read.
+  # Best-effort: a read-only project dir must not fail an otherwise-good verify.
+  begin
+    File.write(stamp_path, "#{fingerprint}\n") if fingerprint
+  rescue StandardError
+    # ignore — verification already passed; caching is optional
+  end
+  ENV[guard] = '1'
 end
 
 # --------------------------- Config load -------------------------------------
@@ -223,12 +335,12 @@ unless var_opatch_software == 'p6880880_190000_Linux-x86-64.zip'
   fatal "'env.opatch_software' must be p6880880_190000_Linux-x86-64.zip (got: #{var_opatch_software})"
 end
 
-checksum_path = File.expand_path('./db_installer.cksum', __dir__)
+checksum_path = File.expand_path('./db_installer.sha256', __dir__)
 fatal "installer checksum file not found: #{checksum_path}" unless File.exist?(checksum_path)
-fatal "no checksum entry for '#{var_gi_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_gi_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_gi_software)
-fatal "no checksum entry for '#{var_db_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_db_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_db_software)
-fatal "no checksum entry for '#{var_opatch_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_opatch_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_opatch_software)
-fatal "no checksum entry for '#{var_gi_ru_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_gi_ru_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_gi_ru_software)
+verify_installer!(checksum_path, gi_zip_path, var_gi_software, 'GI installer')
+verify_installer!(checksum_path, db_zip_path, var_db_software, 'DB installer')
+verify_installer!(checksum_path, opatch_zip_path, var_opatch_software, 'OPatch')
+verify_installer!(checksum_path, gi_ru_zip_path, var_gi_ru_software, 'GI RU')
 
 # --------------------------- Provider setup ----------------------------------
 provider = var_provider_name.to_sym
@@ -239,7 +351,7 @@ box_disks_num = 1
 ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 begin
-  boxes_out = `vagrant box list 2>/dev/null`
+  boxes_out = IO.popen(['vagrant', 'box', 'list'], err: File::NULL, &:read).to_s
   have_box  = boxes_out.lines.any? { |l| l.include?("#{BOX_NAME} (#{var_provider_name},") }
   unless have_box
     puts "NOTE: '#{BOX_NAME}' is not cached for provider '#{var_provider_name}'."

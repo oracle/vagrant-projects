@@ -47,7 +47,7 @@ host2:
 
 env:
   provider:          virtualbox
-  prefix_name:       rac19-ol7
+  prefix_name:       seha19-ol7
   domain:            localdomain
 
   # SCAN addresses — three IPs in the same subnet as public_ip
@@ -103,7 +103,7 @@ env:
 #
 #env:
 #  provider:          libvirt
-#  prefix_name:       rac19-ol7
+#  prefix_name:       seha19-ol7
 #  domain:            localdomain
 #  scan_ip1:          192.168.125.115
 #  scan_ip2:          192.168.125.116

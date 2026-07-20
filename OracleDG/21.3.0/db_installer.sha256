@@ -1,0 +1,13 @@
+# Populate this manifest with the SHA-256 of the Oracle installer zip
+# before running `vagrant up`.
+#
+# Example:
+#   sha256sum ORCL_software/LINUX.X64_213000_db_home.zip
+#
+# Then copy the output here, replacing the example path with /vagrant/...
+# Expected filename:
+#   /vagrant/LINUX.X64_213000_db_home.zip
+#
+# Format:
+#   <sha256>  /vagrant/<installer-zip>
+c05d5c32a72b9bf84ab6babb49aee99cbb403930406aabe3cf2f94f1d35e0916    LINUX.X64_213000_db_home.zip

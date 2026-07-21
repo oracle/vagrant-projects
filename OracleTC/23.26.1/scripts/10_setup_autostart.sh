@@ -8,7 +8,7 @@
 #------------------------------------------------------------------------------
 . /vagrant/scripts/_common.sh
 require_root
-require_var DB_NAME
+require_var INSTANCE_NAME
 require_var DB_HOME
 
 log_section "Installing oracle dbstart/dbshut helper scripts"
@@ -76,7 +76,7 @@ chmod 0644 /etc/systemd/system/dbora.service
 
 log_section "Writing /etc/oratab"
 cat > /etc/oratab <<EOF
-${DB_NAME}:${DB_HOME}:Y
+${INSTANCE_NAME}:${DB_HOME}:Y
 EOF
 chown oracle:oinstall /etc/oratab
 chmod 0664             /etc/oratab

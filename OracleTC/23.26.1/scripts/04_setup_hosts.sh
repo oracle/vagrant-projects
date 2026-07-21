@@ -32,5 +32,7 @@ log_section "Writing /etc/resolv.conf"
 {
   printf 'search %s\n' "${DOMAIN_NAME}"
   # Only add a nameserver when one was configured (public network mode).
-  [[ -n "${DNS_PUBLIC_IP:-}" ]] && printf 'nameserver %s\n' "${DNS_PUBLIC_IP}"
+  if [[ -n "${DNS_PUBLIC_IP:-}" ]]; then
+    printf 'nameserver %s\n' "${DNS_PUBLIC_IP}"
+  fi
 } > /etc/resolv.conf

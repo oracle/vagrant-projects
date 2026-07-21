@@ -1,0 +1,6 @@
+The expecting Oracle software is
+LINUX.X64_<six digit version>_grid_home.zip
+LINUX.X64_<six digit version>_db_home.zip
+
+It will be visible inside the VM below this path:
+    /vagrant/ORCL_software/

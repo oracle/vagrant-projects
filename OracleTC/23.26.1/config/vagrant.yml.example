@@ -50,15 +50,15 @@ env:
   ora_languages:   en,en_GB
   # ---------------------------------------------
   sdb_host_name:       192.168.56.100
-  sdb_service_name:    DB234H1
+  sdb_service_name:    DB26H1
   sdb_service_port:    1521
   #
   db_files:            200
-  db_unique_name:      DB234H1_TC
-  instance_name:       DB234H1_TC1
-  fal_server:          DB234H1
-  fal_client:          DB234H1_TC
-  local_listener:      DB234H1_TC
+  db_unique_name:      DB26H1_TC
+  instance_name:       DB26H1_TC1
+  fal_server:          DB26H1
+  fal_client:          DB26H1_TC
+  local_listener:      DB26H1_TC
   sga_target:          6
   # ---------------------------------------------
 
@@ -103,14 +103,14 @@ env:
 #  ora_languages:   en,en_GB
 #  # ---------------------------------------------
 #  sdb_host_name:       192.168.125.100
-#  sdb_service_name:    DB234H1
+#  sdb_service_name:    DB26H1
 #  sdb_service_port:    1521
 #  #
 #  db_files:            200
-#  db_unique_name:      DB234H1_TC
-#  instance_name:       DB234H1_TC1
-#  fal_server:          DB234H1
-#  fal_client:          DB234H1_TC
-#  local_listener:      DB234H1_TC
+#  db_unique_name:      DB26H1_TC
+#  instance_name:       DB26H1_TC1
+#  fal_server:          DB26H1
+#  fal_client:          DB26H1_TC
+#  local_listener:      DB26H1_TC
 #  sga_target:          6
 #  # ---------------------------------------------

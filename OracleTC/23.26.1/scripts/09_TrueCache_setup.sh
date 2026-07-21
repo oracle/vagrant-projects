@@ -30,14 +30,22 @@ export ORACLE_HOME="${DB_HOME}"
 export ORACLE_SID="${INSTANCE_NAME}"
 
 log_section "Managing SDB password file"
-shopt -s nullglob
-sdb_pwfiles=( /vagrant/SDB_files/orapw* )
-shopt -u nullglob
-if (( ${#sdb_pwfiles[@]} == 0 )); then
-  log_error "no source-DB password file found under /vagrant/SDB_files/ (expected orapw<SID>)"
-  exit 1
+sdb_pwfile="/vagrant/SDB_files/orapw${SDB_SERVICE_NAME}"
+if [[ ! -f "${sdb_pwfile}" ]]; then
+  # Fall back to a glob only when it is unambiguous (exactly one candidate)
+  shopt -s nullglob
+  sdb_pwfiles=( /vagrant/SDB_files/orapw* )
+  shopt -u nullglob
+  if (( ${#sdb_pwfiles[@]} == 0 )); then
+    log_error "no source-DB password file found under /vagrant/SDB_files/ (expected orapw${SDB_SERVICE_NAME})"
+    exit 1
+  elif (( ${#sdb_pwfiles[@]} > 1 )); then
+    log_error "multiple source-DB password files found under /vagrant/SDB_files/ but none named orapw${SDB_SERVICE_NAME}: ${sdb_pwfiles[*]}"
+    exit 1
+  fi
+  sdb_pwfile="${sdb_pwfiles[0]}"
 fi
-cp "${sdb_pwfiles[0]}" "${DB_HOME}/dbs/orapw${INSTANCE_NAME}"
+cp "${sdb_pwfile}" "${DB_HOME}/dbs/orapw${INSTANCE_NAME}"
 
 log_section "Writing instance pfile"
 pfile="${DB_HOME}/dbs/init_${INSTANCE_NAME}.ora"
@@ -135,4 +143,4 @@ else
   log_error "True Cache instance did not reach 'READ ONLY WITH APPLY' — check the source DB configuration and alert log"
 fi
 
-# /etc/oratab is written (as root, with correct ownership) by 09_setup_autostart.sh.
+# /etc/oratab is written (as root, with correct ownership) by 10_setup_autostart.sh.

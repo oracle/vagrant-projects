@@ -37,10 +37,10 @@ The effective topology comes from the combination of `env.orestart` and `env.db_
 
 | `env.orestart` | `env.db_type` | VMs created | Result |
 | --- | --- | --- | --- |
-| `false` | `RAC` | `host1`, `host2` | Two-node Oracle RAC database |
-| `false` | `RACONE` | `host1`, `host2` | Two-node cluster with RAC One Node database |
-| `false` | `SI` | `host1`, `host2` | Two-node GI cluster, database created with `dbca -databaseConfigType SINGLE` |
-| `true` | `SI` | `host1` only | Single-node Oracle Restart lab |
+| `false` | `RAC` | `vm1`, `vm2` | Two-node Oracle RAC database |
+| `false` | `RACONE` | `vm1`, `vm2` | Two-node cluster with RAC One Node database |
+| `false` | `SI` | `vm1`, `vm2` | Two-node GI cluster, database created with `dbca -databaseConfigType SINGLE` |
+| `true` | `SI` | `vm1` only | Single-node Oracle Restart lab |
 
 Validation enforced by `Vagrantfile`:
 
@@ -80,10 +80,10 @@ Default node roles:
 
 | VM | Default hostname | Role |
 | --- | --- | --- |
-| `host1` | `node1` | Main orchestration node, GI install driver, DB software install, DB creation |
-| `host2` | `node2` | Secondary cluster node; owns shared-disk partitioning in clustered mode |
+| `vm1` | `node1` | Main orchestration node, GI install driver, DB software install, DB creation |
+| `vm2` | `node2` | Secondary cluster node; owns shared-disk partitioning in clustered mode |
 
-When `env.orestart=true`, `host2` is skipped entirely.
+When `env.orestart=true`, `vm2` is skipped entirely.
 
 ## 📋 Host Requirements
 
@@ -158,8 +158,8 @@ Applying a Release Update is opt-in. Leave `env.opatch_software` and `env.gi_ru_
 5. Connect to the guests:
 
    ```bash
-   vagrant ssh host1
-   vagrant ssh host2   # cluster mode only
+   vagrant ssh vm1
+   vagrant ssh vm2   # cluster mode only
    ```
 
 Core lifecycle commands:
@@ -170,8 +170,8 @@ Core lifecycle commands:
 | Stop the lab | `vagrant halt` |
 | Start again | `vagrant up` |
 | Destroy VMs | `vagrant destroy -f` |
-| SSH to node1 | `vagrant ssh host1` |
-| SSH to node2 | `vagrant ssh host2` (cluster mode only) |
+| SSH to node1 | `vagrant ssh vm1` |
+| SSH to node2 | `vagrant ssh vm2` (cluster mode only) |
 
 For a truly clean VirtualBox rebuild, also remove persistent `node*_u01.vdi` and `asm_disk*.vdi` files.
 
@@ -186,21 +186,21 @@ All runtime knobs live in [`config/vagrant.yml`](config/vagrant.yml).
 | `env.provider` | `libvirt` | Must be `libvirt` or `virtualbox` |
 | `env.prefix_name` | `rac19-ol7` | Must match `[0-9a-zA-Z-]{1,14}`; also drives cluster and SCAN naming |
 | `env.domain` | `localdomain` | Used in `/etc/hosts`, VIP names, private names, and SCAN |
-| `host1.vm_name` | `node1` | Hostname for node1 |
-| `host2.vm_name` | `node2` | Hostname for node2; ignored when `orestart=true` |
-| `host1.public_ip` | `192.168.125.111` | Public network address |
-| `host2.public_ip` | `192.168.125.121` | Public network address for node2 |
-| `host1.private_ip` | `192.168.200.111` | Interconnect address |
-| `host2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
-| `host1.vip_ip` | `192.168.125.112` | VIP used by GI |
-| `host2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
+| `vm1.vm_name` | `node1` | Hostname for node1 |
+| `vm2.vm_name` | `node2` | Hostname for node2; ignored when `orestart=true` |
+| `vm1.public_ip` | `192.168.125.111` | Public network address |
+| `vm2.public_ip` | `192.168.125.121` | Public network address for node2 |
+| `vm1.private_ip` | `192.168.200.111` | Interconnect address |
+| `vm2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
+| `vm1.vip_ip` | `192.168.125.112` | VIP used by GI |
+| `vm2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
 | `env.scan_ip1..3` | `192.168.125.115-117` | Intended SCAN IPs on the public subnet |
 
 Name resolution behavior:
 
 - [`scripts/03_setup_hosts.sh`](scripts/03_setup_hosts.sh) rewrites `/etc/hosts` with public, private, VIP, and SCAN entries
 - `/etc/resolv.conf` is rewritten to contain `search <domain>`
-- The public subnet and private subnet handed to GI are derived from `host1` addresses
+- The public subnet and private subnet handed to GI are derived from `vm1` addresses
 
 ### Storage and ASM
 
@@ -209,11 +209,11 @@ Name resolution behavior:
 | `env.asm_disk_num` | `4` | Minimum `4` shared ASM disks |
 | `env.asm_disk_size` | `20` | Size in GB for each shared ASM disk |
 | `env.p1_ratio` | `80` | Partition split: `P1` for `DATA`, `P2` for `RECO` |
-| `host1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
-| `host2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
 | `env.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt shared ASM disks only |
-| `host1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
-| `host2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
+| `vm1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
+| `vm2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
 | `env.asm_disk_path` | `./` | VirtualBox path for `asm_disk*.vdi` |
 | `env.virtualbox_group` | `false` | VirtualBox only; optional VM group path such as `/rac19-ol7` |
 | `env.non_rotational` | `on` | VirtualBox SSD hint for attached disks |
@@ -271,7 +271,7 @@ vagrant up
 | Shared folder | Standard Vagrant/VirtualBox shared folder; the orchestrator remounts `/vagrant` if needed | Explicit NFS mount at `/vagrant` |
 | Networks | `vboxnet0` for public, `private` intnet for interconnect | `vgt-hostonly_network` for public, `vgt-private_network` for interconnect |
 | `/u01` disk | Persistent `node1_u01.vdi` / `node2_u01.vdi` by default | Per-node `100G` file-backed libvirt volume |
-| Shared ASM disks | `asm_disk*.vdi`, created once by the first VirtualBox node brought up for the run (`host2` in cluster mode, `host1` in Oracle Restart) and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
+| Shared ASM disks | `asm_disk*.vdi`, created once by the first VirtualBox node brought up for the run (`vm2` in cluster mode, `vm1` in Oracle Restart) and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
 | Disk tuning | `non_rotational` toggle supported | No equivalent YAML toggle here |
 | Parallelism | Normal Vagrant behavior | `VAGRANT_NO_PARALLEL=yes` is forced |
 
@@ -279,7 +279,7 @@ VirtualBox persistence matters:
 
 - `vagrant destroy -f` removes the VMs, but existing `node*_u01.vdi` and `asm_disk*.vdi` files can remain
 - if you change disk topology or want a pristine rebuild, delete those files manually
-- in clustered mode, VirtualBox defines `host2` before `host1` so a plain `vagrant up` lets node2 finish ASM disk partitioning before node1 starts the install-driving stages
+- in clustered mode, VirtualBox defines `vm2` before `vm1` so a plain `vagrant up` lets node2 finish ASM disk partitioning before node1 starts the install-driving stages
 - `env.virtualbox_group` is disabled by default because assigning a group moves VM files on the host and stale directories from interrupted runs can block `vagrant up`
 
 libvirt notes:
@@ -316,7 +316,7 @@ The orchestration entrypoint is [`scripts/setup.sh`](scripts/setup.sh). It write
 Execution nuance:
 
 - in clustered mode, `node2` owns initial shared-disk partitioning while `node1` drives GI and DB install
-- for VirtualBox, the machines are defined in `host2`, then `host1` order so the above works with an ordinary `vagrant up`
+- for VirtualBox, the machines are defined in `vm2`, then `vm1` order so the above works with an ordinary `vagrant up`
 - in Oracle Restart mode, the single remaining node performs the full flow
 - every installer zip is checksum-verified up front, immediately after step 01: the zips are the one input that can be silently wrong, and a bad download should fail the run in minutes rather than an hour in, halfway through a GI or DB install. Step 01 comes first only because the integrity check needs `unzip`
 - only `node1` runs that check: it owns every extract and install, and both nodes read the same zips from the same `/vagrant` synced folder, so re-reading several GB on `node2` would buy nothing
@@ -378,7 +378,7 @@ Guidelines:
 After `vagrant up`, common validation commands are:
 
 ```bash
-vagrant ssh host1
+vagrant ssh vm1
 
 sudo cat /etc/opt/oracle-rac/setup.env
 sudo su - grid
@@ -389,7 +389,7 @@ srvctl config database -d DB19H1
 srvctl status database -d DB19H1
 ```
 
-In cluster mode, repeat the `srvctl` checks on `host2` if you want to confirm both nodes see the same cluster resources.
+In cluster mode, repeat the `srvctl` checks on `vm2` if you want to confirm both nodes see the same cluster resources.
 
 ## ✅ Bottom Line
 

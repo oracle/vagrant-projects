@@ -15,7 +15,7 @@
 | Database | Oracle Database 26ai Enterprise Edition (`23.26.1.0.0`) |
 | Operating system | Oracle Linux 9 |
 | Virtualization providers | VirtualBox, KVM/libvirt |
-| Vagrant machines | `host1` = primary, `host2` = standby |
+| Vagrant machines | `vm1` = primary, `vm2` = standby |
 | Default sample config | `config/vagrant.yml` is currently set up for `virtualbox` |
 
 ## 🎯 What This Project Delivers
@@ -30,8 +30,8 @@
 
 | Vagrant machine | Default guest hostname | Role |
 | --- | --- | --- |
-| `host1` | `primary` | Primary database node |
-| `host2` | `standby` | Physical standby node |
+| `vm1` | `primary` | Primary database node |
+| `vm2` | `standby` | Physical standby node |
 
 ## ✅ Prerequisites
 
@@ -87,8 +87,8 @@ vagrant up
 Connect to the lab:
 
 ```bash
-vagrant ssh host1    # primary
-vagrant ssh host2    # standby
+vagrant ssh vm1    # primary
+vagrant ssh vm2    # standby
 ```
 
 Useful lifecycle commands:
@@ -105,9 +105,9 @@ All project configuration lives in `config/vagrant.yml`.
 
 | Section | Keys | Purpose |
 | --- | --- | --- |
-| `host1`, `host2` | `vm_name`, `mem_size`, `cpus` | Per-node compute settings |
-| `host1`, `host2` | `public_ip`, `private_ip` | Network addresses |
-| `host1`, `host2` | `u01_disk` or `storage_pool_name` | Provider-specific storage settings |
+| `vm1`, `vm2` | `vm_name`, `mem_size`, `cpus` | Per-node compute settings |
+| `vm1`, `vm2` | `public_ip`, `private_ip` | Network addresses |
+| `vm1`, `vm2` | `u01_disk` or `storage_pool_name` | Provider-specific storage settings |
 | `env` | `provider` | `virtualbox` or `libvirt` |
 | `env` | `prefix_name`, `domain` | VM naming and DNS domain |
 | `env` | `oradata_disk_num`, `oradata_disk_size` | Oradata disk layout |
@@ -168,8 +168,8 @@ Use numeric prefixes if execution order matters, for example `01_prepare.sh` or 
 
 | Component | Result |
 | --- | --- |
-| `host1` primary | Database created with `dbca`, archivelog enabled, force logging enabled, flashback enabled, standby redo logs configured, Data Guard Broker enabled |
-| `host2` standby | Auxiliary instance prepared, `RMAN DUPLICATE ... FOR STANDBY FROM ACTIVE DATABASE` performed, broker registration completed |
+| `vm1` primary | Database created with `dbca`, archivelog enabled, force logging enabled, flashback enabled, standby redo logs configured, Data Guard Broker enabled |
+| `vm2` standby | Auxiliary instance prepared, `RMAN DUPLICATE ... FOR STANDBY FROM ACTIVE DATABASE` performed, broker registration completed |
 | Active Data Guard | If `adg: true`, the standby opens read-only with managed recovery |
 | Wallet artifact | A PDB wallet archive is left on the primary at `/tmp/wallet_<PDB_NAME>.zip` |
 

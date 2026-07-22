@@ -53,10 +53,10 @@ ORADATA_NUM=$(yaml_get env oradata_disk_num)
 ORADATA_PATH=$(yaml_get env oradata_disk_path)
 
 # VirtualBox u01 disk (default to the Vagrantfile's own default).
-U01_H1=$(yaml_get host1 u01_disk); U01_H1=${U01_H1:-./primary_u01.vdi}
+U01_H1=$(yaml_get vm1 u01_disk); U01_H1=${U01_H1:-./primary_u01.vdi}
 
 # libvirt storage pools (u01 follows the per-host pool; oradata the env pool).
-POOL_H1=$(yaml_get host1 storage_pool_name); POOL_H1=${POOL_H1:-default}
+POOL_H1=$(yaml_get vm1 storage_pool_name); POOL_H1=${POOL_H1:-default}
 POOL_ORADATA=$(yaml_get env storage_pool_name); POOL_ORADATA=${POOL_ORADATA:-default}
 
 if [[ -z "$PROVIDER" || -z "$PREFIX" || -z "$ORADATA_NUM" ]]; then
@@ -84,7 +84,7 @@ EOF
     echo "  2. delete the u01 disk (${U01_H1##*/})"
     echo "  3. delete ${ORADATA_NUM} oradata disk(s)"
   else
-    echo "  2. sweep leftover per-domain volumes for ${PREFIX}host1"
+    echo "  2. sweep leftover per-domain volumes for ${PREFIX}-vm1"
   fi
   echo ""
   read -rp "Continue? [y/N] " ans
@@ -122,7 +122,7 @@ case "$PROVIDER" in
     for pool in $pools; do
       echo "=== sweeping leftover volumes in libvirt pool '$pool' ==="
       virsh pool-refresh "$pool" >/dev/null 2>&1 || true
-      libvirt_sweep_domain "$pool" "${PREFIX}host1"
+      libvirt_sweep_domain "$pool" "${PREFIX}-vm1"
     done
     ;;
   virtualbox)

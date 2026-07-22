@@ -29,7 +29,7 @@
 # -----------------------------------------------
 # vagrant.yml for VirtualBox
 # -----------------------------------------------
-host1:
+vm1:
   vm_name: fpps
   mem_size: 16384
   cpus: 1
@@ -43,7 +43,7 @@ host1:
   private_ip:    192.168.200.101
   u01_disk: ./fpps_u01.vdi
 
-host2:
+vm2:
   vm_name: fppc
   mem_size: 8192
   cpus: 4
@@ -94,7 +94,7 @@ env:
 ## -----------------------------------------------
 ## vagrant.yml for libVirt
 ## -----------------------------------------------
-#host1:
+#vm1:
 #  vm_name: fpps
 #  mem_size: 16384
 #  cpus: 4
@@ -108,7 +108,7 @@ env:
 #  private_ip:    192.168.200.101
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name: fppc
 #  mem_size: 8192
 #  cpus: 1

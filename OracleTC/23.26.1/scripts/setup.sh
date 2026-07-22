@@ -5,7 +5,7 @@
 #
 # setup.sh
 #   Orchestrator for the Oracle True Cache single-node provisioning flow.
-#   Invoked by Vagrantfile on host1.
+#   Invoked by Vagrantfile on vm1.
 #
 #   Author: Ruggero Citton <ruggero.citton@oracle.com>
 #           RAC Pack, Cloud Innovation and Solution Engineering Team

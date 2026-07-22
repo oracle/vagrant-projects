@@ -30,7 +30,7 @@ for v in PROVIDER BOX_DISK_NUM SYSTEM_TIMEZONE PREFIX_NAME \
   fi
 done
 
-# host2 vars are only required in cluster mode.
+# vm2 vars are only required in cluster mode.
 if [[ "${ORESTART}" != "true" ]]; then
   for v in NODE2_PUBLIC_IP NODE2_PRIV_IP NODE2_VIP_IP; do
     if [[ -z "${!v:-}" ]]; then

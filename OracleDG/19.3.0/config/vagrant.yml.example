@@ -12,7 +12,7 @@
 # ------------------------------------------------------------------------------
 
 ## -------------------------------- VirtualBox ----------------------------------
-host1:
+vm1:
   vm_name:    primary
   mem_size:   8192          # MB — minimum 6144
   cpus:       2
@@ -20,7 +20,7 @@ host1:
   private_ip: 192.168.200.131
   u01_disk:   ./primary_u01.vdi
 
-host2:
+vm2:
   vm_name:    standby
   mem_size:   8192
   cpus:       2
@@ -65,7 +65,7 @@ env:
   adg:               true        # Active Data Guard (open R/O + apply)
 
 # ---------------------------------- KVM / libvirt -----------------------------
-#host1:
+#vm1:
 #  vm_name:    primary
 #  mem_size:   8192
 #  cpus:       2
@@ -73,7 +73,7 @@ env:
 #  private_ip: 192.168.200.131
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name:    standby
 #  mem_size:   8192
 #  cpus:       2

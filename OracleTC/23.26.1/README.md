@@ -74,7 +74,7 @@ Running RDBMS node at least 6Gb are required
 5. Copy the source Database password file into `./SDB_files`
 6. Add a tnsnames.ora entry for the True Cache instance on the source Database
 7. Run `vagrant up`
-8. Connect to the host issuing: `vagrant ssh host1`.
+8. Connect to the host issuing: `vagrant ssh vm1`.
 9. You can shut down the box via the usual `vagrant halt` and start it up again via `vagrant up`
 
 (*) Download Database binary from OTN into the `ORCL_software` folder
@@ -99,8 +99,8 @@ replacing the placeholder path with `/vagrant/...`:
 You can customize your Oracle environment by amending the parameters in the configuration file: "./config/vagrant.yml"
 The following can be customized:
 
-#### node1
-- `vm_name`:           VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+#### vm1
+- `vm_name`:           VM Guest OS hostname (set to <prefix_name>-<vm_name>). The hypervisor VM name is <prefix_name>-vm1
 - `mem_size`:          VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`:              VM Guest virtual cores
 - `public_ip`:         VM public ip. VirtualBox `vboxnet0` hostonly is in use
@@ -147,7 +147,7 @@ The following can be customized:
 
 
 #### VirtualBox provider Example:
-    host1:
+    vm1:
       vm_name: mydb
       mem_size: 8192
       cpus: 2
@@ -200,7 +200,7 @@ The following can be customized:
     # -----------------------------------------------
     # vagrant.yml for libVirt
     # -----------------------------------------------
-    host1:
+    vm1:
       vm_name: truecache
       mem_size: 8192
       cpus: 2

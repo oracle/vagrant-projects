@@ -42,8 +42,8 @@ Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
 
 ## Memory requirement
 
-- Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
-- Deploy OL8 host2 (optional) as Oracle FPP target at least 6Gb are required
+- Deploy one Grid Infrastructure and FPP Server (vm1) at least 12Gb are required
+- Deploy OL8 vm2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
 
@@ -75,9 +75,9 @@ Note: due to ACFS FPP usage, kernel-uek-5.4.17 is in use
 You can customize your Oracle environment by amending the parameters in the configuration file: `./config/vagrant.yml`
 The following can be customized:
 
-#### host1
+#### vm1
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm1
 - `mem_size`         : VM Guest memory size Mb (minimum 12Gb --> 12288)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -92,9 +92,9 @@ The following can be customized:
 - `u01_disk`:          VirtualBox Oracle binary virtual disk (u01) file path
 
 
-#### host2
+#### vm2
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm2
 - `mem_size`         : VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -143,7 +143,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -157,7 +157,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
       ha_vip:        192.168.56.109
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -193,7 +193,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
 
 #### Virtualbox provider Example2: (Oracle FPP Server available on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 2
@@ -207,7 +207,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
       private_ip: 192.168.200.101
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -246,7 +246,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on private network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -260,7 +260,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -296,7 +296,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -310,7 +310,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -390,7 +390,7 @@ by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before th
 
 Note1 : as you need the Database binaries zip file under "ORCL_software"  
 Note2 : having limited resource you may want setup the following JAVA env variables for grid user : `JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2"` before rhpctl commands executions  
-Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'  
+Note3 : you can connect vm1/vm2 issuing 'vagrant ssh vm1/vm2'  
 Note4 : following some fpp commands you may want to try
 
 - `rhpctl import image -image db_21300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_213000_db_home.zip`

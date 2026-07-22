@@ -65,8 +65,8 @@ $Prefix     = Get-YamlValue -Section 'env'   -Key 'prefix_name'
 $OradataNum = Get-YamlValue -Section 'env'   -Key 'oradata_disk_num'
 $OradataPath= Get-YamlValue -Section 'env'   -Key 'oradata_disk_path'
 
-$U01H1 = Get-YamlValue -Section 'host1' -Key 'u01_disk'; if ([string]::IsNullOrEmpty($U01H1)) { $U01H1 = '.\primary_u01.vdi' }
-$U01H2 = Get-YamlValue -Section 'host2' -Key 'u01_disk'; if ([string]::IsNullOrEmpty($U01H2)) { $U01H2 = '.\standby_u01.vdi' }
+$U01H1 = Get-YamlValue -Section 'vm1' -Key 'u01_disk'; if ([string]::IsNullOrEmpty($U01H1)) { $U01H1 = '.\primary_u01.vdi' }
+$U01H2 = Get-YamlValue -Section 'vm2' -Key 'u01_disk'; if ([string]::IsNullOrEmpty($U01H2)) { $U01H2 = '.\standby_u01.vdi' }
 
 if ([string]::IsNullOrEmpty($Provider) -or [string]::IsNullOrEmpty($Prefix) -or [string]::IsNullOrEmpty($OradataNum)) {
     Write-Error "env.provider / env.prefix_name / env.oradata_disk_num must be set in $Config"

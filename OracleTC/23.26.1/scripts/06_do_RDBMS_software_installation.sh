@@ -18,7 +18,7 @@ require_var DB_SOFTWARE
 require_var ORA_INVENTORY
 require_var ORA_LANGUAGES
 
-zip_path="/vagrant/ORCL_software/${DB_SOFTWARE}"
+zip_path="$(orcl_sw "${DB_SOFTWARE}")"
 
 # The installer is verified against db_installer.sha256 on the host (Vagrantfile,
 # verify_installer!) before this VM ever boots, so it is not re-checked here.

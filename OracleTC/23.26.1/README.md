@@ -45,6 +45,24 @@ RDBMS home before the True Cache instance is created — see
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
 - Database DBFs virtual disks (dynamic size): ~10 Gb
 
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
+
 ## Memory requirement
 Running RDBMS node at least 6Gb are required
 
@@ -193,7 +211,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name:   tc-234-ol9
+      prefix_name:   tc26-ol9
       # ---------------------------------------------
       network:       hostonly
       netmask:       
@@ -219,29 +237,29 @@ The following can be customized:
       ora_languages:   en,en_GB
       # ---------------------------------------------
       sdb_host_name:       192.168.125.60
-      sdb_service_name:    ORCL
+      sdb_service_name:    DB26H1
       sdb_service_port:    1521
       #
       db_files:            200
-      db_unique_name:      DB234H1_TC
-      instance_name:       DB234H1_TC1
-      fal_server:          DB234H1
-      fal_client:          DB234H1_TC
-      local_listener:      DB234H1_TC
+      db_unique_name:      DB26H1_TC
+      instance_name:       DB26H1_TC1
+      fal_server:          DB26H1
+      fal_client:          DB26H1_TC
+      local_listener:      DB26H1_TC
       sga_target:          6
       # ---------------------------------------------
 
 
 Example for TrueCache required tnsnames.ora entry for source DB host:
 
-    DB234H1_TC =
+    DB26H1_TC =
       (DESCRIPTION =
         (ADDRESS_LIST =
           (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.125.65)(PORT = 1521))
         )
         (CONNECT_DATA =
           (SERVER = DEDICATED)
-          (SID = DB234H1_TC1)
+          (SID = DB26H1_TC1)
         )
       )
 

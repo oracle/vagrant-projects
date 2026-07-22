@@ -22,6 +22,23 @@ require 'digest'
 
 VAGRANTFILE_API_VERSION = '2'
 
+# ----------------------- Shared Oracle software repository -------------------
+# Large Oracle installer zips are stored once in a central repo shared by every
+# lab under the Vagrant root, instead of being duplicated into each project's
+# ORCL_software/. Override the location with the ORCL_SOFTWARE_REPO env var.
+SOFTWARE_REPO = ENV.fetch('ORCL_SOFTWARE_REPO', File.expand_path('../../_ORCL_software', __dir__))
+
+# Resolve an installer zip to an absolute host path: prefer the shared repo,
+# fall back to this project's ORCL_software/ (which still works and overrides
+# the shared copy). Returns the local path when neither exists so the caller's
+# existence check still prints the usual "place the zip here" guidance.
+def sw_zip(name)
+  return nil if name.nil? || name.to_s.strip.empty?
+  central = File.join(SOFTWARE_REPO, name)
+  local   = File.join(__dir__, 'ORCL_software', name)
+  File.exist?(central) ? central : local
+end
+
 # ----------------------------- Project identity ------------------------------
 PROJECT_TITLE   = 'Oracle FPP 19c (19.3.0) on Oracle Linux 7'
 BOX_NAME        = 'oraclelinux/7'
@@ -46,13 +63,15 @@ MIN_ASM_DISK_NUM = 4
 MIN_ASM_DISK_GB  = 10
 
 # --------------------------- Banner ------------------------------------------
-puts ''
-puts '--------------------------------------------------------'
+puts ""
+puts "-----------------------------------------------------------------"
 puts "  #{PROJECT_TITLE}"
-puts '  Vagrant project for VirtualBox or KVM/libvirt'
-puts '  Copyright (c) 2020-2026 Oracle and/or its affiliates'
-puts '--------------------------------------------------------'
-puts ''
+puts "  Vagrant project for VirtualBox or KVM/libvirt"
+puts "  Copyright (c) 2020-2026 Oracle and/or its affiliates"
+puts "  Author: ruggero.citton@oracle.com"
+puts "  RACPack (MAA) Cloud Innovation and Solution Engineering team"
+puts "-----------------------------------------------------------------"
+puts ""
 
 # --------------------------- Helpers -----------------------------------------
 def fatal(msg)
@@ -153,15 +172,33 @@ def checksum_error(checksum_path, zip_path, installer)
   nil
 end
 
-# Cheap identity fingerprint of the installer + manifest (size + mtime of each).
-# Used to decide whether a previous verification still holds without re-reading
-# the multi-GB zip. Returns nil if either file is missing — verification itself
-# then produces the real, specific error.
-def installer_fingerprint(zip_path, checksum_path)
-  return nil unless File.exist?(zip_path) && File.exist?(checksum_path)
+# The expected SHA-256 recorded for an installer in the manifest (nil if absent).
+# Identical across every lab that ships the same zip — this is what lets the
+# fingerprint below be shared between projects.
+def expected_sha_for(checksum_path, installer)
+  return nil unless File.exist?(checksum_path)
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    return parts[0] if File.basename(parts[1]) == installer
+  end
+  nil
+end
+
+# Cheap identity fingerprint of the installer: zip size + mtime + the expected
+# SHA-256 from the manifest. Decides whether a previous verification still holds
+# without re-reading the multi-GB zip. Deliberately independent of the manifest
+# FILE's mtime/size, so the stamp written into the shared _ORCL_software repo is
+# honoured by EVERY lab (verify once for all). Returns nil if the zip or the
+# manifest entry is missing — verification itself then prints the real error.
+def installer_fingerprint(zip_path, checksum_path, installer)
+  return nil unless File.exist?(zip_path)
+  sha = expected_sha_for(checksum_path, installer)
+  return nil unless sha
   z = File.stat(zip_path)
-  m = File.stat(checksum_path)
-  "#{z.size}:#{z.mtime.to_i}:#{m.size}:#{m.mtime.to_i}"
+  "#{z.size}:#{z.mtime.to_i}:#{sha.downcase}"
 end
 
 # Verify the installer against the manifest, but pay the whole-file cksum read at
@@ -177,9 +214,15 @@ def verify_installer!(checksum_path, zip_path, installer, label)
   guard = "__FPP_INSTALLER_VERIFIED_#{installer}"
   return if ENV[guard]
 
-  stamp_path  = File.join(File.dirname(zip_path), ".#{installer}.verified")
-  fingerprint = installer_fingerprint(zip_path, checksum_path)
-  if fingerprint && File.file?(stamp_path) && File.read(stamp_path).strip == fingerprint
+  # The stamp may live next to the zip (shared _ORCL_software repo — verified
+  # once for every lab) or in this project's ORCL_software/ (always writable,
+  # even when the shared repo is read-only). A match in EITHER counts.
+  stamp_paths = [
+    File.join(File.dirname(zip_path), ".#{installer}.verified"),
+    File.join(__dir__, 'ORCL_software', ".#{installer}.verified")
+  ].uniq
+  fingerprint = installer_fingerprint(zip_path, checksum_path, installer)
+  if fingerprint && stamp_paths.any? { |p| File.file?(p) && File.read(p).strip == fingerprint }
     ENV[guard] = '1'
     return
   end
@@ -192,12 +235,17 @@ def verify_installer!(checksum_path, zip_path, installer, label)
   end
   puts "  #{installer}: checksum OK"
 
-  # Record the fingerprint so subsequent 'vagrant up' runs skip the re-read.
-  # Best-effort: a read-only project dir must not fail an otherwise-good verify.
-  begin
-    File.write(stamp_path, "#{fingerprint}\n") if fingerprint
-  rescue StandardError
-    # ignore — verification already passed; caching is optional
+  # Record the fingerprint so later runs skip the re-read. Best-effort in each
+  # location: the shared stamp benefits every lab; the project-local stamp
+  # guarantees this lab still caches even if the shared repo is read-only.
+  if fingerprint
+    stamp_paths.each do |p|
+      begin
+        File.write(p, "#{fingerprint}\n")
+      rescue StandardError
+        # ignore — verification passed; caching is optional
+      end
+    end
   end
   ENV[guard] = '1'
 end
@@ -336,8 +384,8 @@ end
 end
 
 # Installer presence + filename prefix + checksum manifest entry.
-gi_zip_path = File.expand_path("./ORCL_software/#{var_gi_software}", __dir__)
-db_zip_path = File.expand_path("./ORCL_software/#{var_db_software}", __dir__)
+gi_zip_path = sw_zip(var_gi_software)
+db_zip_path = sw_zip(var_db_software)
 fatal "GI installer zip not found: #{gi_zip_path}\n  Place the Oracle 19c Grid Infrastructure zip into ORCL_software/." unless File.exist?(gi_zip_path)
 fatal "DB installer zip not found: #{db_zip_path}\n  Place the Oracle 19c Database zip into ORCL_software/."            unless File.exist?(db_zip_path)
 
@@ -361,7 +409,7 @@ end
 # The RU pair is optional, but once configured it gets the same treatment as
 # the base installers: present on disk, and pinned in the checksum manifest.
 [var_opatch_software, var_gi_ru_software].reject(&:empty?).each do |ru_zip|
-  ru_zip_path = File.expand_path("./ORCL_software/#{ru_zip}", __dir__)
+  ru_zip_path = sw_zip(ru_zip)
   fatal "patch zip not found: #{ru_zip_path}\n  Place it into ORCL_software/, or remove 'env.opatch_software' and 'env.gi_ru_software' to install at base release." unless File.exist?(ru_zip_path)
   verify_installer!(checksum_path, ru_zip_path, ru_zip, 'patch')
 end
@@ -464,6 +512,18 @@ end
 
 # --------------------------- VM definition -----------------------------------
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # --------------------- Shared Oracle software repository -------------------
+  # Mount the central installer repo (one shared copy for every lab) read-only
+  # at /software. Guest scripts read /software first, then fall back to the
+  # project-local /vagrant/ORCL_software. Mounted only when the repo exists on
+  # the host: NFS on libvirt (matching /vagrant), provider default otherwise.
+  if Dir.exist?(SOFTWARE_REPO)
+    if var_provider_name == 'libvirt'
+      config.vm.synced_folder SOFTWARE_REPO, '/software', type: 'nfs', nfs_udp: false, mount_options: ['ro']
+    else
+      config.vm.synced_folder SOFTWARE_REPO, '/software', mount_options: ['ro']
+    end
+  end
   config.vm.box              = BOX_NAME
   config.vm.box_url          = BOX_URL
   config.vm.box_check_update = false

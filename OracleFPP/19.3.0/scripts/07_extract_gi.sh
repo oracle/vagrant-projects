@@ -18,7 +18,7 @@ log_section "Extracting ${GI_SOFTWARE} into ${GI_HOME}"
 mkdir -p "${GI_HOME}"
 (
   cd "${GI_HOME}"
-  unzip -oq "/vagrant/ORCL_software/${GI_SOFTWARE}"
+  unzip -oq "$(orcl_sw "${GI_SOFTWARE}")"
 )
 chown -R grid:oinstall "${GI_HOME}"
 log_success "Grid Infrastructure extracted into ${GI_HOME}"

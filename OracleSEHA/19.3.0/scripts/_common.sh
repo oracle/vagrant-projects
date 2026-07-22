@@ -251,7 +251,7 @@ stage_ru_patch() {
     return 1
   fi
 
-  local zip_path="/vagrant/ORCL_software/${ru_software}"
+  local zip_path="$(orcl_sw "${ru_software}")"
   local patch_top="/u01/app/oracle-patches/${ru_software%.zip}"
   local patch_dirs=() candidate selected_patch_dir
 
@@ -309,7 +309,7 @@ install_required_opatch() {
 
   [[ -d "${oracle_home}" ]] || { log_error "Oracle home not found: ${oracle_home}"; return 1; }
 
-  zip_path="/vagrant/ORCL_software/${OPATCH_SOFTWARE}"
+  zip_path="$(orcl_sw "${OPATCH_SOFTWARE}")"
 
   log_section "Installing required OPatch into ${oracle_home}"
   rm -rf "${oracle_home}/OPatch"
@@ -405,4 +405,18 @@ asm_disk_glob() {
       return 1
       ;;
   esac
+}
+
+# --- Shared Oracle software repository ---------------------------------------
+# Large installer zips live once in a host-side repo mounted read-only at
+# /software (see the Vagrantfile). Resolve each zip central-first, then fall
+# back to the project-local /vagrant/ORCL_software (which still works and
+# overrides the shared copy).
+orcl_sw() {
+  local name="$1"
+  if [[ -n "${name}" && -f "/software/${name}" ]]; then
+    printf '%s\n' "/software/${name}"
+  else
+    printf '%s\n' "/vagrant/ORCL_software/${name}"
+  fi
 }

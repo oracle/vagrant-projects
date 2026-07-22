@@ -16,7 +16,7 @@ log_section "Extracting ${DB_SOFTWARE} into ${DB_HOME}"
 mkdir -p "${DB_HOME}"
 (
   cd "${DB_HOME}"
-  unzip -oq "/vagrant/ORCL_software/${DB_SOFTWARE}"
+  unzip -oq "$(orcl_sw "${DB_SOFTWARE}")"
 )
 chown -R oracle:oinstall "${DB_HOME}"
 log_success "RDBMS software extracted into ${DB_HOME}"

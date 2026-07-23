@@ -16,14 +16,14 @@ vm1:
   vm_name: truecache
   mem_size: 8192
   cpus: 2
-  public_ip:  192.168.56.151
-  private_ip: 192.168.200.151
+  public_ip:  192.168.56.250
+  private_ip: 192.168.200.250
   u01_disk:   ./primary_u01.vdi
 
 env:
   provider: virtualbox
   # ---------------------------------------------
-  prefix_name:   tc26-ol9
+  prefix_name:   tc261-ol9
   # ---------------------------------------------
   network:       hostonly
   netmask:       
@@ -49,16 +49,16 @@ env:
   # ---------------------------------------------
   ora_languages:   en,en_GB
   # ---------------------------------------------
-  sdb_host_name:       192.168.56.100
-  sdb_service_name:    DB26H1
+  sdb_host_name:       192.168.56.30
+  sdb_service_name:    DB261H1
   sdb_service_port:    1521
   #
   db_files:            200
-  db_unique_name:      DB26H1_TC
-  instance_name:       DB26H1_TC1
-  fal_server:          DB26H1
-  fal_client:          DB26H1_TC
-  local_listener:      DB26H1_TC
+  db_unique_name:      DB261H1_TC
+  instance_name:       DB261H1_TC1
+  fal_server:          DB261H1
+  fal_client:          DB261H1_TC
+  local_listener:      DB261H1_TC
   sga_target:          6
   # ---------------------------------------------
 
@@ -69,14 +69,14 @@ env:
 #  vm_name: truecache
 #  mem_size: 8192
 #  cpus: 2
-#  public_ip:  192.168.125.65
-#  private_ip: 192.168.200.65
+#  public_ip:  192.168.125.250
+#  private_ip: 192.168.200.250
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider: libvirt
 #  # ---------------------------------------------
-#  prefix_name:   tc26-ol9
+#  prefix_name:   tc261-ol9
 #  # ---------------------------------------------
 #  network:       hostonly
 #  netmask:       
@@ -102,15 +102,15 @@ env:
 #  # ---------------------------------------------
 #  ora_languages:   en,en_GB
 #  # ---------------------------------------------
-#  sdb_host_name:       192.168.125.100
-#  sdb_service_name:    DB26H1
+#  sdb_host_name:       192.168.125.30
+#  sdb_service_name:    DB261H1
 #  sdb_service_port:    1521
 #  #
 #  db_files:            200
-#  db_unique_name:      DB26H1_TC
-#  instance_name:       DB26H1_TC1
-#  fal_server:          DB26H1
-#  fal_client:          DB26H1_TC
-#  local_listener:      DB26H1_TC
+#  db_unique_name:      DB261H1_TC
+#  instance_name:       DB261H1_TC1
+#  fal_server:          DB261H1
+#  fal_client:          DB261H1_TC
+#  local_listener:      DB261H1_TC
 #  sga_target:          6
 #  # ---------------------------------------------

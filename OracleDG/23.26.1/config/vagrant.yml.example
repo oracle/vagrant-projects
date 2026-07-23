@@ -1,5 +1,5 @@
 # ==============================================================================
-# Oracle Data Guard — Oracle Database 23ai (23.26.1) on Oracle Linux 9
+# Oracle Data Guard — Oracle Database 26ai (23.26.1) on Oracle Linux 9
 # ==============================================================================
 #
 # This file drives the Vagrantfile. Uncomment the block for the provider you
@@ -18,21 +18,21 @@ vm1:
   vm_name:    primary
   mem_size:   8192          # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.151
-  private_ip: 192.168.200.151
+  public_ip:  192.168.56.71
+  private_ip: 192.168.200.71
   u01_disk:   ./primary_u01.vdi
 
 vm2:
   vm_name:    standby
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.152
-  private_ip: 192.168.200.152
+  public_ip:  192.168.56.72
+  private_ip: 192.168.200.72
   u01_disk:   ./standby_u01.vdi
 
 env:
   provider:          virtualbox
-  prefix_name:       dg26-ol9
+  prefix_name:       dg261-ol9
   domain:            localdomain
 
   # Oradata disks
@@ -41,7 +41,7 @@ env:
   oradata_disk_num:  2
   oradata_disk_size: 20           # GB per disk
 
-  # Oracle Database 23ai (23.26.1) Enterprise Edition base installer.
+  # Oracle Database 26ai (23.26.1) Enterprise Edition base installer.
   # Download from: https://www.oracle.com/database/technologies/oracle-database-software-downloads.html
   db_software:       LINUX.X64_2326100_db_home.zip
 
@@ -60,7 +60,7 @@ env:
 
   ora_languages:     en,en_GB
 
-  db_name:           DB23H1
+  db_name:           DB261H1
   pdb_name:          PDB1
   cdb:               true
   adg:               true        # Active Data Guard (open R/O + apply)
@@ -70,35 +70,39 @@ env:
 #  vm_name:    primary
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.151
-#  private_ip: 192.168.200.151
+#  public_ip:  192.168.125.71
+#  private_ip: 192.168.200.71
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #vm2:
 #  vm_name:    standby
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.152
-#  private_ip: 192.168.200.152
+#  public_ip:  192.168.125.72
+#  private_ip: 192.168.200.72
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
-#  prefix_name:       dg26-ol9
+#  prefix_name:       dg261-ol9
 #  domain:            localdomain
 #  oradata_disk_num:  2
 #  oradata_disk_size: 20
 #  storage_pool_name: Vagrant_KVM_Storage
 #  db_software:       LINUX.X64_2326100_db_home.zip
+#
 #  # Optional Database Release Update — set both keys, or neither. See notes above.
 #  #opatch_software:   p6880880_230000_Linux-x86-64.zip
 #  #db_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
+#
 #  root_password:     welcome1
 #  oracle_password:   welcome1
 #  sys_password:      welcome1
 #  pdb_password:      welcome1
+#
 #  ora_languages:     en,en_GB
-#  db_name:           DB23H1
+#
+#  db_name:           DB261H1
 #  pdb_name:          PDB1
 #  cdb:               true
 #  adg:               true

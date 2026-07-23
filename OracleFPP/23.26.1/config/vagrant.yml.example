@@ -33,22 +33,22 @@ vm1:
   vm_name: fpps
   mem_size: 16384
   cpus: 1
-  public_ip:     192.168.56.101
-  vip_ip:        192.168.56.102
-  scan_ip1:      192.168.56.105
-  scan_ip2:      192.168.56.106
-  scan_ip3:      192.168.56.107
-  gns_ip:        192.168.56.108
-  ha_vip:        192.168.56.109
-  private_ip:    192.168.200.101
+  public_ip:     192.168.56.121
+  vip_ip:        192.168.56.123
+  scan_ip1:      192.168.56.124
+  scan_ip2:      192.168.56.125
+  scan_ip3:      192.168.56.126
+  gns_ip:        192.168.56.127
+  ha_vip:        192.168.56.128
+  private_ip:    192.168.200.121
   u01_disk: ./fpps_u01.vdi
 
 vm2:
   vm_name: fppc
   mem_size: 8192
   cpus: 4
-  public_ip: 192.168.56.201
-  private_ip: 192.168.200.102
+  public_ip: 192.168.56.122
+  private_ip: 192.168.200.122
   u01_disk: ./fppc_u01.vdi
   deploy: 'false'
 
@@ -97,22 +97,22 @@ env:
 #  vm_name: fpps
 #  mem_size: 16384
 #  cpus: 4
-#  public_ip:     192.168.125.101
-#  vip_ip:        192.168.125.102
-#  scan_ip1:      192.168.125.105
-#  scan_ip2:      192.168.125.106
-#  scan_ip3:      192.168.125.107
-#  gns_ip:        192.168.125.108
-#  ha_vip:        192.168.125.109
-#  private_ip:    192.168.200.101
+#  public_ip:     192.168.125.121
+#  vip_ip:        192.168.125.123
+#  scan_ip1:      192.168.125.124
+#  scan_ip2:      192.168.125.125
+#  scan_ip3:      192.168.125.126
+#  gns_ip:        192.168.125.127
+#  ha_vip:        192.168.125.128
+#  private_ip:    192.168.200.121
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #vm2:
 #  vm_name: fppc
 #  mem_size: 8192
 #  cpus: 1
-#  public_ip: 192.168.125.201
-#  private_ip: 192.168.200.102
+#  public_ip: 192.168.125.122
+#  private_ip: 192.168.200.122
 #  storage_pool_name: Vagrant_KVM_Storage
 #  deploy: 'false'
 #

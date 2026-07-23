@@ -37,7 +37,7 @@ def sw_zip(name)
 end
 
 # ----------------------------- Project identity ------------------------------
-PROJECT_TITLE   = 'Oracle Data Guard — Oracle Database 23ai (23.26.1) on Oracle Linux 9'
+PROJECT_TITLE   = 'Oracle Data Guard — Oracle Database 26ai (23.26.1) on Oracle Linux 9'
 BOX_NAME        = 'oraclelinux/9'
 BOX_URL         = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/9.json'
 BOX_MIN_VERSION = '>= 9.7.686'

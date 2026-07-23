@@ -1,6 +1,6 @@
 # ==============================================================================
-# Oracle Real Application Clusters (RAC) — Oracle Database 26ai (23.26.1)
-# on Oracle Linux 9
+# Oracle Standard Edition High Availability (SEHA)
+# Oracle Database 23ai (23.26.1) on Oracle Linux 9
 # ==============================================================================
 #
 # Copy this file to vagrant.yml and edit. vagrant.yml is gitignored so your
@@ -8,58 +8,58 @@
 #
 #     cp config/vagrant.yml.example config/vagrant.yml
 #
-# Only one provider block should be active at a time — the one matching
-# `env.provider`.
+# Only one provider block should be active at a time: the one matching
+# env.provider.
 #
-# CREDENTIALS
-#   The defaults below are DISTINCT placeholders, not a real password policy.
-#   Replace them before any real use. Every password can also be supplied at
-#   run time via an environment variable, which overrides the YAML value:
+# Credentials
+#   The defaults below are demo placeholders. Replace them before any real use.
+#   Every password can also be supplied at run time via an environment variable,
+#   which overrides the YAML value:
 #
-#       ORACLE_RAC_ROOT_PASSWORD    (overrides root_password)
-#       ORACLE_RAC_GRID_PASSWORD    (overrides grid_password)
-#       ORACLE_RAC_ORACLE_PASSWORD  (overrides oracle_password)
-#       ORACLE_RAC_SYS_PASSWORD     (overrides sys_password)
-#       ORACLE_RAC_PDB_PASSWORD     (overrides pdb_password)
+#       ORACLE_SEHA_ROOT_PASSWORD    (overrides root_password)
+#       ORACLE_SEHA_GRID_PASSWORD    (overrides grid_password)
+#       ORACLE_SEHA_ORACLE_PASSWORD  (overrides oracle_password)
+#       ORACLE_SEHA_SYS_PASSWORD     (overrides sys_password)
+#       ORACLE_SEHA_PDB_PASSWORD     (overrides pdb_password)
 #
 #   Never commit a vagrant.yml that contains real credentials.
 #
 # ------------------------------------------------------------------------------
 
 ## -------------------------------- Active profile -------------------------------
-vm1:
+host1:
   vm_name:    node1
-  mem_size:   8192            # MB — minimum 6144
+  mem_size:   8192            # MB, minimum 6144
   cpus:       4
-  public_ip:  192.168.56.171
-  vip_ip:     192.168.56.173
-  private_ip: 192.168.200.171
+  public_ip:  192.168.56.221
+  vip_ip:     192.168.56.223
+  private_ip: 192.168.200.221
   storage_pool_name: Vagrant_KVM_Storage
 
-vm2:
+host2:
   vm_name:    node2
-  mem_size:   8192
+  mem_size:   8192            # MB, minimum 6144
   cpus:       4
-  public_ip:  192.168.56.172
-  vip_ip:     192.168.56.174
-  private_ip: 192.168.200.172
+  public_ip:  192.168.56.222
+  vip_ip:     192.168.56.224
+  private_ip: 192.168.200.222
   storage_pool_name: Vagrant_KVM_Storage
 
 env:
   provider:          virtualbox
-  prefix_name:       rac26-ol9
+  prefix_name:       seha26-ol9
   domain:            localdomain
 
-  # SCAN addresses — three IPs in the same subnet as public_ip
-  scan_ip1:          192.168.56.175
-  scan_ip2:          192.168.56.176
-  scan_ip3:          192.168.56.177
+  # SCAN addresses: three IPs in the same subnet as public_ip.
+  scan_ip1:          192.168.56.225
+  scan_ip2:          192.168.56.226
+  scan_ip3:          192.168.56.227
 
-  # Shared ASM disks
+  # Shared ASM disks. P1 backs DATA; P2 backs RECO.
   asm_disk_path:
   asm_disk_num:      4          # minimum 4
   asm_disk_size:     20         # GB per disk
-  p1_ratio:          80         # size ratio between P1 (DATA) and P2 (RECO), 10..80
+  p1_ratio:          80         # P1 size ratio, 10..80
   storage_pool_name: Vagrant_KVM_Storage
 
   # Oracle Database 23ai (23.26.1) Grid Infrastructure and RDBMS installers.
@@ -68,14 +68,13 @@ env:
   gi_software:       LINUX.X64_2326100_grid_home.zip
   db_software:       LINUX.X64_2326100_db_home.zip
 
-  # Optional Release Update. Patching is opt-in: set BOTH keys to patch the GI
-  # and DB homes, or leave both out to install at base release. The GI RU is a
-  # combo patch that carries the DB home patch too, so there is no separate
-  # Database RU. Each zip needs an entry in db_installer.sha256.
+  # Optional Release Update. 23.26.1 already ships SEHA, so patching is opt-in:
+  # set BOTH keys to patch the GI and DB homes, or leave both out to install at
+  # base release. Each zip needs an entry in db_installer.sha256.
   #opatch_software:   p6880880_230000_Linux-x86-64.zip
   #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
 
-  # Credentials — DISTINCT DEMO PLACEHOLDERS. Change these before real use.
+  # Credentials: demo placeholders only.
   root_password:     DemoRoot_1
   grid_password:     DemoGrid_1
   oracle_password:   DemoOra_1
@@ -84,63 +83,54 @@ env:
 
   ora_languages:     en,en_GB
 
-  # Cluster / database layout
-  nomgmtdb:          true       # skip GI Management Repository
-  orestart:          false      # true = Oracle Restart (SI only); false = cluster
-  db_name:           DB26H1
+  # SEHA layout is fixed:
+  # this project always builds a two-node GI cluster with a SEHA database.
+  # The DB home is installed as SE2, which SEHA requires.
+  db_recovery_file_dest_size: 4G
+  db_name:           SEHA26
   pdb_name:          PDB1
-  db_type:           RAC        # RAC | RACONE | SI
-  cdb:               true
 
 # ---------------------------------- KVM / libvirt -----------------------------
-#vm1:
+#host1:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.171
-#  vip_ip:     192.168.125.173
-#  private_ip: 192.168.200.171
+#  public_ip:  192.168.125.221
+#  vip_ip:     192.168.125.223
+#  private_ip: 192.168.200.221
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#vm2:
+#host2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.172
-#  vip_ip:     192.168.125.174
-#  private_ip: 192.168.200.172
+#  public_ip:  192.168.125.222
+#  vip_ip:     192.168.125.224
+#  private_ip: 192.168.200.222
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
-#  prefix_name:       rac26-ol9
+#  prefix_name:       seha26-ol9
 #  domain:            localdomain
-#  scan_ip1:          192.168.125.175
-#  scan_ip2:          192.168.125.176
-#  scan_ip3:          192.168.125.177
+#  scan_ip1:          192.168.125.225
+#  scan_ip2:          192.168.125.226
+#  scan_ip3:          192.168.125.227
 #  asm_disk_num:      4
 #  asm_disk_size:     20
 #  p1_ratio:          80
-#
 #  storage_pool_name: Vagrant_KVM_Storage
 #  gi_software:       LINUX.X64_2326100_grid_home.zip
 #  db_software:       LINUX.X64_2326100_db_home.zip
-#
 #  # Optional Release Update — set both keys, or neither. See notes above.
 #  #opatch_software:   p6880880_230000_Linux-x86-64.zip
 #  #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
-#
 #  root_password:     DemoRoot_1
 #  grid_password:     DemoGrid_1
 #  oracle_password:   DemoOra_1
 #  sys_password:      DemoSys_1
 #  pdb_password:      DemoPdb_1
-#
 #  ora_languages:     en,en_GB
-#
-#  nomgmtdb:          true
-#  orestart:          false
-#  db_name:           DB262H1
+#  db_recovery_file_dest_size: 4G
+#  db_name:           SEHA26
 #  pdb_name:          PDB1
-#  db_type:           RAC
-#  cdb:               true

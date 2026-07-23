@@ -1,0 +1,773 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#------------------------------------------------------------------------------
+# LICENSE UPL 1.0
+# Copyright (c) 1982-2026 Oracle and/or its affiliates. All rights reserved.
+#
+# Vagrantfile
+#   Provisions a two-node Oracle Standard Edition High Availability (SEHA)
+#   lab with Oracle Database 26ai (23.26.1) Grid Infrastructure and a
+#   Clusterware-managed single-instance RDBMS on Oracle Linux 9.
+#
+#   Supports both VirtualBox and KVM/libvirt providers.
+#
+#   Author: Ruggero Citton <ruggero.citton@oracle.com>
+#           RAC Pack, Cloud Innovation and Solution Engineering Team
+#------------------------------------------------------------------------------
+
+require 'yaml'
+require 'ipaddr'
+require 'shellwords'
+require 'digest'
+require 'open3'
+
+VAGRANTFILE_API_VERSION = "2"
+
+# ----------------------- Shared Oracle software repository -------------------
+# Large Oracle installer zips are stored once in a central repo shared by every
+# lab under the Vagrant root, instead of being duplicated into each project's
+# ORCL_software/. Override the location with the ORCL_SOFTWARE_REPO env var.
+SOFTWARE_REPO = ENV.fetch('ORCL_SOFTWARE_REPO', File.expand_path('../../_ORCL_software', __dir__))
+
+# Resolve an installer zip to an absolute host path: prefer the shared repo,
+# fall back to this project's ORCL_software/ (which still works and overrides
+# the shared copy). Returns the local path when neither exists so the caller's
+# existence check still prints the usual "place the zip here" guidance.
+def sw_zip(name)
+  return nil if name.nil? || name.to_s.strip.empty?
+  central = File.join(SOFTWARE_REPO, name)
+  local   = File.join(__dir__, 'ORCL_software', name)
+  File.exist?(central) ? central : local
+end
+
+# ----------------------------- Project identity ------------------------------
+PROJECT_TITLE   = 'Oracle SEHA - Oracle Database 26ai (23.26.1) on Oracle Linux 9'
+BOX_NAME        = 'oraclelinux/9'
+BOX_URL         = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/9.json'
+BOX_MIN_VERSION = '>= 9.7.686'
+
+# Each installer filename must start with this prefix. Prevents accidentally
+# pointing the 26ai project at a 19c/21c zip.
+EXPECTED_GI_SOFTWARE_PREFIX = 'LINUX.X64_2326'
+EXPECTED_DB_SOFTWARE_PREFIX = 'LINUX.X64_2326'
+
+# Canonical version identifiers (drive ORACLE_HOME paths, preinstall package
+# selection, etc.). Kept as constants so they cannot be overridden by the YAML.
+GI_VERSION = '23.26.1.0'
+DB_VERSION = '23.26.1.0'
+DB_MAJOR   = '23'
+# The 23.26.1 (Oracle AI Database 26ai) Linux x86-64 db_home.zip ships
+# Enterprise Edition only — it carries no SE2 components, and runInstaller
+# rejects installEdition=SE2 with:
+#
+#   [FATAL] [INS-35464] The installer does not support installing the
+#           Standard Edition 2 of Oracle Database.
+#
+# Do not "fix" this by setting SE2: the value is legal in the installer's
+# shared XSD, but that schema is shared across releases and says nothing about
+# what this shiphome carries. install/response/db_install.rsp lists EE only,
+# and it is right — that comment block is generated per-media.
+#
+# Installing EE and asking dbca for SEHA anyway does not work either. Tested on
+# a live two-node cluster with EE homes on both nodes:
+#
+#   [FATAL] [DBT-10604] Standard Edition High Availability database creation is
+#           not supported in this environment.
+#     CAUSE: The specified Oracle home does not support Standard Edition High
+#            Availability database creation.
+#
+# So both doors are shut on this media: no SE2 to install (INS-35464), and an
+# EE home is refused by dbca (DBT-10604). This project cannot complete here.
+# setup.sh fails fast on the mismatch below rather than burning ~30 minutes of
+# GI provisioning first. Switch this back to SE2 if/when Oracle ships an SE2
+# shiphome for this release; the rest of the pipeline is already SEHA-correct.
+DB_INSTALL_EDITION = 'EE'
+NOMGMTDB = true
+DB_TYPE = 'SEHA'
+ORESTART = false
+# The database is always a container database, so pdb_name and pdb_password are
+# always required.
+CDB = true
+
+# --------------------------- Banner ------------------------------------------
+puts ""
+puts "-----------------------------------------------------------------"
+puts "  #{PROJECT_TITLE}"
+puts "  Vagrant project for VirtualBox or KVM/libvirt"
+puts "  Copyright (c) 2020-2026 Oracle and/or its affiliates"
+puts "  Author: ruggero.citton@oracle.com"
+puts "  RACPack (MAA) Cloud Innovation and Solution Engineering team"
+puts "-----------------------------------------------------------------"
+puts ""
+
+# --------------------------- Helpers -----------------------------------------
+def fatal(msg)
+  warn "ERROR: #{msg}"
+  exit 1
+end
+
+def valid_ip?(str)
+  !!IPAddr.new(str.to_s) rescue false
+end
+
+def fetch_required(hash, *path)
+  node = hash
+  path.each do |key|
+    unless node.is_a?(Hash) && node.key?(key)
+      fatal "missing required config key: #{path.map(&:to_s).join('.')}"
+    end
+    node = node[key]
+  end
+  fatal "config key #{path.map(&:to_s).join('.')} is empty" if node.nil? || node.to_s.strip.empty?
+  node
+end
+
+def fetch_optional(hash, *path, default: nil)
+  node = hash
+  path.each do |key|
+    return default unless node.is_a?(Hash) && node.key?(key)
+    node = node[key]
+  end
+  node.nil? ? default : node
+end
+
+# Cross-platform lookup for an executable on the host PATH. Uses Ruby rather
+# than a POSIX `command -v` / `which` subshell, which does not exist on a
+# Windows host (and prints "The system cannot find the path specified.").
+def host_command?(name)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(File::PATH_SEPARATOR) : ['']
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+    next false if dir.empty?
+    exts.any? { |ext| File.file?(File.join(dir, name + ext)) }
+  end
+end
+
+# Full integrity check of an installer zip against db_installer.sha256, run on
+# the HOST before any VM boots. Catches a truncated / corrupt / wrong-download
+# zip in seconds — instead of after OS packages, /u01 LVM and disk allocation
+# inside the guest, by which point a bad unzip may already have filled the host
+# disk mid-extraction. Uses SHA-256 via Ruby's built-in Digest, so it needs no
+# external tool and runs identically on Windows, macOS and Linux hosts.
+# Returns nil on success, or a human-readable error string.
+def checksum_error(checksum_path, zip_path, installer)
+  return "installer zip not found: #{zip_path}" unless File.exist?(zip_path)
+  return "checksum manifest not found: #{checksum_path}" unless File.exist?(checksum_path)
+
+  expected_sha = nil
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    if File.basename(parts[1]) == installer
+      expected_sha = parts[0]
+      break
+    end
+  end
+  return "no checksum entry for '#{installer}' found in #{checksum_path}\n  Run:  sha256sum ORCL_software/#{installer}  (Windows: Get-FileHash -Algorithm SHA256 ORCL_software\\#{installer})  and add the result to the manifest." unless expected_sha
+
+  unless expected_sha =~ /\A[0-9a-fA-F]{64}\z/
+    return "invalid checksum entry for '#{installer}' in #{checksum_path} (expected a 64-hex-character SHA-256 digest)"
+  end
+
+  # SHA-256 of the whole file, computed with Ruby's built-in Digest — no
+  # external cksum / sha256sum binary needed, so the same check runs on every host.
+  actual_sha = Digest::SHA256.file(zip_path).hexdigest
+  unless actual_sha.downcase == expected_sha.downcase
+    return "checksum verification failed for #{zip_path}\n" \
+           "  expected sha256=#{expected_sha.downcase} (from #{checksum_path})\n" \
+           "  got      sha256=#{actual_sha}\n" \
+           "  The file differs from the manifest — re-download it, or refresh its\n" \
+           "  entry:  sha256sum ORCL_software/#{installer}"
+  end
+
+  # A matching hash only proves the file is unchanged since the manifest was
+  # written — not that it is a whole zip. Reading the central directory is
+  # near-instant even on a multi-GB zip and catches the two ways an Oracle
+  # download actually goes wrong: truncated, or an HTML error page saved under a
+  # .zip name. Best-effort: skip quietly if unzip is not on the host. Runs unzip
+  # without a shell (array form + File::NULL) so it works on Windows too; only an
+  # actual non-zero exit (ran == false) is treated as corruption, a launch
+  # failure (nil) is ignored.
+  if host_command?('unzip')
+    ran = begin
+            system('unzip', '-qql', zip_path, out: File::NULL, err: File::NULL)
+          rescue StandardError
+            nil
+          end
+    if ran == false
+      return "#{zip_path} matches its checksum but is not a readable zip archive —\n" \
+             "  the download is truncated or corrupt. Re-download it and refresh its\n" \
+             "  entry in #{checksum_path}."
+    end
+  end
+
+  nil
+end
+
+# The expected SHA-256 recorded for an installer in the manifest (nil if absent).
+# Identical across every lab that ships the same zip — this is what lets the
+# fingerprint below be shared between projects.
+def expected_sha_for(checksum_path, installer)
+  return nil unless File.exist?(checksum_path)
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    return parts[0] if File.basename(parts[1]) == installer
+  end
+  nil
+end
+
+# Cheap identity fingerprint of the installer: zip size + mtime + the expected
+# SHA-256 from the manifest. Decides whether a previous verification still holds
+# without re-reading the multi-GB zip. Deliberately independent of the manifest
+# FILE's mtime/size, so the stamp written into the shared _ORCL_software repo is
+# honoured by EVERY lab (verify once for all). Returns nil if the zip or the
+# manifest entry is missing — verification itself then prints the real error.
+def installer_fingerprint(zip_path, checksum_path, installer)
+  return nil unless File.exist?(zip_path)
+  sha = expected_sha_for(checksum_path, installer)
+  return nil unless sha
+  z = File.stat(zip_path)
+  "#{z.size}:#{z.mtime.to_i}:#{sha.downcase}"
+end
+
+# Verify the installer against the manifest, but pay the whole-file cksum read at
+# most once. Two layers of caching:
+#   * ENV guard  — skip within a single process (Vagrant evaluates the Vagrantfile
+#     several times per command).
+#   * on-disk stamp — skip across separate 'vagrant up' invocations while neither
+#     the zip nor the manifest has changed. Keeps fail-fast on the first run (and
+#     whenever either file changes) yet makes every later run instant.
+# The stamp uses size+mtime as a cheap identity cache (not the SHA-256 itself) —
+# it is a convenience cache, not a tamper boundary.
+def verify_installer!(checksum_path, zip_path, installer, label)
+  guard = "__SEHA_INSTALLER_VERIFIED_#{installer}"
+  return if ENV[guard]
+
+  # The stamp may live next to the zip (shared _ORCL_software repo — verified
+  # once for every lab) or in this project's ORCL_software/ (always writable,
+  # even when the shared repo is read-only). A match in EITHER counts.
+  stamp_paths = [
+    File.join(File.dirname(zip_path), ".#{installer}.verified"),
+    File.join(__dir__, 'ORCL_software', ".#{installer}.verified")
+  ].uniq
+  fingerprint = installer_fingerprint(zip_path, checksum_path, installer)
+  if fingerprint && stamp_paths.any? { |p| File.file?(p) && File.read(p).strip == fingerprint }
+    ENV[guard] = '1'
+    return
+  end
+
+  puts "Verifying #{label} '#{installer}' against #{File.basename(checksum_path)}"
+  puts "  (reads the full zip — may take up to a minute for a multi-GB installer)..."
+  $stdout.flush
+  if (err = checksum_error(checksum_path, zip_path, installer))
+    fatal err
+  end
+  puts "  #{installer}: checksum OK"
+
+  # Record the fingerprint so later runs skip the re-read. Best-effort in each
+  # location: the shared stamp benefits every lab; the project-local stamp
+  # guarantees this lab still caches even if the shared repo is read-only.
+  if fingerprint
+    stamp_paths.each do |p|
+      begin
+        File.write(p, "#{fingerprint}\n")
+      rescue StandardError
+        # ignore — verification passed; caching is optional
+      end
+    end
+  end
+  ENV[guard] = '1'
+end
+
+def vboxmanage_capture(*args)
+  Open3.capture2e('VBoxManage', *args.map(&:to_s))
+end
+
+def vbox_medium_dynamic?(disk_path)
+  return false unless File.exist?(disk_path)
+
+  output, status = vboxmanage_capture('showmediuminfo', 'disk', disk_path)
+  return false unless status.success?
+
+  variant =
+    output[/^Format variant:\s*(.+)$/i, 1] ||
+    output[/^"Format variant"="?([^"\n]+)"?/i, 1]
+  variant.to_s.downcase.include?('dynamic')
+end
+
+def vbox_medium_registered?(disk_path)
+  output, status = vboxmanage_capture('list', 'hdds')
+  status.success? && output.include?(File.expand_path(disk_path))
+end
+
+def remove_vbox_medium(disk_path)
+  output, status = vboxmanage_capture('closemedium', 'disk', disk_path, '--delete')
+  return if status.success? || !File.exist?(disk_path)
+
+  if vbox_medium_registered?(disk_path)
+    fatal "existing ASM disk is dynamic and still registered in VirtualBox: #{disk_path}\n#{output}\nRun cleanup/cleanup.sh --force or detach/delete that medium, then retry."
+  end
+
+  begin
+    File.delete(disk_path)
+  rescue SystemCallError => e
+    fatal "existing ASM disk is dynamic and could not be removed: #{disk_path}\n#{e.message}\nRun cleanup/cleanup.sh --force or detach/delete that medium, then retry."
+  end
+end
+
+def recreate_dynamic_vbox_asm_disk(disk_path)
+  return unless vbox_medium_dynamic?(disk_path)
+
+  puts "NOTE: Existing ASM disk #{disk_path} is dynamic; recreating it as fixed-size media for shareable attachment."
+  remove_vbox_medium(disk_path)
+end
+
+# --------------------------- Config load -------------------------------------
+config_path = File.expand_path('config/vagrant.yml', __dir__)
+fatal "config file not found: #{config_path}" unless File.exist?(config_path)
+
+begin
+  params = YAML.load_file(config_path)
+rescue => e
+  fatal "failed to parse #{config_path}: #{e.message}"
+end
+
+# --------------------------- Extract config ----------------------------------
+var_provider_name   = fetch_required(params, 'env',  'provider')
+var_prefix_name     = fetch_required(params, 'env',  'prefix_name')
+var_domain          = fetch_required(params, 'env',  'domain')
+
+var_scan_ip1        = fetch_required(params, 'env',  'scan_ip1')
+var_scan_ip2        = fetch_required(params, 'env',  'scan_ip2')
+var_scan_ip3        = fetch_required(params, 'env',  'scan_ip3')
+
+var_vm1_name        = fetch_required(params, 'host1', 'vm_name')
+var_vm1_mem_size    = fetch_required(params, 'host1', 'mem_size').to_i
+var_vm1_cpus        = fetch_required(params, 'host1', 'cpus').to_i
+var_vm1_public_ip   = fetch_required(params, 'host1', 'public_ip')
+var_vm1_vip_ip      = fetch_required(params, 'host1', 'vip_ip')
+var_vm1_private_ip  = fetch_required(params, 'host1', 'private_ip')
+
+var_vm2_name        = fetch_required(params, 'host2', 'vm_name')
+var_vm2_mem_size    = fetch_required(params, 'host2', 'mem_size').to_i
+var_vm2_cpus        = fetch_required(params, 'host2', 'cpus').to_i
+var_vm2_public_ip   = fetch_required(params, 'host2', 'public_ip')
+var_vm2_vip_ip      = fetch_required(params, 'host2', 'vip_ip')
+var_vm2_private_ip  = fetch_required(params, 'host2', 'private_ip')
+
+var_asm_disk_num    = fetch_required(params, 'env', 'asm_disk_num').to_i
+var_asm_disk_size   = fetch_required(params, 'env', 'asm_disk_size').to_i
+var_p1_ratio        = fetch_required(params, 'env', 'p1_ratio').to_i
+var_gi_software     = fetch_required(params, 'env', 'gi_software')
+var_db_software     = fetch_required(params, 'env', 'db_software')
+# Optional: 23.26.1 already ships SEHA, so an RU is opt-in. Set both keys to
+# patch the GI and DB homes, or neither to stay at base release.
+var_opatch_software = fetch_optional(params, 'env', 'opatch_software', default: '').to_s
+var_gi_ru_software  = fetch_optional(params, 'env', 'gi_ru_software',  default: '').to_s
+var_ora_languages   = fetch_required(params, 'env', 'ora_languages')
+
+# Passwords can be overridden from the environment for CI/test use.
+var_root_password   = ENV.fetch('ORACLE_SEHA_ROOT_PASSWORD',   fetch_required(params, 'env', 'root_password'))
+var_grid_password   = ENV.fetch('ORACLE_SEHA_GRID_PASSWORD',   fetch_required(params, 'env', 'grid_password'))
+var_oracle_password = ENV.fetch('ORACLE_SEHA_ORACLE_PASSWORD', fetch_required(params, 'env', 'oracle_password'))
+var_sys_password    = ENV.fetch('ORACLE_SEHA_SYS_PASSWORD',    fetch_required(params, 'env', 'sys_password'))
+var_pdb_password    = ENV.fetch('ORACLE_SEHA_PDB_PASSWORD',    fetch_optional(params, 'env', 'pdb_password', default: ''))
+
+var_db_recovery_file_dest_size = fetch_optional(params, 'env', 'db_recovery_file_dest_size', default: '4G').to_s.upcase
+
+var_db_name         = fetch_required(params, 'env', 'db_name')
+var_pdb_name        = fetch_optional(params, 'env', 'pdb_name', default: '')
+
+configured_cdb = fetch_optional(params, 'env', 'cdb', default: nil)
+unless configured_cdb.nil?
+  fatal "'env.cdb' is not supported; the database is always a CDB; remove the key"
+end
+
+configured_nomgmtdb = fetch_optional(params, 'env', 'nomgmtdb', default: nil)
+unless configured_nomgmtdb.nil?
+  fatal "'env.nomgmtdb' is not supported in SEHA; GI Management Repository is always skipped"
+end
+
+configured_orestart = fetch_optional(params, 'env', 'orestart', default: nil)
+unless configured_orestart.nil? || configured_orestart == false
+  fatal "'env.orestart' is not supported in SEHA; this project always builds a two-node Grid Infrastructure cluster"
+end
+
+configured_db_type = fetch_optional(params, 'env', 'db_type', default: nil)
+unless configured_db_type.nil? || configured_db_type.to_s == DB_TYPE
+  fatal "'env.db_type' is fixed to '#{DB_TYPE}' for SEHA; remove the key or set it to '#{DB_TYPE}'"
+end
+
+# --------------------------- Validation --------------------------------------
+unless %w[libvirt virtualbox].include?(var_provider_name)
+  fatal "'env.provider' must be 'libvirt' or 'virtualbox' (got: '#{var_provider_name}')"
+end
+
+unless var_prefix_name.match?(/\A[0-9a-zA-Z-]{1,14}\z/)
+  fatal "'env.prefix_name' must be 1-14 chars of [0-9a-zA-Z-] (got: '#{var_prefix_name}')"
+end
+
+fatal "'host1.mem_size' must be >= 6144 MB (got: #{var_vm1_mem_size})" if var_vm1_mem_size < 6144
+fatal "'host2.mem_size' must be >= 6144 MB (got: #{var_vm2_mem_size})" if var_vm2_mem_size < 6144
+fatal "'host1.cpus' must be >= 1 (got: #{var_vm1_cpus})"               if var_vm1_cpus    < 1
+fatal "'host2.cpus' must be >= 1 (got: #{var_vm2_cpus})"               if var_vm2_cpus    < 1
+
+unless var_db_recovery_file_dest_size.match?(/\A[1-9][0-9]*[KMG]\z/)
+  fatal "'env.db_recovery_file_dest_size' must look like 4096M or 4G (got: '#{var_db_recovery_file_dest_size}')"
+end
+
+# Both RU zips or neither: the shipped OPatch is too old to apply a modern RU.
+if var_opatch_software.empty? ^ var_gi_ru_software.empty?
+  fatal "'env.opatch_software' and 'env.gi_ru_software' must be set together (opatch_software: '#{var_opatch_software}', gi_ru_software: '#{var_gi_ru_software}')"
+end
+
+fatal "'env.p1_ratio' must be between 10 and 80 (got: #{var_p1_ratio})"  unless (10..80).cover?(var_p1_ratio)
+fatal "'env.asm_disk_num' must be >= 4 (got: #{var_asm_disk_num})"       if var_asm_disk_num  < 4
+fatal "'env.asm_disk_size' must be >= 10 GB (got: #{var_asm_disk_size})" if var_asm_disk_size < 10
+
+ip_fields = {
+  'host1.public_ip'  => var_vm1_public_ip,
+  'host1.private_ip' => var_vm1_private_ip,
+  'host1.vip_ip'     => var_vm1_vip_ip,
+  'env.scan_ip1'     => var_scan_ip1,
+  'env.scan_ip2'     => var_scan_ip2,
+  'env.scan_ip3'     => var_scan_ip3,
+  'host2.public_ip'  => var_vm2_public_ip,
+  'host2.private_ip' => var_vm2_private_ip,
+  'host2.vip_ip'     => var_vm2_vip_ip,
+}
+ip_fields.each do |label, val|
+  fatal "#{label} is not a valid IP address (got: '#{val}')" unless valid_ip?(val)
+end
+
+fatal "'env.pdb_name' is required"     if var_pdb_name.to_s.empty?
+fatal "'env.pdb_password' is required" if var_pdb_password.to_s.empty?
+
+# Installer presence + filename prefix + checksum manifest entry
+gi_zip_path = sw_zip(var_gi_software)
+db_zip_path = sw_zip(var_db_software)
+fatal "GI installer zip not found: #{gi_zip_path}\n  Place the Oracle 23ai Grid Infrastructure zip into ORCL_software/." unless File.exist?(gi_zip_path)
+fatal "DB installer zip not found: #{db_zip_path}\n  Place the Oracle 23ai Database zip into ORCL_software/."            unless File.exist?(db_zip_path)
+
+unless var_gi_software.start_with?(EXPECTED_GI_SOFTWARE_PREFIX)
+  fatal "'env.gi_software' (#{var_gi_software}) does not match this project (expected prefix: #{EXPECTED_GI_SOFTWARE_PREFIX})"
+end
+unless var_db_software.start_with?(EXPECTED_DB_SOFTWARE_PREFIX)
+  fatal "'env.db_software' (#{var_db_software}) does not match this project (expected prefix: #{EXPECTED_DB_SOFTWARE_PREFIX})"
+end
+
+checksum_path = File.expand_path('./db_installer.sha256', __dir__)
+fatal "installer checksum file not found: #{checksum_path}" unless File.exist?(checksum_path)
+verify_installer!(checksum_path, gi_zip_path, var_gi_software, 'GI installer')
+verify_installer!(checksum_path, db_zip_path, var_db_software, 'DB installer')
+
+# The RU pair is optional, but once configured it gets the same treatment as
+# the base installers: present on disk, and pinned in the checksum manifest.
+[var_opatch_software, var_gi_ru_software].reject(&:empty?).each do |ru_zip|
+  ru_zip_path = sw_zip(ru_zip)
+  fatal "patch zip not found: #{ru_zip_path}\n  Place it into ORCL_software/, or remove 'env.opatch_software' and 'env.gi_ru_software' to install at base release." unless File.exist?(ru_zip_path)
+  verify_installer!(checksum_path, ru_zip_path, ru_zip, 'patch')
+end
+
+# --------------------------- Provider setup ----------------------------------
+provider = var_provider_name.to_sym
+puts "Provider: #{provider}"
+puts ""
+
+box_disks_num = 1
+ENV['VAGRANT_NO_PARALLEL'] = 'yes' if var_provider_name == 'libvirt'
+
+begin
+  boxes_out = IO.popen(['vagrant', 'box', 'list'], err: File::NULL, &:read).to_s
+  have_box  = boxes_out.lines.any? { |l| l.include?("#{BOX_NAME} (#{var_provider_name},") }
+  unless have_box
+    puts "NOTE: '#{BOX_NAME}' is not cached for provider '#{var_provider_name}'."
+    puts "      Vagrant will download it now; expect a multi-GB transfer from yum.oracle.com."
+    puts "      To pre-download (interactive progress), run in another shell:"
+    puts "        vagrant box add #{BOX_NAME} #{BOX_URL} --provider=#{var_provider_name}"
+    puts ""
+  end
+rescue StandardError
+  # Best-effort notice; never block on failure.
+end
+
+# --------------------------- Storage setup -----------------------------------
+if var_provider_name == 'libvirt'
+  var_vm1_storage     = fetch_optional(params, 'host1', 'storage_pool_name', default: 'default')
+  var_vm2_storage     = fetch_optional(params, 'host2', 'storage_pool_name', default: 'default')
+  var_asm_storage     = fetch_optional(params, 'env',   'storage_pool_name', default: 'default')
+  var_vm1_storage = 'default' if var_vm1_storage.to_s.empty?
+  var_vm2_storage = 'default' if var_vm2_storage.to_s.empty?
+  var_asm_storage = 'default' if var_asm_storage.to_s.empty?
+end
+
+if var_provider_name == 'virtualbox'
+  var_group          = fetch_optional(params, 'env',   'virtualbox_group', default: nil)
+  var_vm1_u01_disk   = fetch_optional(params, 'host1', 'u01_disk',       default: './node1_u01.vdi')
+  var_vm2_u01_disk   = fetch_optional(params, 'host2', 'u01_disk',       default: './node2_u01.vdi')
+  var_non_rotational = fetch_optional(params, 'env',   'non_rotational', default: 'on')
+  var_asm_disk_path  = fetch_optional(params, 'env',   'asm_disk_path',  default: '')
+
+  unless %w[on off].include?(var_non_rotational)
+    fatal "'env.non_rotational' must be 'on' or 'off' (got: '#{var_non_rotational}')"
+  end
+  if var_group == false || var_group.to_s.strip.empty?
+    # Keep VirtualBox groups opt-in. Setting a group moves the VM directory on
+    # the host and stale paths from interrupted imports can make `modifyvm
+    # --groups` fail before the guest even boots.
+    var_group = nil
+  else
+    var_group = var_group.to_s
+    var_group = "/#{var_group}" unless var_group.start_with?('/')
+  end
+  var_asm_disk_path = var_asm_disk_path.to_s.empty? ? './' : "#{var_asm_disk_path}/"
+  var_vm1_u01_disk  = './node1_u01.vdi' if var_vm1_u01_disk.to_s.empty?
+  var_vm2_u01_disk  = './node2_u01.vdi' if var_vm2_u01_disk.to_s.empty?
+end
+
+# --------------------------- Required Vagrant plugins ------------------------
+required_plugins = ['vagrant-reload', 'vagrant-proxyconf']
+required_plugins << 'vagrant-libvirt' if var_provider_name == 'libvirt'
+
+required_plugins.each do |plugin|
+  unless Vagrant.has_plugin?(plugin)
+    puts "Installing missing Vagrant plugin: #{plugin}"
+    unless system("vagrant plugin install #{plugin}")
+      fatal "failed to install Vagrant plugin '#{plugin}'"
+    end
+  end
+end
+
+# --------------------------- Time zone ---------------------------------------
+offset_sec = Time.now.gmt_offset
+if (offset_sec % 3600) == 0
+  offset_hr       = offset_sec / 3600
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr}" : "+#{-offset_hr}"
+  var_system_timezone = "Etc/GMT#{timezone_suffix}"
+else
+  var_system_timezone = 'UTC'
+end
+
+# --------------------------- VM definition -----------------------------------
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # --------------------- Shared Oracle software repository -------------------
+  # Mount the central installer repo (one shared copy for every lab) read-only
+  # at /software. Guest scripts read /software first, then fall back to the
+  # project-local /vagrant/ORCL_software. Mounted only when the repo exists on
+  # the host: NFS on libvirt (matching /vagrant), provider default otherwise.
+  if Dir.exist?(SOFTWARE_REPO)
+    if var_provider_name == 'libvirt'
+      config.vm.synced_folder SOFTWARE_REPO, '/software', type: 'nfs', nfs_udp: false, mount_options: ['ro']
+    else
+      config.vm.synced_folder SOFTWARE_REPO, '/software', mount_options: ['ro']
+    end
+  end
+  config.vm.box              = BOX_NAME
+  config.vm.box_url          = BOX_URL
+  config.vm.box_check_update = false
+  config.vm.box_version      = BOX_MIN_VERSION if var_provider_name == 'virtualbox'
+
+  config.vbguest.auto_update = false if Vagrant.has_plugin?('vagrant-vbguest')
+
+  # Proxy configuration pulled from host environment (optional).
+  if Vagrant.has_plugin?('vagrant-proxyconf')
+    config.proxy.http     = ENV['http_proxy']  if ENV['http_proxy']
+    config.proxy.https    = ENV['https_proxy'] if ENV['https_proxy']
+    config.proxy.no_proxy = ENV['no_proxy']    if ENV['no_proxy']
+  end
+
+  if var_provider_name == 'libvirt'
+    # The provisioner expects the project tree to be mounted at /vagrant.
+    config.vm.synced_folder '.', '/vagrant', type: 'nfs'
+  end
+
+  # -------------------- libvirt --------------------
+  if var_provider_name == 'libvirt'
+    nodes = [
+      [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+       var_vm2_public_ip, var_vm2_private_ip, var_vm2_storage],
+      [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+       var_vm1_public_ip, var_vm1_private_ip, var_vm1_storage]
+    ]
+
+    nodes.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, vm_storage|
+      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+        node.vm.hostname = vm_name
+        node.vm.network 'private_network', libvirt__network_name: 'vgt-hostonly_network', ip: public_ip
+        node.vm.network 'private_network', libvirt__network_name: 'vgt-private_network',  ip: private_ip
+        node.vm.provider :libvirt do |libvirt|
+          libvirt.default_prefix    = var_prefix_name.end_with?('-') ? var_prefix_name : "#{var_prefix_name}-"
+          libvirt.driver            = 'kvm'
+          libvirt.memory            = mem_size
+          libvirt.cpus              = cpus
+          libvirt.graphics_type     = 'none'
+          libvirt.storage_pool_name = vm_storage
+
+          # u01 disk
+          libvirt.storage :file, size: '100G'
+
+          # shared ASM disks
+          libvirt.storage_pool_name = var_asm_storage
+          var_asm_disk_num.times do |i|
+            libvirt.storage :file,
+                            path:      "#{var_prefix_name}_asm_#{i}",
+                            size:      "#{var_asm_disk_size}G",
+                            cache:     'none',
+                            type:      'raw',
+                            serial:    "asm_disk_#{i + 1}",
+                            shareable: 'true',
+                            allow_existing: 'true'
+          end
+        end
+      end
+    end
+  end
+
+  # -------------------- virtualbox -----------------
+  if var_provider_name == 'virtualbox'
+    # host2 only runs the common setup stages and owns the initial ASM disk
+    # partitioning. Defining it first keeps plain `vagrant up` working without
+    # requiring `--parallel`.
+    vb_specs = [
+      [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+       var_vm2_public_ip, var_vm2_private_ip, var_vm2_u01_disk, true],
+      [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+       var_vm1_public_ip, var_vm1_private_ip, var_vm1_u01_disk, false]
+    ]
+
+    vb_specs.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, u01_disk, creates_asm_disks|
+      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+        node.vm.hostname = vm_name
+        node.vm.network :private_network, ip: public_ip,  virtualbox__hostonly: 'vboxnet0'
+        node.vm.network :private_network, ip: private_ip, virtualbox__intnet:   'private'
+
+        node.vm.provider :virtualbox do |vb|
+          vb.name   = "#{var_prefix_name}-#{vm_name}"
+          vb.memory = mem_size
+          vb.cpus   = cpus
+          vb.customize ['modifyvm', :id, '--groups', var_group] unless var_group.nil?
+
+          # Mark existing box disks non-rotational
+          (0...box_disks_num).each do |port|
+            vb.customize ['storageattach', :id,
+                          '--storagectl', 'SATA Controller',
+                          '--port', port,
+                          '--nonrotational', var_non_rotational]
+          end
+
+          disk_port = box_disks_num
+
+          # u01 disk (per-node, persistent)
+          unless File.exist?(u01_disk)
+            vb.customize ['createhd', '--filename', u01_disk, '--size', 100 * 1024]
+          end
+          vb.customize ['storageattach', :id,
+                        '--storagectl', 'SATA Controller',
+                        '--port', disk_port, '--device', 0,
+                        '--type', 'hdd', '--medium', u01_disk,
+                        '--nonrotational', var_non_rotational]
+          disk_port += 1
+
+          # Shared ASM disks — create once on the first cluster node that
+          # Vagrant brings up for this provider, then reuse everywhere.
+          var_asm_disk_num.times do |i|
+            asm_disk = File.expand_path("#{var_asm_disk_path}asm_disk#{i}.vdi", __dir__)
+            if creates_asm_disks
+              recreate_dynamic_vbox_asm_disk(asm_disk)
+            end
+            if creates_asm_disks && !File.exist?(asm_disk)
+              vb.customize ['createhd',
+                            '--filename', asm_disk,
+                            '--size', var_asm_disk_size * 1024,
+                            '--format', 'VDI',
+                            '--variant', 'Fixed']
+            end
+            if creates_asm_disks || File.exist?(asm_disk)
+              vb.customize ['modifymedium', 'disk', asm_disk, '--type', 'shareable']
+            end
+            vb.customize ['storageattach', :id,
+                          '--storagectl', 'SATA Controller',
+                          '--port', disk_port, '--device', 0,
+                          '--type', 'hdd', '--medium', asm_disk,
+                          '--mtype', 'shareable',
+                          '--nonrotational', var_non_rotational]
+            disk_port += 1
+          end
+        end
+      end
+    end
+  end
+
+  # -------------------- Common provisioning --------------------
+  # Enable SSH password auth (lab-internal only; Vagrant's synced folders and
+  # ssh equivalence setup need it during provisioning).
+  config.vm.provision 'shell', name: 'enable-ssh-password-auth', inline: <<~SHELL
+    set -euo pipefail
+    if grep -Eq '^[#[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\\.d/\\*\\.conf([[:space:]]|$)' /etc/ssh/sshd_config; then
+      mkdir -p /etc/ssh/sshd_config.d
+      cat > /etc/ssh/sshd_config.d/00-oracle-seha-bootstrap.conf <<'EOF'
+PermitRootLogin yes
+PasswordAuthentication yes
+EOF
+      chmod 0644 /etc/ssh/sshd_config.d/00-oracle-seha-bootstrap.conf
+    else
+      sed -ri 's/^[# ]*PasswordAuthentication[[:space:]]+.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      if grep -Eq '^[# ]*PermitRootLogin[[:space:]]+' /etc/ssh/sshd_config; then
+        sed -ri 's/^[# ]*PermitRootLogin[[:space:]]+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+      else
+        printf '\nPermitRootLogin yes\n' >> /etc/ssh/sshd_config
+      fi
+    fi
+    /usr/sbin/sshd -t -f /etc/ssh/sshd_config
+    systemctl restart sshd
+  SHELL
+
+  # Main orchestration — all knobs are passed explicitly via env (nothing from
+  # the VM's shell environment bleeds in).
+  config.vm.provision 'shell', name: 'oracle-seha-setup', path: 'scripts/setup.sh', env: {
+    'PROVIDER'         => var_provider_name,
+    'BOX_DISK_NUM'     => box_disks_num.to_s,
+    'SYSTEM_TIMEZONE'  => var_system_timezone,
+    'PREFIX_NAME'      => var_prefix_name,
+    'VM1_NAME'         => var_vm1_name,
+    'VM2_NAME'         => var_vm2_name,
+    'DOMAIN'           => var_domain,
+    'NODE1_PUBLIC_IP'  => var_vm1_public_ip,
+    'NODE2_PUBLIC_IP'  => var_vm2_public_ip,
+    'NODE1_VIP_IP'     => var_vm1_vip_ip,
+    'NODE2_VIP_IP'     => var_vm2_vip_ip,
+    'NODE1_PRIV_IP'    => var_vm1_private_ip,
+    'NODE2_PRIV_IP'    => var_vm2_private_ip,
+    'SCAN_IP1'         => var_scan_ip1,
+    'SCAN_IP2'         => var_scan_ip2,
+    'SCAN_IP3'         => var_scan_ip3,
+    'GI_SOFTWARE'      => var_gi_software,
+    'DB_SOFTWARE'      => var_db_software,
+    'OPATCH_SOFTWARE'  => var_opatch_software,
+    'GI_RU_SOFTWARE'   => var_gi_ru_software,
+    'GI_VERSION'       => GI_VERSION,
+    'DB_VERSION'       => DB_VERSION,
+    'DB_MAJOR'         => DB_MAJOR,
+    'DB_INSTALL_EDITION' => DB_INSTALL_EDITION,
+    'ORA_LANGUAGES'    => var_ora_languages,
+    'P1_RATIO'         => var_p1_ratio.to_s,
+    'ASM_DISK_NUM'     => var_asm_disk_num.to_s,
+    'NOMGMTDB'         => NOMGMTDB.to_s,
+    'ORESTART'         => ORESTART.to_s,
+    'DB_RECOVERY_FILE_DEST_SIZE' => var_db_recovery_file_dest_size,
+    'DB_NAME'          => var_db_name,
+    'PDB_NAME'         => var_pdb_name,
+    'DB_TYPE'          => DB_TYPE,
+    'CDB'              => CDB.to_s,
+    'ROOT_PASSWORD'    => var_root_password,
+    'GRID_PASSWORD'    => var_grid_password,
+    'ORACLE_PASSWORD'  => var_oracle_password,
+    'SYS_PASSWORD'     => var_sys_password,
+    'PDB_PASSWORD'     => var_pdb_password
+  }
+end

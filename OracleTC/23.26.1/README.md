@@ -148,7 +148,7 @@ The following can be customized:
 
 #### VirtualBox provider Example:
     vm1:
-      vm_name: mydb
+      vm_name: truecache
       mem_size: 8192
       cpus: 2
       public_ip:  192.168.56.60
@@ -158,7 +158,7 @@ The following can be customized:
     env:
       provider: virtualbox
       # ---------------------------------------------
-      prefix_name:   tc-234-ol9
+      prefix_name:   tc261-ol9
       # ---------------------------------------------
       network:       hostonly
       netmask:       
@@ -184,15 +184,15 @@ The following can be customized:
       ora_languages:   en,en_GB
       # ---------------------------------------------
       sdb_host_name:       192.168.125.60
-      sdb_service_name:    ORCL
+      sdb_service_name:    DB261H1
       sdb_service_port:    1521
       #
       db_files:            200
-      db_unique_name:      DB234H1_TC
-      instance_name:       DB234H1_TC1
-      fal_server:          DB234H1
-      fal_client:          DB234H1_TC
-      local_listener:      DB234H1_TC
+      db_unique_name:      DB261H1_TC
+      instance_name:       DB261H1_TC1
+      fal_server:          DB261H1
+      fal_client:          DB261H1_TC
+      local_listener:      DB261H1_TC
       sga_target:          6
       # ---------------------------------------------
     
@@ -211,7 +211,7 @@ The following can be customized:
     env:
       provider: libvirt
       # ---------------------------------------------
-      prefix_name:   tc26-ol9
+      prefix_name:   tc261-ol9
       # ---------------------------------------------
       network:       hostonly
       netmask:       
@@ -237,29 +237,29 @@ The following can be customized:
       ora_languages:   en,en_GB
       # ---------------------------------------------
       sdb_host_name:       192.168.125.60
-      sdb_service_name:    DB26H1
+      sdb_service_name:    DB261H1
       sdb_service_port:    1521
       #
       db_files:            200
-      db_unique_name:      DB26H1_TC
-      instance_name:       DB26H1_TC1
-      fal_server:          DB26H1
-      fal_client:          DB26H1_TC
-      local_listener:      DB26H1_TC
+      db_unique_name:      DB261H1_TC
+      instance_name:       DB261H1_TC1
+      fal_server:          DB261H1
+      fal_client:          DB261H1_TC
+      local_listener:      DB261H1_TC
       sga_target:          6
       # ---------------------------------------------
 
 
 Example for TrueCache required tnsnames.ora entry for source DB host:
 
-    DB26H1_TC =
+    DB261H1_TC =
       (DESCRIPTION =
         (ADDRESS_LIST =
           (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.125.65)(PORT = 1521))
         )
         (CONNECT_DATA =
           (SERVER = DEDICATED)
-          (SID = DB26H1_TC1)
+          (SID = DB261H1_TC1)
         )
       )
 

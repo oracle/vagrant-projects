@@ -31,18 +31,18 @@ host1:
   vm_name:    node1
   mem_size:   8192            # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.111
-  vip_ip:     192.168.56.112
-  private_ip: 192.168.200.111
+  public_ip:  192.168.56.201
+  vip_ip:     192.168.56.203
+  private_ip: 192.168.200.201
   u01_disk: ./node1_u01.vdi
 
 host2:
   vm_name:    node2
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.121
-  vip_ip:     192.168.56.122
-  private_ip: 192.168.200.122
+  public_ip:  192.168.56.202
+  vip_ip:     192.168.56.204
+  private_ip: 192.168.200.202
   u01_disk: ./node2_u01.vdi
 
 env:
@@ -51,9 +51,9 @@ env:
   domain:            localdomain
 
   # SCAN addresses — three IPs in the same subnet as public_ip
-  scan_ip1:          192.168.56.115
-  scan_ip2:          192.168.56.116
-  scan_ip3:          192.168.56.117
+  scan_ip1:          192.168.56.205
+  scan_ip2:          192.168.56.206
+  scan_ip3:          192.168.56.207
 
   # Shared ASM disks
   asm_disk_path:
@@ -87,27 +87,27 @@ env:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.111
-#  vip_ip:     192.168.125.112
-#  private_ip: 192.168.200.111
+#  public_ip:  192.168.125.201
+#  vip_ip:     192.168.125.203
+#  private_ip: 192.168.200.201
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #host2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.121
-#  vip_ip:     192.168.125.122
-#  private_ip: 192.168.200.122
+#  public_ip:  192.168.125.202
+#  vip_ip:     192.168.125.204
+#  private_ip: 192.168.200.202
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
 #  prefix_name:       seha19-ol7
 #  domain:            localdomain
-#  scan_ip1:          192.168.125.115
-#  scan_ip2:          192.168.125.116
-#  scan_ip3:          192.168.125.117
+#  scan_ip1:          192.168.125.205
+#  scan_ip2:          192.168.125.206
+#  scan_ip3:          192.168.125.207
 #  asm_disk_num:      4
 #  asm_disk_size:     20
 #  p1_ratio:          80

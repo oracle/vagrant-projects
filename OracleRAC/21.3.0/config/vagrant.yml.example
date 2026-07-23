@@ -31,18 +31,18 @@ vm1:
   vm_name:    node1
   mem_size:   8192            # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.111
-  vip_ip:     192.168.56.112
-  private_ip: 192.168.200.111
+  public_ip:  192.168.56.161
+  vip_ip:     192.168.56.163
+  private_ip: 192.168.200.161
   storage_pool_name: Vagrant_KVM_Storage
 
 vm2:
   vm_name:    node2
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.121
-  vip_ip:     192.168.56.122
-  private_ip: 192.168.200.122
+  public_ip:  192.168.56.162
+  vip_ip:     192.168.56.164
+  private_ip: 192.168.200.162
   storage_pool_name: Vagrant_KVM_Storage
 
 env:
@@ -51,9 +51,9 @@ env:
   domain:            localdomain
 
   # SCAN addresses — three IPs in the same subnet as public_ip
-  scan_ip1:          192.168.56.115
-  scan_ip2:          192.168.56.116
-  scan_ip3:          192.168.56.117
+  scan_ip1:          192.168.56.165
+  scan_ip2:          192.168.56.166
+  scan_ip3:          192.168.56.167
 
   # Shared ASM disks
   asm_disk_path:
@@ -97,27 +97,27 @@ env:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.111
-#  vip_ip:     192.168.125.112
-#  private_ip: 192.168.200.111
+#  public_ip:  192.168.125.161
+#  vip_ip:     192.168.125.163
+#  private_ip: 192.168.200.161
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #vm2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.121
-#  vip_ip:     192.168.125.122
-#  private_ip: 192.168.200.122
+#  public_ip:  192.168.125.162
+#  vip_ip:     192.168.125.164
+#  private_ip: 192.168.200.162
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
 #  prefix_name:       rac21-ol8
 #  domain:            localdomain
-#  scan_ip1:          192.168.125.115
-#  scan_ip2:          192.168.125.116
-#  scan_ip3:          192.168.125.117
+#  scan_ip1:          192.168.125.165
+#  scan_ip2:          192.168.125.166
+#  scan_ip3:          192.168.125.167
 #  asm_disk_num:      4
 #  asm_disk_size:     20
 #  p1_ratio:          80

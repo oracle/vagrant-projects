@@ -16,21 +16,21 @@ vm1:
   vm_name:    primary
   mem_size:   8192          # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.141
-  private_ip: 192.168.200.141
+  public_ip:  192.168.56.61
+  private_ip: 192.168.200.61
   u01_disk:   ./primary_u01.vdi
 
 vm2:
   vm_name:    standby
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.142
-  private_ip: 192.168.200.142
+  public_ip:  192.168.56.62
+  private_ip: 192.168.200.62
   u01_disk:   ./standby_u01.vdi
 
 env:
   provider:          virtualbox
-  prefix_name:       dg21-ol8
+  prefix_name:       dg213-ol8
   domain:            localdomain
 
   # Oradata disks
@@ -58,7 +58,7 @@ env:
 
   ora_languages:     en,en_GB
 
-  db_name:           DB21H1
+  db_name:           DB213H1
   pdb_name:          PDB1
   cdb:               true
   adg:               true        # Active Data Guard (open R/O + apply)
@@ -68,21 +68,21 @@ env:
 #  vm_name:    primary
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.141
-#  private_ip: 192.168.200.141
+#  public_ip:  192.168.125.61
+#  private_ip: 192.168.200.61
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #vm2:
 #  vm_name:    standby
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.142
-#  private_ip: 192.168.200.142
+#  public_ip:  192.168.125.62
+#  private_ip: 192.168.200.62
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
-#  prefix_name:       dg21-ol8
+#  prefix_name:       dg213-ol8
 #  domain:            localdomain
 #  oradata_disk_num:  2
 #  oradata_disk_size: 20
@@ -96,7 +96,7 @@ env:
 #  sys_password:      welcome1
 #  pdb_password:      welcome1
 #  ora_languages:     en,en_GB
-#  db_name:           DB21H1
+#  db_name:           DB213H1
 #  pdb_name:          PDB1
 #  cdb:               true
 #  adg:               true

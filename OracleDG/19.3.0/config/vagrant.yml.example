@@ -16,21 +16,21 @@ vm1:
   vm_name:    primary
   mem_size:   8192          # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.131
-  private_ip: 192.168.200.131
+  public_ip:  192.168.56.51
+  private_ip: 192.168.200.51
   u01_disk:   ./primary_u01.vdi
 
 vm2:
   vm_name:    standby
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.132
-  private_ip: 192.168.200.132
+  public_ip:  192.168.56.52
+  private_ip: 192.168.200.52
   u01_disk:   ./standby_u01.vdi
 
 env:
   provider:          virtualbox
-  prefix_name:       dg19-ol7
+  prefix_name:       dg193-ol7
   domain:            localdomain
 
   # Oradata disks
@@ -59,7 +59,7 @@ env:
 
   ora_languages:     en,en_GB
 
-  db_name:           DB19H1
+  db_name:           DB193H1
   pdb_name:          PDB1
   cdb:               true
   adg:               true        # Active Data Guard (open R/O + apply)
@@ -69,35 +69,40 @@ env:
 #  vm_name:    primary
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.131
-#  private_ip: 192.168.200.131
+#  public_ip:  192.168.125.51
+#  private_ip: 192.168.200.51
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #vm2:
 #  vm_name:    standby
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.132
-#  private_ip: 192.168.200.132
+#  public_ip:  192.168.125.52
+#  private_ip: 192.168.200.52
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
-#  prefix_name:       dg19-ol7
+#  prefix_name:       dg193-ol7
 #  domain:            localdomain
+#
 #  oradata_disk_num:  2
 #  oradata_disk_size: 20
 #  storage_pool_name: Vagrant_KVM_Storage
 #  db_software:       LINUX.X64_193000_db_home.zip
+#
 #  # Optional Database Release Update — set both keys, or neither. See notes above.
 #  #opatch_software:   p6880880_190000_Linux-x86-64.zip
 #  #db_ru_software:    p<bug-number>_190000_Linux-x86-64.zip
+#
 #  root_password:     welcome1
 #  oracle_password:   welcome1
 #  sys_password:      welcome1
 #  pdb_password:      welcome1
+#
 #  ora_languages:     en,en_GB
-#  db_name:           DB19H1
+#
+#  db_name:           DB193H1
 #  pdb_name:          PDB1
 #  cdb:               true
 #  adg:               true

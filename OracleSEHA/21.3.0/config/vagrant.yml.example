@@ -32,7 +32,7 @@
 # ------------------------------------------------------------------------------
 
 ## -------------------------------- Active profile -------------------------------
-host1:
+vm1:
   vm_name:    node1
   mem_size:   8192            # MB — minimum 6144
   cpus:       2
@@ -41,7 +41,7 @@ host1:
   private_ip: 192.168.200.211
   storage_pool_name: Vagrant_KVM_Storage
 
-host2:
+vm2:
   vm_name:    node2
   mem_size:   8192
   cpus:       2
@@ -92,7 +92,7 @@ env:
   pdb_name:          PDB1
 
 # ---------------------------------- KVM / libvirt -----------------------------
-#host1:
+#vm1:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
@@ -101,7 +101,7 @@ env:
 #  private_ip: 192.168.200.211
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2

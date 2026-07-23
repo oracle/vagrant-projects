@@ -33,7 +33,7 @@ The implementation is opinionated and explicit: it verifies every installer payl
 
 ## 🏗️ How SEHA Is Built
 
-There is only one topology: `host1` + `host2` form a GI cluster, and the SE2 database runs on
+There is only one topology: `vm1` + `vm2` form a GI cluster, and the SE2 database runs on
 exactly one node at a time.
 
 `dbca` has no notion of SEHA — it only ever creates a plain single-instance database on ASM
@@ -93,8 +93,8 @@ Default node roles:
 
 | VM | Default hostname | Role |
 | --- | --- | --- |
-| `host1` | `node1` | Main orchestration node, GI install driver, DB creation, SEHA node list |
-| `host2` | `node2` | Second cluster node; owns shared-disk partitioning and installs its own RDBMS home |
+| `vm1` | `node1` | Main orchestration node, GI install driver, DB creation, SEHA node list |
+| `vm2` | `node2` | Second cluster node; owns shared-disk partitioning and installs its own RDBMS home |
 
 Both nodes are always created.
 
@@ -169,8 +169,8 @@ Then update [`db_installer.sha256`](db_installer.sha256). The shipped examples u
 5. Connect to the guests:
 
    ```bash
-   vagrant ssh host1
-   vagrant ssh host2   # cluster mode only
+   vagrant ssh vm1
+   vagrant ssh vm2   # cluster mode only
    ```
 
 Core lifecycle commands:
@@ -181,8 +181,8 @@ Core lifecycle commands:
 | Stop the lab | `vagrant halt` |
 | Start again | `vagrant up` |
 | Destroy VMs | `vagrant destroy -f` |
-| SSH to node1 | `vagrant ssh host1` |
-| SSH to node2 | `vagrant ssh host2` (cluster mode only) |
+| SSH to node1 | `vagrant ssh vm1` |
+| SSH to node2 | `vagrant ssh vm2` (cluster mode only) |
 
 For a truly clean VirtualBox rebuild, also remove persistent `node*_u01.vdi` and `asm_disk*.vdi` files.
 
@@ -197,21 +197,21 @@ All runtime knobs live in [`config/vagrant.yml`](config/vagrant.yml).
 | `env.provider` | `libvirt` | Must be `libvirt` or `virtualbox` |
 | `env.prefix_name` | `seha21-ol8` | Must match `[0-9a-zA-Z-]{1,14}`; also drives cluster and SCAN naming |
 | `env.domain` | `localdomain` | Used in `/etc/hosts`, VIP names, private names, and SCAN |
-| `host1.vm_name` | `node1` | Hostname for node1 |
-| `host2.vm_name` | `node2` | Hostname for node2 |
-| `host1.public_ip` | `192.168.125.111` | Public network address |
-| `host2.public_ip` | `192.168.125.121` | Public network address for node2 |
-| `host1.private_ip` | `192.168.200.111` | Interconnect address |
-| `host2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
-| `host1.vip_ip` | `192.168.125.112` | VIP used by GI |
-| `host2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
+| `vm1.vm_name` | `node1` | Hostname for node1 |
+| `vm2.vm_name` | `node2` | Hostname for node2 |
+| `vm1.public_ip` | `192.168.125.111` | Public network address |
+| `vm2.public_ip` | `192.168.125.121` | Public network address for node2 |
+| `vm1.private_ip` | `192.168.200.111` | Interconnect address |
+| `vm2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
+| `vm1.vip_ip` | `192.168.125.112` | VIP used by GI |
+| `vm2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
 | `env.scan_ip1..3` | `192.168.125.115-117` | Intended SCAN IPs on the public subnet |
 
 Name resolution behavior:
 
 - [`scripts/03_setup_hosts.sh`](scripts/03_setup_hosts.sh) rewrites `/etc/hosts` with public, private, VIP, and SCAN entries
 - `/etc/resolv.conf` is rewritten to contain `search <domain>`
-- The public subnet and private subnet handed to GI are derived from `host1` addresses
+- The public subnet and private subnet handed to GI are derived from `vm1` addresses
 
 ### Storage and ASM
 
@@ -220,11 +220,11 @@ Name resolution behavior:
 | `env.asm_disk_num` | `4` | Minimum `4` shared ASM disks |
 | `env.asm_disk_size` | `20` | Size in GB for each shared ASM disk |
 | `env.p1_ratio` | `80` | Partition split: `P1` for `DATA`, `P2` for `RECO` |
-| `host1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
-| `host2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
 | `env.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt shared ASM disks only |
-| `host1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
-| `host2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
+| `vm1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
+| `vm2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
 | `env.asm_disk_path` | `./` | VirtualBox path for `asm_disk*.vdi` |
 | `env.non_rotational` | `on` | VirtualBox SSD hint for attached disks |
 
@@ -279,7 +279,7 @@ vagrant up
 | Shared folder | Standard Vagrant/VirtualBox shared folder; the orchestrator remounts `/vagrant` if needed | Explicit NFS mount at `/vagrant` |
 | Networks | `vboxnet0` for public, `private` intnet for interconnect | `vgt-hostonly_network` for public, `vgt-private_network` for interconnect |
 | `/u01` disk | Persistent `node1_u01.vdi` / `node2_u01.vdi` by default | Per-node `100G` file-backed libvirt volume |
-| Shared ASM disks | `asm_disk*.vdi`, created once by `host1` and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
+| Shared ASM disks | `asm_disk*.vdi`, created once by `vm1` and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
 | Disk tuning | `non_rotational` toggle supported | No equivalent YAML toggle here |
 | Parallelism | Normal Vagrant behavior | `VAGRANT_NO_PARALLEL=yes` is forced |
 
@@ -377,7 +377,7 @@ Guidelines:
 After `vagrant up`, common validation commands are:
 
 ```bash
-vagrant ssh host1
+vagrant ssh vm1
 
 sudo cat /etc/opt/oracle-rac/setup.env
 sudo su - grid
@@ -389,7 +389,7 @@ srvctl status database -d SEHA21
 ```
 
 `srvctl config database` should list both nodes under the SEHA candidate node list. Repeat the
-checks from `host2` to confirm both nodes see the same cluster resources.
+checks from `vm2` to confirm both nodes see the same cluster resources.
 
 
 ## ✅ Bottom Line

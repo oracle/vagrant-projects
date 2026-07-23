@@ -272,19 +272,19 @@ var_scan_ip1        = fetch_required(params, 'env',  'scan_ip1')
 var_scan_ip2        = fetch_required(params, 'env',  'scan_ip2')
 var_scan_ip3        = fetch_required(params, 'env',  'scan_ip3')
 
-var_vm1_name        = fetch_required(params, 'host1', 'vm_name')
-var_vm1_mem_size    = fetch_required(params, 'host1', 'mem_size').to_i
-var_vm1_cpus        = fetch_required(params, 'host1', 'cpus').to_i
-var_vm1_public_ip   = fetch_required(params, 'host1', 'public_ip')
-var_vm1_vip_ip      = fetch_required(params, 'host1', 'vip_ip')
-var_vm1_private_ip  = fetch_required(params, 'host1', 'private_ip')
+var_vm1_name        = fetch_required(params, 'vm1', 'vm_name')
+var_vm1_mem_size    = fetch_required(params, 'vm1', 'mem_size').to_i
+var_vm1_cpus        = fetch_required(params, 'vm1', 'cpus').to_i
+var_vm1_public_ip   = fetch_required(params, 'vm1', 'public_ip')
+var_vm1_vip_ip      = fetch_required(params, 'vm1', 'vip_ip')
+var_vm1_private_ip  = fetch_required(params, 'vm1', 'private_ip')
 
-var_vm2_name        = fetch_required(params, 'host2', 'vm_name')
-var_vm2_mem_size    = fetch_required(params, 'host2', 'mem_size').to_i
-var_vm2_cpus        = fetch_required(params, 'host2', 'cpus').to_i
-var_vm2_public_ip   = fetch_required(params, 'host2', 'public_ip')
-var_vm2_vip_ip      = fetch_required(params, 'host2', 'vip_ip')
-var_vm2_private_ip  = fetch_required(params, 'host2', 'private_ip')
+var_vm2_name        = fetch_required(params, 'vm2', 'vm_name')
+var_vm2_mem_size    = fetch_required(params, 'vm2', 'mem_size').to_i
+var_vm2_cpus        = fetch_required(params, 'vm2', 'cpus').to_i
+var_vm2_public_ip   = fetch_required(params, 'vm2', 'public_ip')
+var_vm2_vip_ip      = fetch_required(params, 'vm2', 'vip_ip')
+var_vm2_private_ip  = fetch_required(params, 'vm2', 'private_ip')
 
 var_asm_disk_num    = fetch_required(params, 'env', 'asm_disk_num').to_i
 var_asm_disk_size   = fetch_required(params, 'env', 'asm_disk_size').to_i
@@ -327,10 +327,10 @@ unless var_prefix_name.match?(/\A[0-9a-zA-Z-]{1,14}\z/)
   fatal "'env.prefix_name' must be 1-14 chars of [0-9a-zA-Z-] (got: '#{var_prefix_name}')"
 end
 
-fatal "'host1.mem_size' must be >= 6144 MB (got: #{var_vm1_mem_size})" if var_vm1_mem_size < 6144
-fatal "'host2.mem_size' must be >= 6144 MB (got: #{var_vm2_mem_size})" if var_vm2_mem_size < 6144
-fatal "'host1.cpus' must be >= 1 (got: #{var_vm1_cpus})"               if var_vm1_cpus    < 1
-fatal "'host2.cpus' must be >= 1 (got: #{var_vm2_cpus})"               if var_vm2_cpus    < 1
+fatal "'vm1.mem_size' must be >= 6144 MB (got: #{var_vm1_mem_size})" if var_vm1_mem_size < 6144
+fatal "'vm2.mem_size' must be >= 6144 MB (got: #{var_vm2_mem_size})" if var_vm2_mem_size < 6144
+fatal "'vm1.cpus' must be >= 1 (got: #{var_vm1_cpus})"               if var_vm1_cpus    < 1
+fatal "'vm2.cpus' must be >= 1 (got: #{var_vm2_cpus})"               if var_vm2_cpus    < 1
 
 [true, false].include?(var_cdb)      || fatal("'env.cdb' must be true or false (got: #{var_cdb.inspect})")
 
@@ -339,17 +339,17 @@ fatal "'env.asm_disk_num' must be >= 4 (got: #{var_asm_disk_num})"       if var_
 fatal "'env.asm_disk_size' must be >= 10 GB (got: #{var_asm_disk_size})" if var_asm_disk_size < 10
 
 ip_fields = {
-  'host1.public_ip'  => var_vm1_public_ip,
-  'host1.private_ip' => var_vm1_private_ip,
-  'host1.vip_ip'     => var_vm1_vip_ip,
+  'vm1.public_ip'  => var_vm1_public_ip,
+  'vm1.private_ip' => var_vm1_private_ip,
+  'vm1.vip_ip'     => var_vm1_vip_ip,
   'env.scan_ip1'     => var_scan_ip1,
   'env.scan_ip2'     => var_scan_ip2,
   'env.scan_ip3'     => var_scan_ip3,
 }
 unless ORESTART == true
-  ip_fields['host2.public_ip']  = var_vm2_public_ip
-  ip_fields['host2.private_ip'] = var_vm2_private_ip
-  ip_fields['host2.vip_ip']     = var_vm2_vip_ip
+  ip_fields['vm2.public_ip']  = var_vm2_public_ip
+  ip_fields['vm2.private_ip'] = var_vm2_private_ip
+  ip_fields['vm2.vip_ip']     = var_vm2_vip_ip
 end
 ip_fields.each do |label, val|
   fatal "#{label} is not a valid IP address (got: '#{val}')" unless valid_ip?(val)
@@ -414,8 +414,8 @@ end
 
 # --------------------------- Storage setup -----------------------------------
 if var_provider_name == 'libvirt'
-  var_vm1_storage     = fetch_optional(params, 'host1', 'storage_pool_name', default: 'default')
-  var_vm2_storage     = fetch_optional(params, 'host2', 'storage_pool_name', default: 'default')
+  var_vm1_storage     = fetch_optional(params, 'vm1', 'storage_pool_name', default: 'default')
+  var_vm2_storage     = fetch_optional(params, 'vm2', 'storage_pool_name', default: 'default')
   var_asm_storage     = fetch_optional(params, 'env',   'storage_pool_name', default: 'default')
   var_vm1_storage = 'default' if var_vm1_storage.to_s.empty?
   var_vm2_storage = 'default' if var_vm2_storage.to_s.empty?
@@ -424,8 +424,8 @@ end
 
 if var_provider_name == 'virtualbox'
   var_group          = fetch_optional(params, 'env',   'virtualbox_group', default: nil)
-  var_vm1_u01_disk   = fetch_optional(params, 'host1', 'u01_disk',       default: './node1_u01.vdi')
-  var_vm2_u01_disk   = fetch_optional(params, 'host2', 'u01_disk',       default: './node2_u01.vdi')
+  var_vm1_u01_disk   = fetch_optional(params, 'vm1', 'u01_disk',       default: './node1_u01.vdi')
+  var_vm2_u01_disk   = fetch_optional(params, 'vm2', 'u01_disk',       default: './node2_u01.vdi')
   var_non_rotational = fetch_optional(params, 'env',   'non_rotational', default: 'on')
   var_asm_disk_path  = fetch_optional(params, 'env',   'asm_disk_path',  default: '')
 
@@ -506,14 +506,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   if var_provider_name == 'libvirt'
     nodes = []
     unless ORESTART == true
-      nodes << [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+      nodes << [:vm2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
                 var_vm2_public_ip, var_vm2_private_ip, var_vm2_storage]
     end
-    nodes << [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+    nodes << [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
               var_vm1_public_ip, var_vm1_private_ip, var_vm1_storage]
 
     nodes.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, vm_storage|
-      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+      config.vm.define vm_sym, primary: (vm_sym == :vm1) do |node|
         node.vm.hostname = vm_name
         node.vm.network 'private_network', libvirt__network_name: 'vgt-hostonly_network', ip: public_ip
         node.vm.network 'private_network', libvirt__network_name: 'vgt-private_network',  ip: private_ip
@@ -548,24 +548,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # -------------------- virtualbox -----------------
   if var_provider_name == 'virtualbox'
     unless ORESTART == true
-      # In clustered mode, host2 only runs the common setup stages and owns the
+      # In clustered mode, vm2 only runs the common setup stages and owns the
       # initial ASM disk partitioning. Defining it first keeps plain
       # `vagrant up` working without requiring `--parallel`.
       vb_specs = [
-        [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+        [:vm2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
          var_vm2_public_ip, var_vm2_private_ip, var_vm2_u01_disk, true],
-        [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+        [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
          var_vm1_public_ip, var_vm1_private_ip, var_vm1_u01_disk, false]
       ]
     else
       vb_specs = [
-        [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+        [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
          var_vm1_public_ip, var_vm1_private_ip, var_vm1_u01_disk, true]
       ]
     end
 
     vb_specs.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, u01_disk, creates_asm_disks|
-      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+      config.vm.define vm_sym, primary: (vm_sym == :vm1) do |node|
         node.vm.hostname = vm_name
         node.vm.network :private_network, ip: public_ip,  virtualbox__hostonly: 'vboxnet0'
         node.vm.network :private_network, ip: private_ip, virtualbox__intnet:   'private'

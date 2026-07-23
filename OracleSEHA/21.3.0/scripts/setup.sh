@@ -35,7 +35,7 @@ if [[ "${ORESTART}" != "false" || "${DB_TYPE}" != "SEHA" ]]; then
   exit 1
 fi
 
-# SEHA is always a two-node cluster, so host2 is never optional.
+# SEHA is always a two-node cluster, so vm2 is never optional.
 for v in NODE2_PUBLIC_IP NODE2_PRIV_IP NODE2_VIP_IP; do
   if [[ -z "${!v:-}" ]]; then
     echo "ERROR: required environment variable '${v}' is missing (SEHA cluster mode)" >&2

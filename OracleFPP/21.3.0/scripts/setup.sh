@@ -75,6 +75,10 @@ install -d -m 0700 "${SETUP_ENV_DIR}"
     printf '\n'
 
     write_env_export GI_SOFTWARE       "${GI_SOFTWARE}"
+    write_env_export DB_SOFTWARE       "${DB_SOFTWARE}"
+    # Optional: empty unless an RU is configured in config/vagrant.yml.
+    write_env_export OPATCH_SOFTWARE   "${OPATCH_SOFTWARE:-}"
+    write_env_export GI_RU_SOFTWARE    "${GI_RU_SOFTWARE:-}"
     write_env_export GI_VERSION        "${GI_VERSION}"
     write_env_export DB_VERSION        "${DB_VERSION}"
     write_env_export DB_MAJOR          "${DB_MAJOR}"
@@ -147,6 +151,13 @@ if [[ "${PROVIDER}" == "virtualbox" ]] && ! mountpoint -q /vagrant; then
   mount -t vboxsf vagrant /vagrant
 fi
 
+# Vagrant sets the guest hostname at boot, before any provisioner, and nothing
+# below changes it — so this is already accurate here, and the FPP server block
+# further down reuses it rather than re-deriving it.
+current_host="$(hostname -s)"
+is_node1="false"
+[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
+
 log_section "Fixing locale warnings"
 for line in 'LANG=en_US.utf-8' 'LC_ALL=en_US.utf-8'; do
   grep -qxF "${line}" /etc/environment || echo "${line}" >> /etc/environment
@@ -186,10 +197,6 @@ printf 'root:%s\n'   "${ROOT_PASSWORD}"   | chpasswd
 printf 'grid:%s\n'   "${GRID_PASSWORD}"   | chpasswd
 printf 'oracle:%s\n' "${ORACLE_PASSWORD}" | chpasswd
 
-current_host="$(hostname -s)"
-is_node1="false"
-[[ "${current_host}" == "${VM1_NAME}" ]] && is_node1="true"
-
 # -------------------- node1 only -------
 if [[ "${is_node1}" == "true" ]]; then
 
@@ -227,11 +234,15 @@ if [[ "${is_node1}" == "true" ]]; then
 
   bash "${DB_HOME}/root.sh"
 
+  # Patch before the GIMR exists, so opatchauto never has to bring it down.
+  log_section "Patching RDBMS home"
+  bash "${SCRIPT_DIR}/15_patch_db_home.sh"
+
   log_section "Executing GIMR setup"
-  su - grid -c "bash ${SCRIPT_DIR}/15_setup_gimr.sh"
+  su - grid -c "bash ${SCRIPT_DIR}/16_setup_gimr.sh"
 
   log_section "Executing FPP setup"
-  bash "${SCRIPT_DIR}/16_Setup_FPP.sh"
+  bash "${SCRIPT_DIR}/17_Setup_FPP.sh"
 fi
 
 # Run user-defined post-setup scripts on every node.

@@ -8,7 +8,7 @@ The build is intentionally SEHA-only: a **two-node Grid Infrastructure cluster**
 
 The implementation is opinionated and explicit: it verifies every installer payload up front, lays out `/u01` on its own disk, creates shared ASM storage, performs silent GI and RDBMS installs, creates the database, sets the SEHA failover node list, and then executes optional post-provision hooks from `userscripts/`.
 
-![Topology](.images/OracleRAC.png)
+![Topology](.images/OracleSEHA.png)
 
 ###### Author: Ruggero Citton (<ruggero.citton@oracle.com>) — RAC Pack, Cloud Innovation and Solution Engineering Team
 
@@ -33,7 +33,7 @@ The implementation is opinionated and explicit: it verifies every installer payl
 
 ## 🏗️ How SEHA Is Built
 
-There is only one topology: `host1` + `host2` form a GI cluster, and the SE2 database runs on
+There is only one topology: `vm1` + `vm2` form a GI cluster, and the SE2 database runs on
 exactly one node at a time.
 
 `dbca` has no notion of SEHA — it only ever creates a plain single-instance database on ASM
@@ -93,8 +93,8 @@ Default node roles:
 
 | VM | Default hostname | Role |
 | --- | --- | --- |
-| `host1` | `node1` | Main orchestration node, GI install driver, DB creation, SEHA node list |
-| `host2` | `node2` | Second cluster node; owns shared-disk partitioning and installs its own RDBMS home |
+| `vm1` | `node1` | Main orchestration node, GI install driver, DB creation, SEHA node list |
+| `vm2` | `node2` | Second cluster node; owns shared-disk partitioning and installs its own RDBMS home |
 
 Both nodes are always created.
 
@@ -106,12 +106,30 @@ Both nodes are always created.
 | Provider | Choose `virtualbox` or `libvirt` in [`config/vagrant.yml`](config/vagrant.yml) |
 | Vagrant plugins | The `Vagrantfile` auto-installs `vagrant-reload`, `vagrant-proxyconf`, and `vagrant-libvirt` when needed |
 | Oracle installers | Download the Oracle Database 21c installer zips (installed as **SE2**) from [Oracle](https://www.oracle.com/database/technologies/oracle21c-linux-downloads.html) under [`ORCL_software/`](ORCL_software/) |
-| Checksum manifest | [`db_installer.cksum`](db_installer.cksum) must contain POSIX `cksum` entries for both zips |
+| Checksum manifest | [`db_installer.sha256`](db_installer.sha256) must contain POSIX `cksum` entries for both zips |
 | libvirt networking | The code expects libvirt networks named `vgt-hostonly_network` and `vgt-private_network` |
 | libvirt file sharing | The project tree is mounted into guests via **NFS** at `/vagrant` |
 | Host sizing | Defaults are `8192` MB RAM and `2` vCPU per node, plus one `100G` `/u01` disk per node and `4 x 20G` shared ASM disks |
 
 Proxy-aware environments are supported. If `vagrant-proxyconf` is installed, the `Vagrantfile` forwards `http_proxy`, `https_proxy`, and `no_proxy` from the host.
+
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
 
 ## 📦 Oracle Software Payload and Integrity Checks
 
@@ -119,27 +137,29 @@ Required payload:
 
 | File | Required | Checked by |
 | --- | --- | --- |
-| `ORCL_software/LINUX.X64_213000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
-| `ORCL_software/LINUX.X64_213000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, guest-side `cksum` verification |
-| `ORCL_software/p6880880_210000_Linux-x86-64.zip` (OPatch) | Only if applying an RU | Presence + manifest entry + guest-side `cksum` |
-| `ORCL_software/p<bug>_210000_Linux-x86-64.zip` (GI RU) | Only if applying an RU | Presence + manifest entry + guest-side `cksum` |
+| `ORCL_software/LINUX.X64_213000_grid_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/LINUX.X64_213000_db_home.zip` | Yes | Host-side filename/presence checks, manifest entry check, host-side SHA-256 verification |
+| `ORCL_software/p6880880_210000_Linux-x86-64.zip` (OPatch) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 |
+| `ORCL_software/p<bug>_210000_Linux-x86-64.zip` (GI RU) | Only if applying an RU | Presence + manifest entry + host-side SHA-256 |
 
 The `Vagrantfile` rejects installer names that do not start with `LINUX.X64_213`, which prevents accidentally pointing this 21c lab at a different major release.
 
-The repository already ships a [`db_installer.cksum`](db_installer.cksum) manifest. If your downloaded zips differ, regenerate the entries:
+The repository already ships a [`db_installer.sha256`](db_installer.sha256) manifest. If your downloaded zips differ, regenerate the entries:
 
 ```bash
-cksum ORCL_software/LINUX.X64_213000_grid_home.zip
-cksum ORCL_software/LINUX.X64_213000_db_home.zip
+sha256sum ORCL_software/LINUX.X64_213000_grid_home.zip
+sha256sum ORCL_software/LINUX.X64_213000_db_home.zip
 ```
 
-Then update [`db_installer.cksum`](db_installer.cksum). The shipped examples use `/vagrant/<zipname>` in the third field, and the verifier matches on the basename.
+> On **Windows PowerShell**, `sha256sum` is not available — use `Get-FileHash -Algorithm SHA256 ORCL_software\<zip>` instead (the digest is the `Hash` column; upper- or lower-case both match).
+
+Then update [`db_installer.sha256`](db_installer.sha256). The shipped examples use `/vagrant/<zipname>` in the second field, and the verifier matches on the basename.
 
 ## 🚀 Quick Start
 
 1. Review and, if necessary, edit [`config/vagrant.yml`](config/vagrant.yml).
 2. Place both Oracle 21c installer zips under [`ORCL_software/`](ORCL_software/).
-3. Confirm [`db_installer.cksum`](db_installer.cksum) matches your installer files.
+3. Confirm [`db_installer.sha256`](db_installer.sha256) matches your installer files.
 4. Launch the lab:
 
    ```bash
@@ -149,8 +169,8 @@ Then update [`db_installer.cksum`](db_installer.cksum). The shipped examples use
 5. Connect to the guests:
 
    ```bash
-   vagrant ssh host1
-   vagrant ssh host2   # cluster mode only
+   vagrant ssh vm1
+   vagrant ssh vm2   # cluster mode only
    ```
 
 Core lifecycle commands:
@@ -161,8 +181,8 @@ Core lifecycle commands:
 | Stop the lab | `vagrant halt` |
 | Start again | `vagrant up` |
 | Destroy VMs | `vagrant destroy -f` |
-| SSH to node1 | `vagrant ssh host1` |
-| SSH to node2 | `vagrant ssh host2` (cluster mode only) |
+| SSH to node1 | `vagrant ssh vm1` |
+| SSH to node2 | `vagrant ssh vm2` (cluster mode only) |
 
 For a truly clean VirtualBox rebuild, also remove persistent `node*_u01.vdi` and `asm_disk*.vdi` files.
 
@@ -177,21 +197,21 @@ All runtime knobs live in [`config/vagrant.yml`](config/vagrant.yml).
 | `env.provider` | `libvirt` | Must be `libvirt` or `virtualbox` |
 | `env.prefix_name` | `seha21-ol8` | Must match `[0-9a-zA-Z-]{1,14}`; also drives cluster and SCAN naming |
 | `env.domain` | `localdomain` | Used in `/etc/hosts`, VIP names, private names, and SCAN |
-| `host1.vm_name` | `node1` | Hostname for node1 |
-| `host2.vm_name` | `node2` | Hostname for node2 |
-| `host1.public_ip` | `192.168.125.111` | Public network address |
-| `host2.public_ip` | `192.168.125.121` | Public network address for node2 |
-| `host1.private_ip` | `192.168.200.111` | Interconnect address |
-| `host2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
-| `host1.vip_ip` | `192.168.125.112` | VIP used by GI |
-| `host2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
+| `vm1.vm_name` | `node1` | Hostname for node1 |
+| `vm2.vm_name` | `node2` | Hostname for node2 |
+| `vm1.public_ip` | `192.168.125.111` | Public network address |
+| `vm2.public_ip` | `192.168.125.121` | Public network address for node2 |
+| `vm1.private_ip` | `192.168.200.111` | Interconnect address |
+| `vm2.private_ip` | `192.168.200.122` | Interconnect address for node2 |
+| `vm1.vip_ip` | `192.168.125.112` | VIP used by GI |
+| `vm2.vip_ip` | `192.168.125.122` | VIP used by GI on node2 |
 | `env.scan_ip1..3` | `192.168.125.115-117` | Intended SCAN IPs on the public subnet |
 
 Name resolution behavior:
 
 - [`scripts/03_setup_hosts.sh`](scripts/03_setup_hosts.sh) rewrites `/etc/hosts` with public, private, VIP, and SCAN entries
 - `/etc/resolv.conf` is rewritten to contain `search <domain>`
-- The public subnet and private subnet handed to GI are derived from `host1` addresses
+- The public subnet and private subnet handed to GI are derived from `vm1` addresses
 
 ### Storage and ASM
 
@@ -200,11 +220,11 @@ Name resolution behavior:
 | `env.asm_disk_num` | `4` | Minimum `4` shared ASM disks |
 | `env.asm_disk_size` | `20` | Size in GB for each shared ASM disk |
 | `env.p1_ratio` | `80` | Partition split: `P1` for `DATA`, `P2` for `RECO` |
-| `host1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
-| `host2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm1.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
+| `vm2.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt only |
 | `env.storage_pool_name` | `Vagrant_KVM_Storage` | libvirt shared ASM disks only |
-| `host1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
-| `host2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
+| `vm1.u01_disk` | `./node1_u01.vdi` | VirtualBox only |
+| `vm2.u01_disk` | `./node2_u01.vdi` | VirtualBox only |
 | `env.asm_disk_path` | `./` | VirtualBox path for `asm_disk*.vdi` |
 | `env.non_rotational` | `on` | VirtualBox SSD hint for attached disks |
 
@@ -259,7 +279,7 @@ vagrant up
 | Shared folder | Standard Vagrant/VirtualBox shared folder; the orchestrator remounts `/vagrant` if needed | Explicit NFS mount at `/vagrant` |
 | Networks | `vboxnet0` for public, `private` intnet for interconnect | `vgt-hostonly_network` for public, `vgt-private_network` for interconnect |
 | `/u01` disk | Persistent `node1_u01.vdi` / `node2_u01.vdi` by default | Per-node `100G` file-backed libvirt volume |
-| Shared ASM disks | `asm_disk*.vdi`, created once by `host1` and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
+| Shared ASM disks | `asm_disk*.vdi`, created once by `vm1` and attached as shareable | Shared raw volumes in the configured storage pool with `allow_existing=true` |
 | Disk tuning | `non_rotational` toggle supported | No equivalent YAML toggle here |
 | Parallelism | Normal Vagrant behavior | `VAGRANT_NO_PARALLEL=yes` is forced |
 
@@ -314,7 +334,7 @@ Execution nuance:
 | Process list hygiene | `chpasswd` reads passwords from stdin; SSH equivalence passes the password through `RAC_USER_PASSWORD` instead of argv |
 | Account bootstrap | `grid` and `oracle` are created with locked passwords first, then assigned real passwords later |
 | Root SSH exposure | `PermitRootLogin yes` is enabled only for bootstrap, then reverted to `PermitRootLogin prohibit-password` |
-| Installer integrity | ZIP files are checked by filename policy, manifest presence, and guest-side `cksum` before extraction |
+| Installer integrity | ZIP files are checked by filename policy, manifest presence, and host-side SHA-256 before boot |
 
 Important distinction:
 
@@ -342,7 +362,7 @@ Guidelines:
 | --- | --- |
 | [`Vagrantfile`](Vagrantfile) | VM definitions, validation, provider-specific wiring, env injection |
 | [`config/vagrant.yml`](config/vagrant.yml) | All configurable lab settings |
-| [`db_installer.cksum`](db_installer.cksum) | POSIX `cksum` manifest for GI and DB installer zips |
+| [`db_installer.sha256`](db_installer.sha256) | POSIX `cksum` manifest for GI and DB installer zips |
 | [`scripts/setup.sh`](scripts/setup.sh) | Main orchestration entrypoint |
 | [`scripts/_common.sh`](scripts/_common.sh) | Shared strict-mode helpers, logging, checksum verification, device utilities |
 | [`scripts/`](scripts/) | Numbered provisioning stages from OS prep through DB validation |
@@ -357,7 +377,7 @@ Guidelines:
 After `vagrant up`, common validation commands are:
 
 ```bash
-vagrant ssh host1
+vagrant ssh vm1
 
 sudo cat /etc/opt/oracle-rac/setup.env
 sudo su - grid
@@ -369,9 +389,9 @@ srvctl status database -d SEHA21
 ```
 
 `srvctl config database` should list both nodes under the SEHA candidate node list. Repeat the
-checks from `host2` to confirm both nodes see the same cluster resources.
+checks from `vm2` to confirm both nodes see the same cluster resources.
 
 
 ## ✅ Bottom Line
 
-This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.cksum`](db_installer.cksum), and the two installer zips aligned, the rest of the lab is intentionally automated.
+This directory is not just a thin Vagrant wrapper. It is a full provisioning pipeline with validation, repeatable storage layout, silent Oracle installation, post-build hook support, and provider-specific handling for both VirtualBox and libvirt. If you keep [`config/vagrant.yml`](config/vagrant.yml), [`db_installer.sha256`](db_installer.sha256), and the two installer zips aligned, the rest of the lab is intentionally automated.

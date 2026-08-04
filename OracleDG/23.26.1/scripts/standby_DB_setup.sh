@@ -110,9 +110,15 @@ exit;
 EOF
 sleep 10
 
+# The name must be quoted here: unquoted, DGMGRL folds it to lowercase for
+# storage, which permanently mismatches the standby's actual (case-preserved)
+# DB_UNIQUE_NAME and makes every broker-side status check on it fail with
+# ORA-16642 DB_UNIQUE_NAME mismatch — not a transient/timing issue, it never
+# self-resolves. Quoting keeps the registered name's case identical to the
+# real parameter.
 "${DB_HOME}/bin/dgmgrl" <<EOF
 CONNECT sys/"${SYS_PASSWORD}"@${DB_NAME};
-ADD DATABASE ${DB_NAME}_STDBY AS CONNECT IDENTIFIER IS ${DB_NAME}_STDBY;
+ADD DATABASE "${DB_NAME}_STDBY" AS CONNECT IDENTIFIER IS ${DB_NAME}_STDBY;
 exit;
 EOF
 sleep 5
@@ -142,8 +148,42 @@ exit;
 EOF
 fi
 
-log_section "Final broker status (takes ~60s to converge)"
-sleep 60
+log_section "Waiting for Data Guard broker configuration to converge"
+# A freshly duplicated standby can take a while to register with the broker
+# and catch up on apply. Polling the aggregate Configuration Status isn't
+# enough on its own — it can report SUCCESS before the standby's own
+# per-database status check clears, which still throws a transient
+# ORA-16642 DB_UNIQUE_NAME mismatch for a while after the config looks
+# healthy. Poll that specific check instead of sleeping a fixed amount.
+dg_wait_timeout=300
+dg_wait_interval=10
+dg_wait_elapsed=0
+dg_standby_status=""
+
+while (( dg_wait_elapsed < dg_wait_timeout )); do
+  dg_show_output="$("${DB_HOME}/bin/dgmgrl" <<EOF
+CONNECT sys/"${SYS_PASSWORD}"@${DB_NAME};
+SHOW DATABASE ${DB_NAME}_STDBY;
+exit;
+EOF
+)"
+  dg_standby_status="$(awk '/^Database Status:/{getline; print; exit}' <<< "${dg_show_output}")"
+
+  if [[ "${dg_standby_status}" == SUCCESS* ]]; then
+    log_info "Standby database status reports SUCCESS after ${dg_wait_elapsed}s"
+    break
+  fi
+
+  log_info "Standby database status: '${dg_standby_status:-none yet}' (waited ${dg_wait_elapsed}s of ${dg_wait_timeout}s) — retrying in ${dg_wait_interval}s"
+  sleep "${dg_wait_interval}"
+  dg_wait_elapsed=$(( dg_wait_elapsed + dg_wait_interval ))
+done
+
+if [[ "${dg_standby_status}" != SUCCESS* ]]; then
+  log_info "Standby database status did not reach SUCCESS within ${dg_wait_timeout}s (last status: '${dg_standby_status:-none}'); continuing — check status manually"
+fi
+
+log_section "Final broker status"
 "${DB_HOME}/bin/dgmgrl" <<EOF
 CONNECT sys/"${SYS_PASSWORD}"@${DB_NAME};
 SHOW CONFIGURATION;

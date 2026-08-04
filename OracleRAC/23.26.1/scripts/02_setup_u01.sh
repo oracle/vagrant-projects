@@ -21,7 +21,10 @@ fi
 box_disk_num="$1"
 provider="$2"
 
-device="$(resolve_disk_device "${box_disk_num}" "${provider}")"
+# 'u01_disk' is the serial the Vagrantfile stamps on this disk; on libvirt it is
+# the only reliable way to tell it apart from the shared ASM disks, whose guest
+# device letters are not ordered by attachment.
+device="$(resolve_disk_device "${box_disk_num}" "${provider}" u01_disk)"
 
 # Idempotency: if /u01 is already mounted, skip.
 if mountpoint -q /u01; then

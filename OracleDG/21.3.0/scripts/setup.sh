@@ -59,6 +59,9 @@ install -d -m 0700 "${SETUP_ENV_DIR}"
     write_env_export DB_SOFTWARE "${DB_SOFTWARE}"
     write_env_export DB_MAJOR "${DB_MAJOR}"
     write_env_export DB_VERSION "${DB_VERSION}"
+    # Optional: empty unless a Release Update is configured in config/vagrant.yml.
+    write_env_export OPATCH_SOFTWARE "${OPATCH_SOFTWARE:-}"
+    write_env_export DB_RU_SOFTWARE  "${DB_RU_SOFTWARE:-}"
     printf '\n'
 
     write_env_export SYS_PASSWORD "${SYS_PASSWORD}"
@@ -141,6 +144,13 @@ log_section "Installing Oracle RDBMS software"
 su - oracle -c "bash ${SCRIPT_DIR}/06_do_RDBMS_software_installation.sh"
 bash "${ORA_INVENTORY}/orainstRoot.sh"
 bash "${DB_HOME}/root.sh"
+
+# Apply the optional Database RU to the freshly installed home, before any
+# database exists. No-op unless env.opatch_software and env.db_ru_software are
+# both set. Runs on both primary and standby so they start at the same patch
+# level.
+log_section "Patching RDBMS home (optional Release Update)"
+su - oracle -c "bash ${SCRIPT_DIR}/09_patch_db_home.sh"
 
 log_section "Configuring Oracle Net (listener, tnsnames)"
 su - oracle -c "bash ${SCRIPT_DIR}/07_setup_OracleNet.sh"

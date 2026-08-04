@@ -6,3 +6,6 @@ CVS
 .zip
 *.swp
 
+# Installer-checksum verification stamps written by the Vagrantfile cache
+*.verified
+

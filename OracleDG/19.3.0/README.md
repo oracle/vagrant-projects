@@ -15,7 +15,7 @@
 | Database | Oracle Database 19c Enterprise Edition (`19.3.0.0.0`) |
 | Operating system | Oracle Linux 7 |
 | Virtualization providers | VirtualBox, KVM/libvirt |
-| Vagrant machines | `host1` = primary, `host2` = standby |
+| Vagrant machines | `vm1` = primary, `vm2` = standby |
 | Default sample config | `config/vagrant.yml` is currently set up for `virtualbox` |
 
 ## 🎯 What This Project Delivers
@@ -30,8 +30,8 @@
 
 | Vagrant machine | Default guest hostname | Role |
 | --- | --- | --- |
-| `host1` | `primary` | Primary database node |
-| `host2` | `standby` | Physical standby node |
+| `vm1` | `primary` | Primary database node |
+| `vm2` | `standby` | Physical standby node |
 
 ## ✅ Prerequisites
 
@@ -43,7 +43,25 @@
 ORCL_software/LINUX.X64_193000_db_home.zip
 ```
 
-The `Vagrantfile` stops early if the installer is missing, if `db_installer.cksum` is missing, or if the configured zip has no matching checksum entry. During the guest install step, the project also verifies the zip's `cksum` CRC and byte count against `db_installer.cksum` before extracting it.
+The `Vagrantfile` stops early if the installer is missing, if `db_installer.sha256` is missing, or if the configured zip has no matching checksum entry. During the guest install step, the project also verifies the zip's `cksum` CRC and byte count against `db_installer.sha256` before extracting it.
+
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
 
 ## 📦 Resource Profile
 
@@ -69,8 +87,8 @@ vagrant up
 Connect to the lab:
 
 ```bash
-vagrant ssh host1    # primary
-vagrant ssh host2    # standby
+vagrant ssh vm1    # primary
+vagrant ssh vm2    # standby
 ```
 
 Useful lifecycle commands:
@@ -87,17 +105,39 @@ All project configuration lives in `config/vagrant.yml`.
 
 | Section | Keys | Purpose |
 | --- | --- | --- |
-| `host1`, `host2` | `vm_name`, `mem_size`, `cpus` | Per-node compute settings |
-| `host1`, `host2` | `public_ip`, `private_ip` | Network addresses |
-| `host1`, `host2` | `u01_disk` or `storage_pool_name` | Provider-specific storage settings |
+| `vm1`, `vm2` | `vm_name`, `mem_size`, `cpus` | Per-node compute settings |
+| `vm1`, `vm2` | `public_ip`, `private_ip` | Network addresses |
+| `vm1`, `vm2` | `u01_disk` or `storage_pool_name` | Provider-specific storage settings |
 | `env` | `provider` | `virtualbox` or `libvirt` |
 | `env` | `prefix_name`, `domain` | VM naming and DNS domain |
 | `env` | `oradata_disk_num`, `oradata_disk_size` | Oradata disk layout |
 | `env` | `db_software` | Installer zip filename under `ORCL_software/` |
+| `env` | `opatch_software`, `db_ru_software` | Optional Release Update — see below |
 | `env` | `db_name`, `pdb_name` | CDB and PDB naming |
 | `env` | `cdb` | Enable or disable CDB mode |
 | `env` | `adg` | Open standby in Active Data Guard mode |
 | `env` | `*_password` | Root, oracle, SYS, and PDB passwords |
+
+### 🩹 Optional patching (Release Update)
+
+Patching is opt-in. Set **both** keys in `env` to apply a Database Release
+Update to the RDBMS home, or leave both unset to install at base release:
+
+```yaml
+env:
+  opatch_software:   p6880880_190000_Linux-x86-64.zip   # OPatch (bug 6880880)
+  db_ru_software:    p<bug-number>_190000_Linux-x86-64.zip
+```
+
+- Both zips go under `ORCL_software/` and need an entry in `db_installer.sha256`
+  (`sha256sum ORCL_software/<zip>`), same as the base installer.
+- The RU is applied with `opatch apply` on **both** the primary and the standby,
+  **before** the database is created — no instance is running when the binary
+  patch goes on, and both nodes reach the same patch level before redo flows.
+- Data Guard runs a single-instance database with no Grid Infrastructure, so the
+  home is patched directly (no `opatchauto`). This is why the key is
+  `db_ru_software` (a standalone Database RU), not the `gi_ru_software` combo
+  patch used by the RAC/FPP projects.
 
 ## 🔐 Credentials
 
@@ -128,8 +168,8 @@ Use numeric prefixes if execution order matters, for example `01_prepare.sh` or 
 
 | Component | Result |
 | --- | --- |
-| `host1` primary | Database created with `dbca`, archivelog enabled, force logging enabled, flashback enabled, standby redo logs configured, Data Guard Broker enabled |
-| `host2` standby | Auxiliary instance prepared, `RMAN DUPLICATE ... FOR STANDBY FROM ACTIVE DATABASE` performed, broker registration completed |
+| `vm1` primary | Database created with `dbca`, archivelog enabled, force logging enabled, flashback enabled, standby redo logs configured, Data Guard Broker enabled |
+| `vm2` standby | Auxiliary instance prepared, `RMAN DUPLICATE ... FOR STANDBY FROM ACTIVE DATABASE` performed, broker registration completed |
 | Active Data Guard | If `adg: true`, the standby opens read-only with managed recovery |
 | Wallet artifact | A PDB wallet archive is left on the primary at `/tmp/wallet_<PDB_NAME>.zip` |
 

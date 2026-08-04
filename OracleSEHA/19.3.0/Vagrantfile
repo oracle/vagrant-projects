@@ -17,8 +17,27 @@
 
 require 'yaml'
 require 'ipaddr'
+require 'shellwords'
+require 'digest'
 
 VAGRANTFILE_API_VERSION = "2"
+
+# ----------------------- Shared Oracle software repository -------------------
+# Large Oracle installer zips are stored once in a central repo shared by every
+# lab under the Vagrant root, instead of being duplicated into each project's
+# ORCL_software/. Override the location with the ORCL_SOFTWARE_REPO env var.
+SOFTWARE_REPO = ENV.fetch('ORCL_SOFTWARE_REPO', File.expand_path('../../_ORCL_software', __dir__))
+
+# Resolve an installer zip to an absolute host path: prefer the shared repo,
+# fall back to this project's ORCL_software/ (which still works and overrides
+# the shared copy). Returns the local path when neither exists so the caller's
+# existence check still prints the usual "place the zip here" guidance.
+def sw_zip(name)
+  return nil if name.nil? || name.to_s.strip.empty?
+  central = File.join(SOFTWARE_REPO, name)
+  local   = File.join(__dir__, 'ORCL_software', name)
+  File.exist?(central) ? central : local
+end
 
 # ----------------------------- Project identity ------------------------------
 PROJECT_TITLE   = 'Oracle SEHA — Oracle Database 19c on Oracle Linux 7'
@@ -41,11 +60,13 @@ ORESTART   = false
 
 # --------------------------- Banner ------------------------------------------
 puts ""
-puts "---------------------------------------------------------------"
+puts "-----------------------------------------------------------------"
 puts "  #{PROJECT_TITLE}"
 puts "  Vagrant project for VirtualBox or KVM/libvirt"
 puts "  Copyright (c) 2020-2026 Oracle and/or its affiliates"
-puts "---------------------------------------------------------------"
+puts "  Author: ruggero.citton@oracle.com"
+puts "  RACPack (MAA) Cloud Innovation and Solution Engineering team"
+puts "-----------------------------------------------------------------"
 puts ""
 
 # --------------------------- Helpers -----------------------------------------
@@ -79,18 +100,157 @@ def fetch_optional(hash, *path, default: nil)
   node.nil? ? default : node
 end
 
-def verify_checksum_entry(checksum_path, installer)
-  return false unless File.exist?(checksum_path)
+# Cross-platform lookup for an executable on the host PATH. Uses Ruby rather
+# than a POSIX `command -v` / `which` subshell, which does not exist on a
+# Windows host (and prints "The system cannot find the path specified.").
+def host_command?(name)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(File::PATH_SEPARATOR) : ['']
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+    next false if dir.empty?
+    exts.any? { |ext| File.file?(File.join(dir, name + ext)) }
+  end
+end
 
+# Full integrity check of an installer zip against db_installer.sha256, run on
+# the HOST before any VM boots. Catches a truncated / corrupt / wrong-download
+# zip in seconds — instead of after OS packages, /u01 LVM and disk allocation
+# inside the guest, by which point a bad unzip may already have filled the host
+# disk mid-extraction. Uses SHA-256 via Ruby's built-in Digest, so it needs no
+# external tool and runs identically on Windows, macOS and Linux hosts.
+# Returns nil on success, or a human-readable error string.
+def checksum_error(checksum_path, zip_path, installer)
+  return "installer zip not found: #{zip_path}" unless File.exist?(zip_path)
+  return "checksum manifest not found: #{checksum_path}" unless File.exist?(checksum_path)
+
+  expected_sha = nil
   File.foreach(checksum_path) do |line|
     line = line.strip
     next if line.empty? || line.start_with?('#')
 
-    parts = line.split(/\s+/, 3)
-    next unless parts.length == 3
-    return true if File.basename(parts[2]) == installer
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    if File.basename(parts[1]) == installer
+      expected_sha = parts[0]
+      break
+    end
   end
-  false
+  return "no checksum entry for '#{installer}' found in #{checksum_path}\n  Run:  sha256sum ORCL_software/#{installer}  (Windows: Get-FileHash -Algorithm SHA256 ORCL_software\\#{installer})  and add the result to the manifest." unless expected_sha
+
+  unless expected_sha =~ /\A[0-9a-fA-F]{64}\z/
+    return "invalid checksum entry for '#{installer}' in #{checksum_path} (expected a 64-hex-character SHA-256 digest)"
+  end
+
+  # SHA-256 of the whole file, computed with Ruby's built-in Digest — no
+  # external cksum / sha256sum binary needed, so the same check runs on every host.
+  actual_sha = Digest::SHA256.file(zip_path).hexdigest
+  unless actual_sha.downcase == expected_sha.downcase
+    return "checksum verification failed for #{zip_path}\n" \
+           "  expected sha256=#{expected_sha.downcase} (from #{checksum_path})\n" \
+           "  got      sha256=#{actual_sha}\n" \
+           "  The file differs from the manifest — re-download it, or refresh its\n" \
+           "  entry:  sha256sum ORCL_software/#{installer}"
+  end
+
+  # A matching hash only proves the file is unchanged since the manifest was
+  # written — not that it is a whole zip. Reading the central directory is
+  # near-instant even on a multi-GB zip and catches the two ways an Oracle
+  # download actually goes wrong: truncated, or an HTML error page saved under a
+  # .zip name. Best-effort: skip quietly if unzip is not on the host. Runs unzip
+  # without a shell (array form + File::NULL) so it works on Windows too; only an
+  # actual non-zero exit (ran == false) is treated as corruption, a launch
+  # failure (nil) is ignored.
+  if host_command?('unzip')
+    ran = begin
+            system('unzip', '-qql', zip_path, out: File::NULL, err: File::NULL)
+          rescue StandardError
+            nil
+          end
+    if ran == false
+      return "#{zip_path} matches its checksum but is not a readable zip archive —\n" \
+             "  the download is truncated or corrupt. Re-download it and refresh its\n" \
+             "  entry in #{checksum_path}."
+    end
+  end
+
+  nil
+end
+
+# The expected SHA-256 recorded for an installer in the manifest (nil if absent).
+# Identical across every lab that ships the same zip — this is what lets the
+# fingerprint below be shared between projects.
+def expected_sha_for(checksum_path, installer)
+  return nil unless File.exist?(checksum_path)
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    return parts[0] if File.basename(parts[1]) == installer
+  end
+  nil
+end
+
+# Cheap identity fingerprint of the installer: zip size + mtime + the expected
+# SHA-256 from the manifest. Decides whether a previous verification still holds
+# without re-reading the multi-GB zip. Deliberately independent of the manifest
+# FILE's mtime/size, so the stamp written into the shared _ORCL_software repo is
+# honoured by EVERY lab (verify once for all). Returns nil if the zip or the
+# manifest entry is missing — verification itself then prints the real error.
+def installer_fingerprint(zip_path, checksum_path, installer)
+  return nil unless File.exist?(zip_path)
+  sha = expected_sha_for(checksum_path, installer)
+  return nil unless sha
+  z = File.stat(zip_path)
+  "#{z.size}:#{z.mtime.to_i}:#{sha.downcase}"
+end
+
+# Verify the installer against the manifest, but pay the whole-file cksum read at
+# most once. Two layers of caching:
+#   * ENV guard  — skip within a single process (Vagrant evaluates the Vagrantfile
+#     several times per command).
+#   * on-disk stamp — skip across separate 'vagrant up' invocations while neither
+#     the zip nor the manifest has changed. Keeps fail-fast on the first run (and
+#     whenever either file changes) yet makes every later run instant.
+# The stamp uses size+mtime as a cheap identity cache (not the SHA-256 itself) —
+# it is a convenience cache, not a tamper boundary.
+def verify_installer!(checksum_path, zip_path, installer, label)
+  guard = "__SEHA_INSTALLER_VERIFIED_#{installer}"
+  return if ENV[guard]
+
+  # The stamp may live next to the zip (shared _ORCL_software repo — verified
+  # once for every lab) or in this project's ORCL_software/ (always writable,
+  # even when the shared repo is read-only). A match in EITHER counts.
+  stamp_paths = [
+    File.join(File.dirname(zip_path), ".#{installer}.verified"),
+    File.join(__dir__, 'ORCL_software', ".#{installer}.verified")
+  ].uniq
+  fingerprint = installer_fingerprint(zip_path, checksum_path, installer)
+  if fingerprint && stamp_paths.any? { |p| File.file?(p) && File.read(p).strip == fingerprint }
+    ENV[guard] = '1'
+    return
+  end
+
+  puts "Verifying #{label} '#{installer}' against #{File.basename(checksum_path)}"
+  puts "  (reads the full zip — may take up to a minute for a multi-GB installer)..."
+  $stdout.flush
+  if (err = checksum_error(checksum_path, zip_path, installer))
+    fatal err
+  end
+  puts "  #{installer}: checksum OK"
+
+  # Record the fingerprint so later runs skip the re-read. Best-effort in each
+  # location: the shared stamp benefits every lab; the project-local stamp
+  # guarantees this lab still caches even if the shared repo is read-only.
+  if fingerprint
+    stamp_paths.each do |p|
+      begin
+        File.write(p, "#{fingerprint}\n")
+      rescue StandardError
+        # ignore — verification passed; caching is optional
+      end
+    end
+  end
+  ENV[guard] = '1'
 end
 
 # --------------------------- Config load -------------------------------------
@@ -112,19 +272,19 @@ var_scan_ip1        = fetch_required(params, 'env',  'scan_ip1')
 var_scan_ip2        = fetch_required(params, 'env',  'scan_ip2')
 var_scan_ip3        = fetch_required(params, 'env',  'scan_ip3')
 
-var_vm1_name        = fetch_required(params, 'host1', 'vm_name')
-var_vm1_mem_size    = fetch_required(params, 'host1', 'mem_size').to_i
-var_vm1_cpus        = fetch_required(params, 'host1', 'cpus').to_i
-var_vm1_public_ip   = fetch_required(params, 'host1', 'public_ip')
-var_vm1_vip_ip      = fetch_required(params, 'host1', 'vip_ip')
-var_vm1_private_ip  = fetch_required(params, 'host1', 'private_ip')
+var_vm1_name        = fetch_required(params, 'vm1', 'vm_name')
+var_vm1_mem_size    = fetch_required(params, 'vm1', 'mem_size').to_i
+var_vm1_cpus        = fetch_required(params, 'vm1', 'cpus').to_i
+var_vm1_public_ip   = fetch_required(params, 'vm1', 'public_ip')
+var_vm1_vip_ip      = fetch_required(params, 'vm1', 'vip_ip')
+var_vm1_private_ip  = fetch_required(params, 'vm1', 'private_ip')
 
-var_vm2_name        = fetch_required(params, 'host2', 'vm_name')
-var_vm2_mem_size    = fetch_required(params, 'host2', 'mem_size').to_i
-var_vm2_cpus        = fetch_required(params, 'host2', 'cpus').to_i
-var_vm2_public_ip   = fetch_required(params, 'host2', 'public_ip')
-var_vm2_vip_ip      = fetch_required(params, 'host2', 'vip_ip')
-var_vm2_private_ip  = fetch_required(params, 'host2', 'private_ip')
+var_vm2_name        = fetch_required(params, 'vm2', 'vm_name')
+var_vm2_mem_size    = fetch_required(params, 'vm2', 'mem_size').to_i
+var_vm2_cpus        = fetch_required(params, 'vm2', 'cpus').to_i
+var_vm2_public_ip   = fetch_required(params, 'vm2', 'public_ip')
+var_vm2_vip_ip      = fetch_required(params, 'vm2', 'vip_ip')
+var_vm2_private_ip  = fetch_required(params, 'vm2', 'private_ip')
 
 var_asm_disk_num    = fetch_required(params, 'env', 'asm_disk_num').to_i
 var_asm_disk_size   = fetch_required(params, 'env', 'asm_disk_size').to_i
@@ -167,10 +327,10 @@ unless var_prefix_name.match?(/\A[0-9a-zA-Z-]{1,14}\z/)
   fatal "'env.prefix_name' must be 1-14 chars of [0-9a-zA-Z-] (got: '#{var_prefix_name}')"
 end
 
-fatal "'host1.mem_size' must be >= 6144 MB (got: #{var_vm1_mem_size})" if var_vm1_mem_size < 6144
-fatal "'host2.mem_size' must be >= 6144 MB (got: #{var_vm2_mem_size})" if var_vm2_mem_size < 6144
-fatal "'host1.cpus' must be >= 1 (got: #{var_vm1_cpus})"               if var_vm1_cpus    < 1
-fatal "'host2.cpus' must be >= 1 (got: #{var_vm2_cpus})"               if var_vm2_cpus    < 1
+fatal "'vm1.mem_size' must be >= 6144 MB (got: #{var_vm1_mem_size})" if var_vm1_mem_size < 6144
+fatal "'vm2.mem_size' must be >= 6144 MB (got: #{var_vm2_mem_size})" if var_vm2_mem_size < 6144
+fatal "'vm1.cpus' must be >= 1 (got: #{var_vm1_cpus})"               if var_vm1_cpus    < 1
+fatal "'vm2.cpus' must be >= 1 (got: #{var_vm2_cpus})"               if var_vm2_cpus    < 1
 
 [true, false].include?(var_cdb)      || fatal("'env.cdb' must be true or false (got: #{var_cdb.inspect})")
 
@@ -179,17 +339,17 @@ fatal "'env.asm_disk_num' must be >= 4 (got: #{var_asm_disk_num})"       if var_
 fatal "'env.asm_disk_size' must be >= 10 GB (got: #{var_asm_disk_size})" if var_asm_disk_size < 10
 
 ip_fields = {
-  'host1.public_ip'  => var_vm1_public_ip,
-  'host1.private_ip' => var_vm1_private_ip,
-  'host1.vip_ip'     => var_vm1_vip_ip,
+  'vm1.public_ip'  => var_vm1_public_ip,
+  'vm1.private_ip' => var_vm1_private_ip,
+  'vm1.vip_ip'     => var_vm1_vip_ip,
   'env.scan_ip1'     => var_scan_ip1,
   'env.scan_ip2'     => var_scan_ip2,
   'env.scan_ip3'     => var_scan_ip3,
 }
 unless ORESTART == true
-  ip_fields['host2.public_ip']  = var_vm2_public_ip
-  ip_fields['host2.private_ip'] = var_vm2_private_ip
-  ip_fields['host2.vip_ip']     = var_vm2_vip_ip
+  ip_fields['vm2.public_ip']  = var_vm2_public_ip
+  ip_fields['vm2.private_ip'] = var_vm2_private_ip
+  ip_fields['vm2.vip_ip']     = var_vm2_vip_ip
 end
 ip_fields.each do |label, val|
   fatal "#{label} is not a valid IP address (got: '#{val}')" unless valid_ip?(val)
@@ -201,10 +361,10 @@ if var_cdb == true
 end
 
 # Installer presence + filename prefix + checksum manifest entry
-gi_zip_path = File.expand_path("./ORCL_software/#{var_gi_software}", __dir__)
-db_zip_path = File.expand_path("./ORCL_software/#{var_db_software}", __dir__)
-opatch_zip_path = File.expand_path("./ORCL_software/#{var_opatch_software}", __dir__)
-gi_ru_zip_path = File.expand_path("./ORCL_software/#{var_gi_ru_software}", __dir__)
+gi_zip_path = sw_zip(var_gi_software)
+db_zip_path = sw_zip(var_db_software)
+opatch_zip_path = sw_zip(var_opatch_software)
+gi_ru_zip_path = sw_zip(var_gi_ru_software)
 fatal "GI installer zip not found: #{gi_zip_path}\n  Place the Oracle 19c Grid Infrastructure zip into ORCL_software/." unless File.exist?(gi_zip_path)
 fatal "DB installer zip not found: #{db_zip_path}\n  Place the Oracle 19c Database zip into ORCL_software/."            unless File.exist?(db_zip_path)
 fatal "19c OPatch zip not found: #{opatch_zip_path}\n  Place p6880880_190000_Linux-x86-64.zip into ORCL_software/." unless File.exist?(opatch_zip_path)
@@ -223,12 +383,12 @@ unless var_opatch_software == 'p6880880_190000_Linux-x86-64.zip'
   fatal "'env.opatch_software' must be p6880880_190000_Linux-x86-64.zip (got: #{var_opatch_software})"
 end
 
-checksum_path = File.expand_path('./db_installer.cksum', __dir__)
+checksum_path = File.expand_path('./db_installer.sha256', __dir__)
 fatal "installer checksum file not found: #{checksum_path}" unless File.exist?(checksum_path)
-fatal "no checksum entry for '#{var_gi_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_gi_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_gi_software)
-fatal "no checksum entry for '#{var_db_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_db_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_db_software)
-fatal "no checksum entry for '#{var_opatch_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_opatch_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_opatch_software)
-fatal "no checksum entry for '#{var_gi_ru_software}' found in #{checksum_path}\n  Run:  cksum ORCL_software/#{var_gi_ru_software}  and paste the result." unless verify_checksum_entry(checksum_path, var_gi_ru_software)
+verify_installer!(checksum_path, gi_zip_path, var_gi_software, 'GI installer')
+verify_installer!(checksum_path, db_zip_path, var_db_software, 'DB installer')
+verify_installer!(checksum_path, opatch_zip_path, var_opatch_software, 'OPatch')
+verify_installer!(checksum_path, gi_ru_zip_path, var_gi_ru_software, 'GI RU')
 
 # --------------------------- Provider setup ----------------------------------
 provider = var_provider_name.to_sym
@@ -239,7 +399,7 @@ box_disks_num = 1
 ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 begin
-  boxes_out = `vagrant box list 2>/dev/null`
+  boxes_out = IO.popen(['vagrant', 'box', 'list'], err: File::NULL, &:read).to_s
   have_box  = boxes_out.lines.any? { |l| l.include?("#{BOX_NAME} (#{var_provider_name},") }
   unless have_box
     puts "NOTE: '#{BOX_NAME}' is not cached for provider '#{var_provider_name}'."
@@ -254,8 +414,8 @@ end
 
 # --------------------------- Storage setup -----------------------------------
 if var_provider_name == 'libvirt'
-  var_vm1_storage     = fetch_optional(params, 'host1', 'storage_pool_name', default: 'default')
-  var_vm2_storage     = fetch_optional(params, 'host2', 'storage_pool_name', default: 'default')
+  var_vm1_storage     = fetch_optional(params, 'vm1', 'storage_pool_name', default: 'default')
+  var_vm2_storage     = fetch_optional(params, 'vm2', 'storage_pool_name', default: 'default')
   var_asm_storage     = fetch_optional(params, 'env',   'storage_pool_name', default: 'default')
   var_vm1_storage = 'default' if var_vm1_storage.to_s.empty?
   var_vm2_storage = 'default' if var_vm2_storage.to_s.empty?
@@ -264,8 +424,8 @@ end
 
 if var_provider_name == 'virtualbox'
   var_group          = fetch_optional(params, 'env',   'virtualbox_group', default: nil)
-  var_vm1_u01_disk   = fetch_optional(params, 'host1', 'u01_disk',       default: './node1_u01.vdi')
-  var_vm2_u01_disk   = fetch_optional(params, 'host2', 'u01_disk',       default: './node2_u01.vdi')
+  var_vm1_u01_disk   = fetch_optional(params, 'vm1', 'u01_disk',       default: './node1_u01.vdi')
+  var_vm2_u01_disk   = fetch_optional(params, 'vm2', 'u01_disk',       default: './node2_u01.vdi')
   var_non_rotational = fetch_optional(params, 'env',   'non_rotational', default: 'on')
   var_asm_disk_path  = fetch_optional(params, 'env',   'asm_disk_path',  default: '')
 
@@ -311,6 +471,18 @@ end
 
 # --------------------------- VM definition -----------------------------------
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # --------------------- Shared Oracle software repository -------------------
+  # Mount the central installer repo (one shared copy for every lab) read-only
+  # at /software. Guest scripts read /software first, then fall back to the
+  # project-local /vagrant/ORCL_software. Mounted only when the repo exists on
+  # the host: NFS on libvirt (matching /vagrant), provider default otherwise.
+  if Dir.exist?(SOFTWARE_REPO)
+    if var_provider_name == 'libvirt'
+      config.vm.synced_folder SOFTWARE_REPO, '/software', type: 'nfs', nfs_udp: false, mount_options: ['ro']
+    else
+      config.vm.synced_folder SOFTWARE_REPO, '/software', mount_options: ['ro']
+    end
+  end
   config.vm.box              = BOX_NAME
   config.vm.box_url          = BOX_URL
   config.vm.box_check_update = false
@@ -334,14 +506,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   if var_provider_name == 'libvirt'
     nodes = []
     unless ORESTART == true
-      nodes << [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+      nodes << [:vm2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
                 var_vm2_public_ip, var_vm2_private_ip, var_vm2_storage]
     end
-    nodes << [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+    nodes << [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
               var_vm1_public_ip, var_vm1_private_ip, var_vm1_storage]
 
     nodes.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, vm_storage|
-      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+      config.vm.define vm_sym, primary: (vm_sym == :vm1) do |node|
         node.vm.hostname = vm_name
         node.vm.network 'private_network', libvirt__network_name: 'vgt-hostonly_network', ip: public_ip
         node.vm.network 'private_network', libvirt__network_name: 'vgt-private_network',  ip: private_ip
@@ -376,24 +548,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # -------------------- virtualbox -----------------
   if var_provider_name == 'virtualbox'
     unless ORESTART == true
-      # In clustered mode, host2 only runs the common setup stages and owns the
+      # In clustered mode, vm2 only runs the common setup stages and owns the
       # initial ASM disk partitioning. Defining it first keeps plain
       # `vagrant up` working without requiring `--parallel`.
       vb_specs = [
-        [:host2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
+        [:vm2, var_vm2_name, var_vm2_mem_size, var_vm2_cpus,
          var_vm2_public_ip, var_vm2_private_ip, var_vm2_u01_disk, true],
-        [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+        [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
          var_vm1_public_ip, var_vm1_private_ip, var_vm1_u01_disk, false]
       ]
     else
       vb_specs = [
-        [:host1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
+        [:vm1, var_vm1_name, var_vm1_mem_size, var_vm1_cpus,
          var_vm1_public_ip, var_vm1_private_ip, var_vm1_u01_disk, true]
       ]
     end
 
     vb_specs.each do |vm_sym, vm_name, mem_size, cpus, public_ip, private_ip, u01_disk, creates_asm_disks|
-      config.vm.define vm_sym, primary: (vm_sym == :host1) do |node|
+      config.vm.define vm_sym, primary: (vm_sym == :vm1) do |node|
         node.vm.hostname = vm_name
         node.vm.network :private_network, ip: public_ip,  virtualbox__hostonly: 'vboxnet0'
         node.vm.network :private_network, ip: private_ip, virtualbox__intnet:   'private'

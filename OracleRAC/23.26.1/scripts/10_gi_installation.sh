@@ -91,13 +91,25 @@ else
   rsp_args+=(oracle_install_crs_ConfigureMgmtDB=true)
 fi
 
+gridsetup_args=( -ignorePrereq -waitforcompletion -silent )
+
+# Only patch when an RU is configured. 07_extract_gi.sh records GI_RU_PATCH_DIR
+# in the runtime env once it has staged the RU, and leaves it unset otherwise —
+# gridSetup rejects an empty -applyRU, so the flag has to disappear entirely.
+if [[ -n "${GI_RU_PATCH_DIR:-}" ]]; then
+  log_info "Applying GI RU ${GI_RU_PATCH_DIR##*/} during gridSetup"
+  gridsetup_args+=( -applyRU "${GI_RU_PATCH_DIR}" )
+else
+  log_info "No Release Update configured; installing GI at base release"
+fi
+
 log_section "Running gridSetup.sh (silent, -ignorePrereq)"
 
 # gridSetup.sh exit codes:
 #   0  success
 #   6  success with warnings (typical when -ignorePrereq bypasses checks)
 if "${GI_HOME}/gridSetup.sh" \
-     -ignorePrereq -waitforcompletion -silent \
+     "${gridsetup_args[@]}" \
      -responseFile "${GI_HOME}/install/response/gridsetup.rsp" \
      "${rsp_args[@]}"; then
   rc=0

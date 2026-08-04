@@ -1,0 +1,116 @@
+# ==============================================================================
+# Oracle True Cache — Oracle Database 23ai (23.26.1) on Oracle Linux 9
+# ==============================================================================
+#
+# This file drives the Vagrantfile. Uncomment the block for the provider you
+# intend to use (virtualbox OR libvirt) and comment the other out.
+#
+# IMPORTANT:
+#   * Default passwords are DEMO ONLY. Replace them before any real use.
+#   * Never commit a vagrant.yml that contains real credentials.
+#
+# ------------------------------------------------------------------------------
+
+# -------------------------------- VirtualBox --------------------------------
+vm1:
+  vm_name: truecache
+  mem_size: 8192
+  cpus: 2
+  public_ip:  192.168.56.250
+  private_ip: 192.168.200.250
+  u01_disk:   ./primary_u01.vdi
+
+env:
+  provider: virtualbox
+  # ---------------------------------------------
+  prefix_name:   tc261-ol9
+  # ---------------------------------------------
+  network:       hostonly
+  netmask:       
+  gateway:       
+  dns_public_ip: 
+  domain:        localdomain
+  # ---------------------------------------------
+  non_rotational:    'on'
+  oradata_disk_path: ''           # empty = project directory
+  oradata_disk_num:  2
+  oradata_disk_size: 20           # GB per disk
+  # ---------------------------------------------
+  db_software: LINUX.X64_2326100_db_home.zip
+  # ---------------------------------------------
+  # Optional Database Release Update. Patching is opt-in: set BOTH keys to patch
+  # the RDBMS home before the True Cache instance is created, or leave both out
+  # to install at base release. Each zip needs an entry in db_installer.sha256.
+  #opatch_software: p6880880_230000_Linux-x86-64.zip
+  #db_ru_software:  p<bug-number>_230000_Linux-x86-64.zip
+  # ---------------------------------------------
+  root_password:   welcome1
+  oracle_password: welcome1
+  # ---------------------------------------------
+  ora_languages:   en,en_GB
+  # ---------------------------------------------
+  sdb_host_name:       192.168.56.30
+  sdb_service_name:    DB261H1
+  sdb_service_port:    1521
+  #
+  db_files:            200
+  db_unique_name:      DB261H1_TC
+  instance_name:       DB261H1_TC1
+  fal_server:          DB261H1
+  fal_client:          DB261H1_TC
+  local_listener:      DB261H1_TC
+  sga_target:          6
+  # ---------------------------------------------
+
+
+
+## ---------------------------------- KVM / libvirt -----------------------------
+#vm1:
+#  vm_name: truecache
+#  mem_size: 8192
+#  cpus: 2
+#  public_ip:  192.168.125.250
+#  private_ip: 192.168.200.250
+#  storage_pool_name: Vagrant_KVM_Storage
+#
+#env:
+#  provider: libvirt
+#  # ---------------------------------------------
+#  prefix_name:   tc261-ol9
+#  # ---------------------------------------------
+#  network:       hostonly
+#  netmask:       
+#  gateway:       
+#  dns_public_ip: 
+#  domain:        localdomain
+#  bridge_nic:    
+#  # ---------------------------------------------
+#  storage_pool_name: Vagrant_KVM_Storage
+#  oradata_disk_num:   2
+#  oradata_disk_size: 10
+#  # ---------------------------------------------
+#  db_software: LINUX.X64_2326100_db_home.zip
+#  # ---------------------------------------------
+#  # Optional Database Release Update. Patching is opt-in: set BOTH keys to patch
+#  # the RDBMS home before the True Cache instance is created, or leave both out
+#  # to install at base release. Each zip needs an entry in db_installer.sha256.
+#  #opatch_software: p6880880_230000_Linux-x86-64.zip
+#  #db_ru_software:  p<bug-number>_230000_Linux-x86-64.zip
+#  # ---------------------------------------------
+#  root_password:   welcome1
+#  oracle_password: welcome1
+#  # ---------------------------------------------
+#  ora_languages:   en,en_GB
+#  # ---------------------------------------------
+#  sdb_host_name:       192.168.125.30
+#  sdb_service_name:    DB261H1
+#  sdb_service_port:    1521
+#  #
+#  db_files:            200
+#  db_unique_name:      DB261H1_TC
+#  instance_name:       DB261H1_TC1
+#  fal_server:          DB261H1
+#  fal_client:          DB261H1_TC
+#  local_listener:      DB261H1_TC
+#  sga_target:          6
+#  # ---------------------------------------------

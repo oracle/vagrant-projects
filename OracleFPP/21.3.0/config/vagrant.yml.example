@@ -29,26 +29,26 @@
 # -----------------------------------------------
 # vagrant.yml for VirtualBox
 # -----------------------------------------------
-host1:
+vm1:
   vm_name: fpps
   mem_size: 16384
   cpus: 1
-  public_ip:     192.168.56.101
-  vip_ip:        192.168.56.102
-  scan_ip1:      192.168.56.105
-  scan_ip2:      192.168.56.106
-  scan_ip3:      192.168.56.107
-  gns_ip:        192.168.56.108
-  ha_vip:        192.168.56.109
-  private_ip:    192.168.200.101
+  public_ip:     192.168.56.111
+  vip_ip:        192.168.56.113
+  scan_ip1:      192.168.56.114
+  scan_ip2:      192.168.56.115
+  scan_ip3:      192.168.56.116
+  gns_ip:        192.168.56.117
+  ha_vip:        192.168.56.118
+  private_ip:    192.168.200.111
   u01_disk: ./fpps_u01.vdi
 
-host2:
+vm2:
   vm_name: fppc
   mem_size: 8192
   cpus: 4
-  public_ip: 192.168.56.201
-  private_ip: 192.168.200.102
+  public_ip: 192.168.56.112
+  private_ip: 192.168.200.112
   u01_disk: ./fppc_u01.vdi
   deploy: 'false'
 
@@ -73,6 +73,13 @@ env:
   # ---------------------------------------------
   gi_software: LINUX.X64_213000_grid_home.zip
   db_software: LINUX.X64_213000_db_home.zip
+
+  # Optional Release Update. Patching is opt-in: set BOTH keys to patch the GI
+  # and RDBMS homes, or leave both out to install at base release. The GI RU is
+  # a combo patch that carries the RDBMS home patch too, so there is no separate
+  # Database RU. Each zip needs an entry in db_installer.sha256.
+  #opatch_software: p6880880_210000_Linux-x86-64.zip
+  #gi_ru_software:  p<bug-number>_210000_Linux-x86-64.zip
   # ---------------------------------------------
   root_password:   welcome1
   grid_password:   welcome1
@@ -86,26 +93,26 @@ env:
 ## -----------------------------------------------
 ## vagrant.yml for libVirt
 ## -----------------------------------------------
-#host1:
+#vm1:
 #  vm_name: fpps
 #  mem_size: 16384
 #  cpus: 4
-#  public_ip:     192.168.125.101
-#  vip_ip:        192.168.125.102
-#  scan_ip1:      192.168.125.105
-#  scan_ip2:      192.168.125.106
-#  scan_ip3:      192.168.125.107
-#  gns_ip:        192.168.125.108
-#  ha_vip:        192.168.125.109
-#  private_ip:    192.168.200.101
+#  public_ip:     192.168.125.111
+#  vip_ip:        192.168.125.113
+#  scan_ip1:      192.168.125.114
+#  scan_ip2:      192.168.125.115
+#  scan_ip3:      192.168.125.116
+#  gns_ip:        192.168.125.117
+#  ha_vip:        192.168.125.118
+#  private_ip:    192.168.200.111
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name: fppc
 #  mem_size: 8192
 #  cpus: 1
-#  public_ip: 192.168.125.201
-#  private_ip: 192.168.200.102
+#  public_ip: 192.168.125.112
+#  private_ip: 192.168.200.112
 #  storage_pool_name: Vagrant_KVM_Storage
 #  deploy: 'false'
 #
@@ -129,6 +136,9 @@ env:
 #  # ---------------------------------------------
 #  gi_software: LINUX.X64_213000_grid_home.zip
 #  db_software: LINUX.X64_213000_db_home.zip
+#  # Optional Release Update — set both keys, or neither. See notes above.
+#  #opatch_software: p6880880_210000_Linux-x86-64.zip
+#  #gi_ru_software:  p<bug-number>_210000_Linux-x86-64.zip
 #  # ---------------------------------------------
 #  root_password:   welcome1
 #  grid_password:   welcome1

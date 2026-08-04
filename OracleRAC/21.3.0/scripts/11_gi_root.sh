@@ -13,8 +13,33 @@ require_var ORA_INVENTORY
 require_var GI_HOME
 require_var ORESTART
 
-log_section "Running orainstRoot.sh on local node"
-sh "${ORA_INVENTORY}/orainstRoot.sh"
+# orainstRoot.sh creates /etc/oraInst.loc and fixes up the inventory
+# permissions. OUI only generates it when there is no central inventory yet, so
+# it is absent whenever a Release Update is configured: staging the RU has to
+# create the inventory pointer up front (opatch, which gridSetup -applyRU runs,
+# needs it), which leaves OUI with nothing for the script to do. Skip it when it
+# was not generated rather than failing the run.
+run_local_orainst_root() {
+  local script="${ORA_INVENTORY}/orainstRoot.sh"
+
+  if [[ -f "${script}" ]]; then
+    log_section "Running orainstRoot.sh on local node"
+    sh "${script}"
+  else
+    log_section "Skipping orainstRoot.sh on local node"
+    log_info "${script} was not generated; central inventory is already initialized"
+  fi
+}
+
+run_remote_orainst_root() {
+  local node="$1"
+
+  log_section "Running orainstRoot.sh on ${node} if present"
+  ssh -o StrictHostKeyChecking=no "root@${node}" \
+    "if [ -f '${ORA_INVENTORY}/orainstRoot.sh' ]; then sh '${ORA_INVENTORY}/orainstRoot.sh'; else echo '${ORA_INVENTORY}/orainstRoot.sh was not generated; skipping'; fi"
+}
+
+run_local_orainst_root
 
 log_section "Running root.sh on local node"
 sh "${GI_HOME}/root.sh"
@@ -26,7 +51,7 @@ if [[ "${ORESTART}" == "true" ]]; then
     "${GI_HOME}/crs/install/roothas.pl"
 else
   require_var NODE2_HOSTNAME
-  log_section "Running orainstRoot.sh + root.sh on ${NODE2_HOSTNAME}"
-  ssh -o StrictHostKeyChecking=no "root@${NODE2_HOSTNAME}" "sh ${ORA_INVENTORY}/orainstRoot.sh"
+  run_remote_orainst_root "${NODE2_HOSTNAME}"
+  log_section "Running root.sh on ${NODE2_HOSTNAME}"
   ssh -o StrictHostKeyChecking=no "root@${NODE2_HOSTNAME}" "sh ${GI_HOME}/root.sh"
 fi

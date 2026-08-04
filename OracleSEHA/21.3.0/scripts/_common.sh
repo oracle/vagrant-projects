@@ -212,69 +212,6 @@ chown_block_device() {
   chown "${owner_group}" "${path}"
 }
 
-# Verify an installer zip against the project's db_installer.cksum manifest.
-# Args: $1 = zip basename (e.g. LINUX.X64_2326100_db_home.zip)
-verify_installer_cksum() {
-  local installer="$1"
-  local zip_path="/vagrant/ORCL_software/${installer}"
-  local manifest="/vagrant/db_installer.cksum"
-
-  [[ -f "${zip_path}" ]] || { log_error "installer zip not found at ${zip_path}"; return 1; }
-  [[ -f "${manifest}" ]] || { log_error "checksum manifest not found at ${manifest}"; return 1; }
-
-  local expected_crc='' expected_size='' expected_name=''
-  local line entry_crc entry_size entry_name
-  while IFS= read -r line; do
-    [[ -z "${line}" || "${line}" == \#* ]] && continue
-    IFS=' ' read -r entry_crc entry_size entry_name <<< "${line}"
-    if [[ "${entry_name##*/}" == "${installer}" ]]; then
-      expected_crc="${entry_crc}"
-      expected_size="${entry_size}"
-      expected_name="${entry_name}"
-      break
-    fi
-  done < "${manifest}"
-
-  if [[ -z "${expected_crc}" || -z "${expected_size}" ]]; then
-    log_error "no checksum entry for ${installer} found in ${manifest}"
-    return 1
-  fi
-  if ! [[ "${expected_crc}" =~ ^[0-9]+$ && "${expected_size}" =~ ^[0-9]+$ ]]; then
-    log_error "invalid checksum entry for ${installer} in ${manifest}"
-    return 1
-  fi
-
-  log_section "Verifying ${installer} against ${manifest}"
-  local actual_crc actual_size _discard
-  IFS=' ' read -r actual_crc actual_size _discard < <(cksum "${zip_path}")
-  if [[ "${actual_crc}" != "${expected_crc}" || "${actual_size}" != "${expected_size}" ]]; then
-    log_error "checksum verification failed for ${zip_path} (expected crc=${expected_crc} size=${expected_size} from ${expected_name}, got crc=${actual_crc} size=${actual_size})"
-    return 1
-  fi
-  log_success "Installer checksum verified: ${installer}"
-}
-
-# Verify every installer zip the run depends on, in one pass. setup.sh calls
-# this before any provisioning work, so a bad download fails the run in minutes
-# rather than an hour in, halfway through a GI or DB install.
-verify_all_installer_cksums() {
-  local v
-  for v in GI_SOFTWARE DB_SOFTWARE; do
-    require_var "${v}"
-    verify_installer_cksum "${!v}"
-  done
-
-  if ru_configured; then
-    for v in OPATCH_SOFTWARE GI_RU_SOFTWARE; do
-      verify_installer_cksum "${!v}"
-    done
-  else
-    log_info "No Release Update configured; skipping OPatch/RU checksum checks"
-  fi
-
-  log_success "All installer checksums verified"
-}
-
 #------------------------------------------------------------------------------
 # Release Update support (optional).
 #
@@ -341,7 +278,7 @@ stage_ru_patch() {
     return 1
   fi
 
-  local zip_path="/vagrant/ORCL_software/${ru_software}"
+  local zip_path="$(orcl_sw "${ru_software}")"
   local patch_top="/u01/app/oracle-patches/${ru_software%.zip}"
   local patch_dirs=() candidate selected_patch_dir
 
@@ -400,7 +337,7 @@ install_required_opatch() {
 
   [[ -d "${oracle_home}" ]] || { log_error "Oracle home not found: ${oracle_home}"; return 1; }
 
-  zip_path="/vagrant/ORCL_software/${OPATCH_SOFTWARE}"
+  zip_path="$(orcl_sw "${OPATCH_SOFTWARE}")"
 
   log_section "Installing required OPatch into ${oracle_home}"
   rm -rf "${oracle_home}/OPatch"
@@ -506,4 +443,18 @@ asm_disk_glob() {
       return 1
       ;;
   esac
+}
+
+# --- Shared Oracle software repository ---------------------------------------
+# Large installer zips live once in a host-side repo mounted read-only at
+# /software (see the Vagrantfile). Resolve each zip central-first, then fall
+# back to the project-local /vagrant/ORCL_software (which still works and
+# overrides the shared copy).
+orcl_sw() {
+  local name="$1"
+  if [[ -n "${name}" && -f "/software/${name}" ]]; then
+    printf '%s\n' "/software/${name}"
+  else
+    printf '%s\n' "/vagrant/ORCL_software/${name}"
+  fi
 }

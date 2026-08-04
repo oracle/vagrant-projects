@@ -1,5 +1,5 @@
 # ==============================================================================
-# Oracle Real Application Clusters (RAC) — Oracle Database 23ai (23.26.1)
+# Oracle Real Application Clusters (RAC) — Oracle Database 26ai (23.26.1)
 # on Oracle Linux 9
 # ==============================================================================
 #
@@ -27,22 +27,22 @@
 # ------------------------------------------------------------------------------
 
 ## -------------------------------- Active profile -------------------------------
-host1:
+vm1:
   vm_name:    node1
   mem_size:   8192            # MB — minimum 6144
   cpus:       4
-  public_ip:  192.168.56.111
-  vip_ip:     192.168.56.112
-  private_ip: 192.168.200.111
+  public_ip:  192.168.56.171
+  vip_ip:     192.168.56.173
+  private_ip: 192.168.200.171
   storage_pool_name: Vagrant_KVM_Storage
 
-host2:
+vm2:
   vm_name:    node2
   mem_size:   8192
   cpus:       4
-  public_ip:  192.168.56.121
-  vip_ip:     192.168.56.122
-  private_ip: 192.168.200.122
+  public_ip:  192.168.56.172
+  vip_ip:     192.168.56.174
+  private_ip: 192.168.200.172
   storage_pool_name: Vagrant_KVM_Storage
 
 env:
@@ -51,9 +51,9 @@ env:
   domain:            localdomain
 
   # SCAN addresses — three IPs in the same subnet as public_ip
-  scan_ip1:          192.168.56.115
-  scan_ip2:          192.168.56.116
-  scan_ip3:          192.168.56.117
+  scan_ip1:          192.168.56.175
+  scan_ip2:          192.168.56.176
+  scan_ip3:          192.168.56.177
 
   # Shared ASM disks
   asm_disk_path:
@@ -67,6 +67,13 @@ env:
   #   https://www.oracle.com/database/technologies/oracle-database-free-downloads.html
   gi_software:       LINUX.X64_2326100_grid_home.zip
   db_software:       LINUX.X64_2326100_db_home.zip
+
+  # Optional Release Update. Patching is opt-in: set BOTH keys to patch the GI
+  # and DB homes, or leave both out to install at base release. The GI RU is a
+  # combo patch that carries the DB home patch too, so there is no separate
+  # Database RU. Each zip needs an entry in db_installer.sha256.
+  #opatch_software:   p6880880_230000_Linux-x86-64.zip
+  #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
 
   # Credentials — DISTINCT DEMO PLACEHOLDERS. Change these before real use.
   root_password:     DemoRoot_1
@@ -86,46 +93,54 @@ env:
   cdb:               true
 
 # ---------------------------------- KVM / libvirt -----------------------------
-#host1:
+#vm1:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.111
-#  vip_ip:     192.168.125.112
-#  private_ip: 192.168.200.111
+#  public_ip:  192.168.125.171
+#  vip_ip:     192.168.125.173
+#  private_ip: 192.168.200.171
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.121
-#  vip_ip:     192.168.125.122
-#  private_ip: 192.168.200.122
+#  public_ip:  192.168.125.172
+#  vip_ip:     192.168.125.174
+#  private_ip: 192.168.200.172
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
 #  prefix_name:       rac26-ol9
 #  domain:            localdomain
-#  scan_ip1:          192.168.125.115
-#  scan_ip2:          192.168.125.116
-#  scan_ip3:          192.168.125.117
+#  scan_ip1:          192.168.125.175
+#  scan_ip2:          192.168.125.176
+#  scan_ip3:          192.168.125.177
 #  asm_disk_num:      4
 #  asm_disk_size:     20
 #  p1_ratio:          80
+#
 #  storage_pool_name: Vagrant_KVM_Storage
 #  gi_software:       LINUX.X64_2326100_grid_home.zip
 #  db_software:       LINUX.X64_2326100_db_home.zip
+#
+#  # Optional Release Update — set both keys, or neither. See notes above.
+#  #opatch_software:   p6880880_230000_Linux-x86-64.zip
+#  #gi_ru_software:    p<bug-number>_230000_Linux-x86-64.zip
+#
 #  root_password:     DemoRoot_1
 #  grid_password:     DemoGrid_1
 #  oracle_password:   DemoOra_1
 #  sys_password:      DemoSys_1
 #  pdb_password:      DemoPdb_1
+#
 #  ora_languages:     en,en_GB
+#
 #  nomgmtdb:          true
 #  orestart:          false
-#  db_name:           DB26H1
+#  db_name:           DB262H1
 #  pdb_name:          PDB1
 #  db_type:           RAC
 #  cdb:               true

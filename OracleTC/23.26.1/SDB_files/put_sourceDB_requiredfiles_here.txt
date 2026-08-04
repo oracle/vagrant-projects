@@ -1,0 +1,7 @@
+Put here source database
+- password file
+or
+- wallet file
+
+It will be visible inside the VM below this path:
+    /vagrant/SDB_files/

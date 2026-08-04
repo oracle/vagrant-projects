@@ -22,10 +22,28 @@ This directory contains Vagrant build files to provision automatically
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
 - Dynamically allocated storage for ASM shared virtual disks (node1, location set by `asm_disk_path`): ~24 Gb
 
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
+
 ## Memory requirement
 
-- Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
-- Deploy OL8 host2 (optional) as Oracle FPP target at least 6Gb are required
+- Deploy one Grid Infrastructure and FPP Server (vm1) at least 12Gb are required
+- Deploy OL8 vm2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
 
@@ -57,9 +75,9 @@ Note: due to ACFS FPP usage, kernel-uek-6.12.10 is in use
 You can customize your Oracle environment by amending the parameters in the configuration file: `./config/vagrant.yml`
 The following can be customized:
 
-#### host1
+#### vm1
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm1
 - `mem_size`         : VM Guest memory size Mb (minimum 12Gb --> 12288)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -74,9 +92,9 @@ The following can be customized:
 - `u01_disk`:          VirtualBox Oracle binary virtual disk (u01) file path
 
 
-#### host2
+#### vm2
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm2
 - `mem_size`         : VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -112,11 +130,20 @@ The following can be customized:
 - `oracle_password`  : VM Guest oracle password
 - `sys_password`     : Oracled RDBMS SYS password
 - `ora_languages`    : Oracle products languages
+- `opatch_software`  : Optional. OPatch zip (`p6880880_230000_Linux-x86-64.zip`); required if applying a Release Update
+- `gi_ru_software`   : Optional. GI Release Update zip; a combo patch that also carries the RDBMS home patch
+
+Applying a Release Update is opt-in. Leave `opatch_software` and `gi_ru_software` unset and both the GI
+and RDBMS homes are installed at base release. Set **both** — they are validated as a pair, because the
+OPatch shipped in the homes is too old to apply a modern RU — and add a SHA-256 entry for each zip to
+`db_installer.sha256`. The GI RU is a combo patch that carries the RDBMS home patch as well, so one zip
+covers both homes and there is no separate Database RU. The GI home is patched in place at install time
+by `gridSetup.sh -applyRU`; the RDBMS home afterwards by `opatchauto`, before the GIMR is created.
 
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -130,7 +157,7 @@ The following can be customized:
       ha_vip:        192.168.56.109
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -166,7 +193,7 @@ The following can be customized:
 
 #### Virtualbox provider Example2: (Oracle FPP Server available on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 2
@@ -180,7 +207,7 @@ The following can be customized:
       private_ip: 192.168.200.101
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -219,7 +246,7 @@ The following can be customized:
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on private network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -233,7 +260,7 @@ The following can be customized:
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -269,7 +296,7 @@ The following can be customized:
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -283,7 +310,7 @@ The following can be customized:
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -359,15 +386,93 @@ The following can be customized:
     - set http_proxy=http://proxy:port
     - set https_proxy=https://proxy:port
 
-## FPP commands you could test postdeploy based on the configuration file above
+## FPP Commands to Test After Deployment
 
-Note1 : as you need the Database binaries zip file under "ORCL_software"  
-Note2 : having limited resource you may want setup the following JAVA env variables for grid user : `JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2"` before rhpctl commands executions  
-Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'  
-Note4 : following some fpp commands you may want to try
+Based on the configuration described above, you can test the following Fleet Patching and Provisioning (FPP) commands after deployment.
 
-- `rhpctl import image -image db_2326100 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_2326100_db_home.zip`
-- `rhpctl import image -image gi_2326100 -imagetype ORACLEGISOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_2326100_grid_home.zip`
-- `rhpctl add workingcopy -workingcopy wc_db_2326100 -image db_2326100 -user oracle -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba -oraclebase /u01/app/oracle -path /u01/app/oracle/product/2326100/dbhome_1 -targetnode fppc -root`
-- `rhpctl add database -workingcopy wc_db_2326100 -dbname ORCL -dbtype SINGLE -cdb -pdbName PDB -numberOfPDBs 2 -root`
-- (...)
+> **Note 1:** The database and Grid Infrastructure binary ZIP files must be available in the `/vagrant/ORCL_software` directory.
+
+> **Note 2:** If the environment has limited resources, consider setting the following Java environment variables for the `grid` user before running `rhpctl` commands:
+>
+> ```bash
+> export JVM_ARGS="-Xms512m -Xmx512m"
+> export _JAVA_OPTIONS="-XX:ParallelGCThreads=2"
+> ```
+
+> **Note 3:** You can connect to `vm1` or `vm2` by running:
+>
+> ```bash
+> vagrant ssh vm1
+> ```
+>
+> or:
+>
+> ```bash
+> vagrant ssh vm2
+> ```
+
+> **Note 4:** The following are examples of FPP commands you may want to test.
+
+### Import the Database Software Image
+
+```bash
+rhpctl import image \
+  -image db_2326100 \
+  -imagetype ORACLEDBSOFTWARE \
+  -zip /vagrant/ORCL_software/LINUX.X64_2326100_db_home.zip
+```
+
+### Import the Grid Infrastructure Software Image
+
+```bash
+rhpctl import image \
+  -image gi_2326100 \
+  -imagetype ORACLEGISOFTWARE \
+  -zip /vagrant/ORCL_software/LINUX.X64_2326100_grid_home.zip
+```
+
+### Add a Database Working Copy
+
+```bash
+rhpctl add workingcopy \
+  -workingcopy wc_db_2326100 \
+  -image db_2326100 \
+  -user oracle \
+  -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba \
+  -oraclebase /u01/app/oracle \
+  -inventory /u01/app/oraInventory \
+  -path /u01/app/oracle/product/2326100/dbhome_1 \
+  -targetnode fppc \
+  -root
+```
+
+Alternatively, without explicitly specifying the inventory location:
+
+```bash
+rhpctl add workingcopy \
+  -workingcopy wc_db_2326100 \
+  -image db_2326100 \
+  -user oracle \
+  -groups OSBACKUP=dba,OSDG=dba,OSKM=dba,OSRAC=dba \
+  -oraclebase /u01/app/oracle \
+  -path /u01/app/oracle/product/2326100/dbhome_1 \
+  -targetnode fppc \
+  -root
+```
+
+### Create a Container Database
+
+The following command creates a single-instance container database named `ORCL` with two pluggable databases:
+
+```bash
+rhpctl add database \
+  -workingcopy wc_db_2326100 \
+  -dbname ORCL \
+  -dbtype SINGLE \
+  -cdb \
+  -pdbName PDB \
+  -numberOfPDBs 2 \
+  -root
+```
+
+Additional FPP commands can be tested as needed.

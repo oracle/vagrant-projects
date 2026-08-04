@@ -12,11 +12,17 @@ require_var DB_NAME
 require_var DB_HOME
 
 log_section "Installing oracle dbstart/dbshut helper scripts"
-install -d -o oracle -g oinstall -m 0755 /home/oracle/scripts
+# NB: scripts must live OUTSIDE /home. On RHEL/OL with SELinux enforcing,
+# files under /home get a *_home_t label that systemd (init_t) is not allowed
+# to execute, which fails as status=203/EXEC "Permission denied".
+SCRIPT_DIR=/opt/oracle/scripts
+install -d -o oracle -g oinstall -m 0755 "${SCRIPT_DIR}"
 
-cat > /home/oracle/scripts/start_all.sh <<'EOF'
+cat > "${SCRIPT_DIR}/start_all.sh" <<'EOF'
 #!/usr/bin/env bash
-set -euo pipefail
+# NB: no 'set -u' here — sourcing /etc/profile references interactive-only
+# vars (e.g. HISTCONTROL) that are unset under systemd and would abort nounset.
+set -eo pipefail
 . /home/oracle/.bash_profile
 export ORAENV_ASK=NO
 . oraenv
@@ -24,9 +30,11 @@ export ORAENV_ASK=YES
 dbstart "${ORACLE_HOME}"
 EOF
 
-cat > /home/oracle/scripts/stop_all.sh <<'EOF'
+cat > "${SCRIPT_DIR}/stop_all.sh" <<'EOF'
 #!/usr/bin/env bash
-set -euo pipefail
+# NB: no 'set -u' here — sourcing /etc/profile references interactive-only
+# vars (e.g. HISTCONTROL) that are unset under systemd and would abort nounset.
+set -eo pipefail
 . /home/oracle/.bash_profile
 export ORAENV_ASK=NO
 . oraenv
@@ -34,8 +42,13 @@ export ORAENV_ASK=YES
 dbshut "${ORACLE_HOME}"
 EOF
 
-chown oracle:oinstall /home/oracle/scripts/start_all.sh /home/oracle/scripts/stop_all.sh
-chmod 0755             /home/oracle/scripts/start_all.sh /home/oracle/scripts/stop_all.sh
+chown oracle:oinstall "${SCRIPT_DIR}/start_all.sh" "${SCRIPT_DIR}/stop_all.sh"
+chmod 0755             "${SCRIPT_DIR}/start_all.sh" "${SCRIPT_DIR}/stop_all.sh"
+
+# Ensure correct SELinux labels so systemd may execute the helpers.
+if command -v restorecon >/dev/null 2>&1; then
+  restorecon -R "${SCRIPT_DIR}"
+fi
 
 log_section "Writing /etc/systemd/system/dbora.service"
 cat > /etc/systemd/system/dbora.service <<EOF
@@ -53,8 +66,8 @@ RemainAfterExit=yes
 User=oracle
 Group=oinstall
 Restart=no
-ExecStart=/home/oracle/scripts/start_all.sh
-ExecStop=/home/oracle/scripts/stop_all.sh
+ExecStart=${SCRIPT_DIR}/start_all.sh
+ExecStop=${SCRIPT_DIR}/stop_all.sh
 
 [Install]
 WantedBy=multi-user.target

@@ -8,7 +8,7 @@ lab from a single `vagrant up`.
 
 The build is intentionally SEHA-only:
 
-- two Oracle Linux 7 VMs: `host1` and `host2`
+- two Oracle Linux 7 VMs: `vm1` and `vm2`
 - two-node Grid Infrastructure cluster with SCAN, VIPs, private interconnect, and ASM
 - required OPatch `p6880880_190000_Linux-x86-64.zip` installed into each home
   before applying the RU
@@ -31,7 +31,7 @@ The build is intentionally SEHA-only:
 | Operating system | `oraclelinux/7` |
 | GI / DB version | 19.3.0.0 |
 | Database edition | Requires `SE2` |
-| Nodes | `host1`, `host2` |
+| Nodes | `vm1`, `vm2` |
 | ASM diskgroups | `DATA` on P1 partitions, `RECO` on P2 partitions |
 | Runtime env file | `/etc/opt/oracle-seha/setup.env` |
 | Hook model | `userscripts/*.sh` as `root`, `userscripts/*.sql` as `SYSDBA` |
@@ -56,13 +56,13 @@ The build is intentionally SEHA-only:
    ORCL_software/p39036936_190000_Linux-x86-64.zip
    ```
 
-3. Confirm `db_installer.cksum` matches the installers:
+3. Confirm `db_installer.sha256` matches the installers:
 
    ```bash
-   cksum ORCL_software/LINUX.X64_193000_grid_home.zip
-   cksum ORCL_software/LINUX.X64_193000_db_home.zip
-   cksum ORCL_software/p6880880_190000_Linux-x86-64.zip
-   cksum ORCL_software/p39036936_190000_Linux-x86-64.zip
+   sha256sum ORCL_software/LINUX.X64_193000_grid_home.zip
+   sha256sum ORCL_software/LINUX.X64_193000_db_home.zip
+   sha256sum ORCL_software/p6880880_190000_Linux-x86-64.zip
+   sha256sum ORCL_software/p39036936_190000_Linux-x86-64.zip
    ```
 
    RU patching is part of the clean provisioning flow. The required OPatch is
@@ -79,9 +79,27 @@ The build is intentionally SEHA-only:
 5. Connect to the guests:
 
    ```bash
-   vagrant ssh host1
-   vagrant ssh host2
+   vagrant ssh vm1
+   vagrant ssh vm2
    ```
+
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
 
 ## Configuration
 
@@ -92,8 +110,8 @@ All runtime settings live in `config/vagrant.yml`.
 | `env.provider` | `virtualbox` | Must be `virtualbox` or `libvirt` |
 | `env.prefix_name` | `seha19-ol7` | Drives VM, cluster, ASM disk, and SCAN names |
 | `env.domain` | `localdomain` | Used for host, VIP, private, and SCAN names |
-| `host1.vm_name` | `node1` | Primary orchestration node |
-| `host2.vm_name` | `node2` | Secondary node and initial shared-disk partition owner |
+| `vm1.vm_name` | `node1` | Primary orchestration node |
+| `vm2.vm_name` | `node2` | Secondary node and initial shared-disk partition owner |
 | `env.asm_disk_num` | `4` | Minimum 4 shared ASM disks |
 | `env.asm_disk_size` | `20` | GB per shared ASM disk |
 | `env.p1_ratio` | `80` | Percentage assigned to DATA partitions |
@@ -149,7 +167,7 @@ numbered stages:
 After `vagrant up`, useful in-guest checks are:
 
 ```bash
-vagrant ssh host1
+vagrant ssh vm1
 
 sudo cat /etc/opt/oracle-seha/setup.env
 sudo su - grid
@@ -160,7 +178,7 @@ srvctl config database -d SEHA26
 srvctl status database -d SEHA26
 ```
 
-Repeat the `srvctl` checks from `host2` to confirm both nodes see the same
+Repeat the `srvctl` checks from `vm2` to confirm both nodes see the same
 Clusterware-managed database resource.
 
 ## Cleanup

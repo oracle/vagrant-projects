@@ -31,7 +31,19 @@ if [[ -z "${data_disks}" ]]; then
   log_error "no DATA disks found using glob '$(asm_disk_glob p1)'"
   exit 1
 fi
-discovery_string='/dev/ORCL_*'
+
+# ASM discovery string — restrict it to the P1 PARTITIONS only, never the bare
+# '/dev/ORCL_*'. A broad '/dev/ORCL_*' also matches the whole-disk symlinks
+# (/dev/ORCL_DISK<n>), and when ASM's discovery opens a whole disk the kernel
+# revalidates it and re-reads its partition table (journal: 'vdX: vdX1'). That
+# tears down and re-adds the partition device vdX1, so for a brief window the
+# /dev/ORCL_DISK<n>_p1 symlink does not exist. root.sh's CREATE DISKGROUP runs
+# its discovery inside exactly that window and every '/dev/ORCL_DISK*_p1' spec
+# "matches no disks" -> ORA-15031 / DBT-30002, failing ASM config. Matching only
+# the partitions means ASM never opens the whole disks, so nothing triggers the
+# rescan and the partitions stay stable through diskgroup creation. This string
+# flows into crsconfig_params (ASM_DISCOVERY_STRING) and is what root.sh uses.
+discovery_string="$(asm_disk_glob p1)"
 
 # --- Assemble rsp parameters ------------------------------------------------
 rsp_args=(
@@ -73,13 +85,25 @@ rsp_args=(
 )
 
 
+gridsetup_args=( -ignorePrereq -waitforcompletion -silent )
+
+# Only patch when an RU is configured. 07_extract_gi.sh records GI_RU_PATCH_DIR
+# in the runtime env once it has staged the RU, and leaves it unset otherwise —
+# gridSetup rejects an empty -applyRU, so the flag has to disappear entirely.
+if [[ -n "${GI_RU_PATCH_DIR:-}" ]]; then
+  log_info "Applying GI RU ${GI_RU_PATCH_DIR##*/} during gridSetup"
+  gridsetup_args+=( -applyRU "${GI_RU_PATCH_DIR}" )
+else
+  log_info "No Release Update configured; installing GI at base release"
+fi
+
 log_section "Running gridSetup.sh (silent, -ignorePrereq)"
 
 # gridSetup.sh exit codes:
 #   0  success
 #   6  success with warnings (typical when -ignorePrereq bypasses checks)
 if "${GI_HOME}/gridSetup.sh" \
-     -ignorePrereq -waitforcompletion -silent \
+     "${gridsetup_args[@]}" \
      -responseFile "${GI_HOME}/install/response/gridsetup.rsp" \
      "${rsp_args[@]}"; then
   rc=0

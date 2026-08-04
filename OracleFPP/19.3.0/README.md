@@ -22,10 +22,28 @@ This directory contains Vagrant build files to provision automatically
     - Use `VBoxManage setproperty machinefolder <your path>` to set VM default location
 - Dynamically allocated storage for ASM shared virtual disks (node1, location set by `asm_disk_path`): ~24 Gb
 
+## 📦 Shared installer repository (`_ORCL_software/`)
+
+The Oracle installer zips are multi-GB and identical across labs. Instead of
+copying them into this project's `ORCL_software/`, you can drop each zip
+**once** into the shared repository at the root of the Vagrant tree
+([`_ORCL_software/`](../../_ORCL_software/README.md)). Every lab resolves
+each zip **central-first, then this project's `ORCL_software/`** (which still
+works and overrides the shared copy). Inside the guest the repo is mounted
+read-only at `/software`.
+
+| Where you put the zip | Effect |
+|-----------------------|--------|
+| `_ORCL_software/` | Shared by **all** labs — no duplication |
+| this project's `ORCL_software/` | Used here only, **overrides** the shared copy |
+| *(repo empty / absent)* | Behaves exactly as before |
+
+Point the labs at a different location with `export ORCL_SOFTWARE_REPO=/path`.
+
 ## Memory requirement
 
-- Deploy one Grid Infrastructure and FPP Server (host1) at least 12Gb are required
-- Deploy OL7 host2 (optional) as Oracle FPP target at least 6Gb are required
+- Deploy one Grid Infrastructure and FPP Server (vm1) at least 12Gb are required
+- Deploy OL7 vm2 (optional) as Oracle FPP target at least 6Gb are required
 
 ## Getting started
 
@@ -57,9 +75,9 @@ Note: due to ACFS FPP usage, kernel-uek-4.1.12 is in use
 You can customize your Oracle environment by amending the parameters in the configuration file: `./config/vagrant.yml`
 The following can be customized:
 
-#### host1
+#### vm1
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm1
 - `mem_size`         : VM Guest memory size Mb (minimum 12Gb --> 12288)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -74,9 +92,9 @@ The following can be customized:
 - `u01_disk`:          VirtualBox Oracle binary virtual disk (u01) file path
 
 
-#### host2
+#### vm2
 
-- `vm_name`          : VM Guest partial name. The full name will be <prefix_name>-<vm_name>
+- `vm_name`          : VM Guest OS hostname. The hypervisor VM name is <prefix_name>-vm2
 - `mem_size`         : VM Guest memory size Mb (minimum 6Gb --> 6144)
 - `cpus`             : VM Guest virtual cores
 - `public_ip`        : VM public ip.
@@ -112,11 +130,20 @@ The following can be customized:
 - `oracle_password`  : VM Guest oracle password
 - `sys_password`     : Oracled RDBMS SYS password
 - `ora_languages`    : Oracle products languages
+- `opatch_software`  : Optional. OPatch zip (`p6880880_190000_Linux-x86-64.zip`); required if applying a Release Update
+- `gi_ru_software`   : Optional. GI Release Update zip; patches the GI home (19c has no separate RDBMS home here)
+
+Applying a Release Update is opt-in. Leave `opatch_software` and `gi_ru_software` unset and the GI home is
+installed at base release. Set **both** — they are validated as a pair, because the OPatch shipped in the
+home is too old to apply a modern RU — and add a SHA-256 entry for each zip to `db_installer.sha256`. The GI
+home is patched in place at install time by `gridSetup.sh -applyRU`. Unlike 21c and later, 19c has no
+separate RDBMS home on the FPP server — its GIMR is configured inline by `gridSetup.sh` — so the GI home is
+the only home patched here; the `db_software` zip is staged for `rhpctl import image`, not installed.
 
 
 #### Virtualbox provider Example1 (Oracle FPP Server available on host-only Virtualbox network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -130,7 +157,7 @@ The following can be customized:
       ha_vip:        192.168.56.109
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -166,7 +193,7 @@ The following can be customized:
 
 #### Virtualbox provider Example2: (Oracle FPP Server available on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 2
@@ -180,7 +207,7 @@ The following can be customized:
       private_ip: 192.168.200.101
       storage_pool_name: Vagrant_KVM
 
-    host2:
+    vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -219,7 +246,7 @@ The following can be customized:
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on private network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -233,7 +260,7 @@ The following can be customized:
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -269,7 +296,7 @@ The following can be customized:
 
 #### KVM/libVirt provider Example1 (Oracle FPP Server and FPP target on public network):
 
-    host1:
+    vm1:
       vm_name: fpps
       mem_size: 16384
       cpus: 1
@@ -283,7 +310,7 @@ The following can be customized:
       ha_vip:        192.168.125.109
       storage_pool_name: Vagrant_KVM_Storage
 
-      host2:
+      vm2:
       vm_name: fppc
       mem_size: 8192
       cpus: 1
@@ -363,7 +390,7 @@ The following can be customized:
 
 Note1 : as you need the Database binaries zip file under "ORCL_software"  
 Note2 : having limited resource you may want setup the following JAVA env variables for grid user : `JVM_ARGS="-Xms512m -Xmx512m" and _JAVA_OPTIONS="-XX:ParallelGCThreads=2"` before rhpctl commands executions  
-Note3 : you can connect host1/host2 issuing 'vagrant ssh host1/host2'  
+Note3 : you can connect vm1/vm2 issuing 'vagrant ssh vm1/vm2'  
 Note4 : following some fpp commands you may want to try
 
 - `rhpctl import image -image db_19300 -imagetype ORACLEDBSOFTWARE -zip /vagrant/ORCL_software/LINUX.X64_193000_db_home.zip`

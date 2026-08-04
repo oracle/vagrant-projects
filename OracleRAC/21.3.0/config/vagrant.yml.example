@@ -27,22 +27,22 @@
 # ------------------------------------------------------------------------------
 
 ## -------------------------------- Active profile -------------------------------
-host1:
+vm1:
   vm_name:    node1
   mem_size:   8192            # MB — minimum 6144
   cpus:       2
-  public_ip:  192.168.56.111
-  vip_ip:     192.168.56.112
-  private_ip: 192.168.200.111
+  public_ip:  192.168.56.161
+  vip_ip:     192.168.56.163
+  private_ip: 192.168.200.161
   storage_pool_name: Vagrant_KVM_Storage
 
-host2:
+vm2:
   vm_name:    node2
   mem_size:   8192
   cpus:       2
-  public_ip:  192.168.56.121
-  vip_ip:     192.168.56.122
-  private_ip: 192.168.200.122
+  public_ip:  192.168.56.162
+  vip_ip:     192.168.56.164
+  private_ip: 192.168.200.162
   storage_pool_name: Vagrant_KVM_Storage
 
 env:
@@ -51,9 +51,9 @@ env:
   domain:            localdomain
 
   # SCAN addresses — three IPs in the same subnet as public_ip
-  scan_ip1:          192.168.56.115
-  scan_ip2:          192.168.56.116
-  scan_ip3:          192.168.56.117
+  scan_ip1:          192.168.56.165
+  scan_ip2:          192.168.56.166
+  scan_ip3:          192.168.56.167
 
   # Shared ASM disks
   asm_disk_path:
@@ -67,6 +67,13 @@ env:
   #   https://www.oracle.com/database/technologies/oracle21c-linux-downloads.html
   gi_software:       LINUX.X64_213000_grid_home.zip
   db_software:       LINUX.X64_213000_db_home.zip
+
+  # Optional Release Update. Patching is opt-in: set BOTH keys to patch the GI
+  # and DB homes, or leave both out to install at base release. The GI RU is a
+  # combo patch that carries the DB home patch too, so there is no separate
+  # Database RU. Each zip needs an entry in db_installer.sha256.
+  #opatch_software:   p6880880_210000_Linux-x86-64.zip
+  #gi_ru_software:    p<bug-number>_210000_Linux-x86-64.zip
 
   # Credentials — DISTINCT DEMO PLACEHOLDERS. Change these before real use.
   root_password:     DemoRoot_1
@@ -86,37 +93,40 @@ env:
   cdb:               true
 
 # ---------------------------------- KVM / libvirt -----------------------------
-#host1:
+#vm1:
 #  vm_name:    node1
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.111
-#  vip_ip:     192.168.125.112
-#  private_ip: 192.168.200.111
+#  public_ip:  192.168.125.161
+#  vip_ip:     192.168.125.163
+#  private_ip: 192.168.200.161
 #  storage_pool_name: Vagrant_KVM_Storage
 #
-#host2:
+#vm2:
 #  vm_name:    node2
 #  mem_size:   8192
 #  cpus:       2
-#  public_ip:  192.168.125.121
-#  vip_ip:     192.168.125.122
-#  private_ip: 192.168.200.122
+#  public_ip:  192.168.125.162
+#  vip_ip:     192.168.125.164
+#  private_ip: 192.168.200.162
 #  storage_pool_name: Vagrant_KVM_Storage
 #
 #env:
 #  provider:          libvirt
 #  prefix_name:       rac21-ol8
 #  domain:            localdomain
-#  scan_ip1:          192.168.125.115
-#  scan_ip2:          192.168.125.116
-#  scan_ip3:          192.168.125.117
+#  scan_ip1:          192.168.125.165
+#  scan_ip2:          192.168.125.166
+#  scan_ip3:          192.168.125.167
 #  asm_disk_num:      4
 #  asm_disk_size:     20
 #  p1_ratio:          80
 #  storage_pool_name: Vagrant_KVM_Storage
 #  gi_software:       LINUX.X64_213000_grid_home.zip
 #  db_software:       LINUX.X64_213000_db_home.zip
+#  # Optional Release Update — set both keys, or neither. See notes above.
+#  #opatch_software:   p6880880_210000_Linux-x86-64.zip
+#  #gi_ru_software:    p<bug-number>_210000_Linux-x86-64.zip
 #  root_password:     DemoRoot_1
 #  grid_password:     DemoGrid_1
 #  oracle_password:   DemoOra_1

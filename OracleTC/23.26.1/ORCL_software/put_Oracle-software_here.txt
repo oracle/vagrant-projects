@@ -1,0 +1,15 @@
+The expecting Oracle software is
+LINUX.X64_<six digit version>_grid_home.zip
+LINUX.X64_<six digit version>_db_home.zip
+
+It will be visible inside the VM below this path:
+    /vagrant/ORCL_software/
+-----------------------------------------------------------------------
+Shared repository (recommended — avoids duplicating this zip per lab):
+Instead of placing the zip here, drop it once into the central folder
+    ../../../_ORCL_software/
+It is shared by every Vagrant lab and mounted read-only at /software in
+the guest. Resolution is central-first, then this project-local folder
+(a zip placed here still works and overrides the shared copy).
+See _ORCL_software/README.md for details.
+-----------------------------------------------------------------------

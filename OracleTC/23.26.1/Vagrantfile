@@ -1,0 +1,789 @@
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+#
+# LICENSE UPL 1.0
+#
+# Copyright (c) 1982-2024 Oracle and/or its affiliates. All rights reserved.
+#
+#    NAME
+#      vagrantfile
+#
+#    DESCRIPTION
+#      Creates Vagrant virtual machines configured with Oracle TrueCache for libVirt/KVM & VirtualBox
+#
+#    NOTES
+#      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+#    AUTHOR
+#      Ruggero Citton - RAC Pack, Cloud Innovation and Solution Engineering Team
+#
+#    MODIFIED   (MM/DD/YY)
+#    rcitton     03/28/23 - Creation
+#
+#
+#│▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒│
+  
+### -------------------------------------------------------------------
+### Disclaimer:
+###
+### EXCEPT WHERE EXPRESSLY PROVIDED OTHERWISE, THE INFORMATION, SOFTWARE,
+### PROVIDED ON AN \"AS IS\" AND \"AS AVAILABLE\" BASIS. ORACLE EXPRESSLY DISCLAIMS
+### ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT
+### LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+### PURPOSE AND NON-INFRINGEMENT. ORACLE MAKES NO WARRANTY THAT: (A) THE RESULTS
+### THAT MAY BE OBTAINED FROM THE USE OF THE SOFTWARE WILL BE ACCURATE OR
+### RELIABLE; OR (B) THE INFORMATION, OR OTHER MATERIAL OBTAINED WILL MEET YOUR
+### EXPECTATIONS. ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE DOWNLOADED OR
+### OTHERWISE OBTAINED IS DONE AT YOUR OWN DISCRETION AND RISK. ORACLE SHALL HAVE
+### NO RESPONSIBILITY FOR ANY DAMAGE TO YOUR COMPUTER SYSTEM OR LOSS OF DATA THAT
+### RESULTS FROM THE DOWNLOAD OF ANY CONTENT, MATERIALS, INFORMATION OR SOFTWARE.
+###
+### ORACLE RESERVES THE RIGHT TO MAKE CHANGES OR UPDATES TO THE SOFTWARE AT ANY
+### TIME WITHOUT NOTICE.
+###
+### Limitation of Liability:
+###
+### IN NO EVENT SHALL ORACLE BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+### SPECIAL OR CONSEQUENTIAL DAMAGES, OR DAMAGES FOR LOSS OF PROFITS, REVENUE,
+### DATA OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN ACTION IN
+### CONTRACT OR TORT, ARISING FROM YOUR ACCESS TO, OR USE OF, THE SOFTWARE.
+### -------------------------------------------------------------------
+### This script is NOT supported by Oracle World Wide Technical Support. 
+### The script has been tested and appears to work as intended. 
+### -------------------------------------------------------------------
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+require 'ipaddr'
+require 'digest'
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# ----------------------- Shared Oracle software repository -------------------
+# Large Oracle installer zips are stored once in a central repo shared by every
+# lab under the Vagrant root, instead of being duplicated into each project's
+# ORCL_software/. Override the location with the ORCL_SOFTWARE_REPO env var.
+SOFTWARE_REPO = ENV.fetch('ORCL_SOFTWARE_REPO', File.expand_path('../../_ORCL_software', __dir__))
+
+# Resolve an installer zip to an absolute host path: prefer the shared repo,
+# fall back to this project's ORCL_software/ (which still works and overrides
+# the shared copy). Returns the local path when neither exists so the caller's
+# existence check still prints the usual "place the zip here" guidance.
+def sw_zip(name)
+  return nil if name.nil? || name.to_s.strip.empty?
+  central = File.join(SOFTWARE_REPO, name)
+  local   = File.join(__dir__, 'ORCL_software', name)
+  File.exist?(central) ? central : local
+end
+
+# ----------------------------- Project identity ------------------------------
+PROJECT_TITLE = 'Oracle True Cache — Oracle Database 23ai (23.26.1) on Oracle Linux 9'
+
+# The installer filename must start with this prefix to match the DB version
+# this project is built for. Prevents accidentally pointing at e.g. a 19c zip.
+EXPECTED_DB_SOFTWARE_PREFIX = 'LINUX.X64_2326'
+
+# Canonical version identifiers for this release (drive ORACLE_HOME path,
+# preinstall package selection, etc.).
+DB_VERSION = '23.26.1'
+DB_MAJOR   = '23'
+
+# --------------------------- Checksum helpers --------------------------------
+# Full integrity check of an installer zip against db_installer.sha256, run on
+# the HOST before any VM boots. Catches a truncated / corrupt / wrong-download
+# zip in seconds — instead of after OS packages, /u01 LVM and disk allocation
+# inside the guest, by which point a bad unzip may already have filled the host
+# disk mid-extraction. Uses SHA-256 via Ruby's built-in Digest, so it needs no
+# external tool and runs identically on Windows, macOS and Linux hosts.
+
+# Cross-platform lookup for an executable on the host PATH. Uses Ruby rather
+# than a POSIX `command -v` / `which` subshell, which does not exist on a
+# Windows host (and prints "The system cannot find the path specified.").
+def host_command?(name)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(File::PATH_SEPARATOR) : ['']
+  ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+    next false if dir.empty?
+    exts.any? { |ext| File.file?(File.join(dir, name + ext)) }
+  end
+end
+
+# Returns nil on success, or a human-readable error string.
+def checksum_error(checksum_path, zip_path, installer)
+  return "installer zip not found: #{zip_path}" unless File.exist?(zip_path)
+  return "checksum manifest not found: #{checksum_path}" unless File.exist?(checksum_path)
+
+  expected_sha = nil
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    if File.basename(parts[1]) == installer
+      expected_sha = parts[0]
+      break
+    end
+  end
+  return "no checksum entry for '#{installer}' found in #{checksum_path}\n  Run:  sha256sum ORCL_software/#{installer}  (Windows: Get-FileHash -Algorithm SHA256 ORCL_software\\#{installer})  and add the result to the manifest." unless expected_sha
+
+  unless expected_sha =~ /\A[0-9a-fA-F]{64}\z/
+    return "invalid checksum entry for '#{installer}' in #{checksum_path} (expected a 64-hex-character SHA-256 digest)"
+  end
+
+  # SHA-256 of the whole file, computed with Ruby's built-in Digest — no
+  # external cksum / sha256sum binary needed, so the same check runs on every host.
+  actual_sha = Digest::SHA256.file(zip_path).hexdigest
+  unless actual_sha.downcase == expected_sha.downcase
+    return "checksum verification failed for #{zip_path}\n" \
+           "  expected sha256=#{expected_sha.downcase} (from #{checksum_path})\n" \
+           "  got      sha256=#{actual_sha}\n" \
+           "  The file differs from the manifest — re-download it, or refresh its\n" \
+           "  entry:  sha256sum ORCL_software/#{installer}"
+  end
+
+  # A matching hash only proves the file is unchanged since the manifest was
+  # written — not that it is a whole zip. Reading the central directory is
+  # near-instant even on a multi-GB zip and catches the two ways an Oracle
+  # download actually goes wrong: truncated, or an HTML error page saved under a
+  # .zip name. Best-effort: skip quietly if unzip is not on the host.
+  if host_command?('unzip')
+    ran = begin
+            system('unzip', '-qql', zip_path, out: File::NULL, err: File::NULL)
+          rescue StandardError
+            nil
+          end
+    if ran == false
+      return "#{zip_path} matches its checksum but is not a readable zip archive —\n" \
+             "  the download is truncated or corrupt. Re-download it and refresh its\n" \
+             "  entry in #{checksum_path}."
+    end
+  end
+
+  nil
+end
+
+# The expected SHA-256 recorded for an installer in the manifest (nil if absent).
+# Identical across every lab that ships the same zip — this is what lets the
+# fingerprint below be shared between projects.
+def expected_sha_for(checksum_path, installer)
+  return nil unless File.exist?(checksum_path)
+  File.foreach(checksum_path) do |line|
+    line = line.strip
+    next if line.empty? || line.start_with?('#')
+    parts = line.split(/\s+/, 2)
+    next unless parts.length == 2
+    return parts[0] if File.basename(parts[1]) == installer
+  end
+  nil
+end
+
+# Cheap identity fingerprint of the installer: zip size + mtime + the expected
+# SHA-256 from the manifest. Decides whether a previous verification still holds
+# without re-reading the multi-GB zip. Deliberately independent of the manifest
+# FILE's mtime/size, so the stamp written into the shared _ORCL_software repo is
+# honoured by EVERY lab (verify once for all). Returns nil if the zip or the
+# manifest entry is missing — verification itself then prints the real error.
+# Pick the checksum manifest to verify a given installer against: prefer the
+# shared repo's db_installer.sha256 when it lists an entry for this installer,
+# else fall back to the project-local db_installer.sha256. Lets a central and a
+# project-local manifest be used together ("both"), entry by entry.
+def manifest_for(installer)
+  central = File.join(SOFTWARE_REPO, 'db_installer.sha256')
+  local   = File.expand_path('db_installer.sha256', __dir__)
+  (File.exist?(central) && expected_sha_for(central, installer)) ? central : local
+end
+
+def installer_fingerprint(zip_path, checksum_path, installer)
+  return nil unless File.exist?(zip_path)
+  sha = expected_sha_for(checksum_path, installer)
+  return nil unless sha
+  z = File.stat(zip_path)
+  "#{z.size}:#{z.mtime.to_i}:#{sha.downcase}"
+end
+
+# Verify the installer against the manifest, but pay the whole-file SHA-256 read
+# at most once. Two layers of caching:
+#   * ENV guard  — skip within a single process (Vagrant evaluates the Vagrantfile
+#     several times per command).
+#   * on-disk stamp — skip across separate 'vagrant up' invocations while neither
+#     the zip nor the manifest has changed.
+def verify_installer!(checksum_path, zip_path, installer, label)
+  guard = "__TC_INSTALLER_VERIFIED_#{installer}"
+  return if ENV[guard]
+
+  # The stamp may live next to the zip (shared _ORCL_software repo — verified
+  # once for every lab) or in this project's ORCL_software/ (always writable,
+  # even when the shared repo is read-only). A match in EITHER counts.
+  stamp_paths = [
+    File.join(File.dirname(zip_path), ".#{installer}.verified"),
+    File.join(__dir__, 'ORCL_software', ".#{installer}.verified")
+  ].uniq
+  fingerprint = installer_fingerprint(zip_path, checksum_path, installer)
+  if fingerprint && stamp_paths.any? { |p| File.file?(p) && File.read(p).strip == fingerprint }
+    ENV[guard] = '1'
+    return
+  end
+
+  puts "Verifying #{label} '#{installer}' against #{File.basename(checksum_path)}"
+  puts "  (reads the full zip — may take up to a minute for a multi-GB installer)..."
+  $stdout.flush
+  if (err = checksum_error(checksum_path, zip_path, installer))
+    puts "ERROR: #{err}"
+    exit 1
+  end
+  puts "  #{installer}: checksum OK"
+
+  # Record the fingerprint so later runs skip the re-read. Best-effort in each
+  # location: the shared stamp benefits every lab; the project-local stamp
+  # guarantees this lab still caches even if the shared repo is read-only.
+  if fingerprint
+    stamp_paths.each do |p|
+      begin
+        File.write(p, "#{fingerprint}\n")
+      rescue StandardError
+        # ignore — verification passed; caching is optional
+      end
+    end
+  end
+  ENV[guard] = '1'
+end
+
+# --------------------------- Banner ------------------------------------------
+puts ""
+puts "-----------------------------------------------------------------"
+puts "  #{PROJECT_TITLE}"
+puts "  Vagrant project for VirtualBox or KVM/libvirt"
+puts "  Copyright (c) 2018-2026 Oracle and/or its affiliates"
+puts "  Author: ruggero.citton@oracle.com"
+puts "  RACPack (MAA) Cloud Innovation and Solution Engineering team"
+puts "-----------------------------------------------------------------"
+puts ""
+
+# Vagrant Boxes Source Definition
+var_box = 'oraclelinux/9'
+var_url = 'https://oracle.github.io/vagrant-projects/boxes/oraclelinux/9.json'
+
+# -----------------------------------------------------------------
+# Variables
+# -----------------------------------------------------------------
+params = YAML.load_file 'config/vagrant.yml'
+#
+var_provider_name   = params['env']['provider']
+#
+var_prefix_name     = params['env']['prefix_name']
+#
+var_network         = params['env']['network']
+var_bridge_nic      = params['env']['bridge_nic']
+var_netmask         = params['env']['netmask']
+var_gateway         = params['env']['gateway']
+var_dns_public_ip   = params['env']['dns_public_ip']
+var_domain          = params['env']['domain']
+#
+var_vm1_name        = params['vm1']['vm_name']
+var_vm1_mem_size    = params['vm1']['mem_size']
+var_vm1_cpus        = params['vm1']['cpus']
+var_vm1_public_ip   = params['vm1']['public_ip']
+var_vm1_private_ip  = params['vm1']['private_ip']
+# 
+var_oradata_disk_num   = params['env']['oradata_disk_num']
+var_oradata_disk_size  = params['env']['oradata_disk_size']
+#
+var_db_software     = params['env']['db_software']
+# Optional: patching is opt-in. Set both keys to apply a Database Release Update
+# to the RDBMS home before the True Cache instance is created, or neither to
+# install at base release.
+var_opatch_software = params['env']['opatch_software'].to_s
+var_db_ru_software  = params['env']['db_ru_software'].to_s
+var_ora_languages   = params['env']['ora_languages']
+#
+var_root_password   = params['env']['root_password']
+var_oracle_password = params['env']['oracle_password']
+#
+var_sdb_host_name   = params['env']['sdb_host_name']
+var_sdb_service_name= params['env']['sdb_service_name']
+var_sdb_service_port= params['env']['sdb_service_port']
+#
+var_db_files        = params['env']['db_files']
+var_db_unique_name  = params['env']['db_unique_name']
+var_instance_name   = params['env']['instance_name']
+var_fal_server      = params['env']['fal_server']
+var_fal_client      = params['env']['fal_client']
+var_local_listener  = params['env']['local_listener']
+var_sga_target      = params['env']['sga_target']
+
+# -----------------------------------------------------------------
+# Provider Specific checks
+# -----------------------------------------------------------------
+if ( (var_provider_name != 'libvirt') and (var_provider_name != 'virtualbox') )
+  puts "ERROR: 'provider' option can be 'libvirt' or 'virtualbox'" 
+  exit
+else
+  provider = (var_provider_name).to_sym
+  puts "--------------------"
+  puts "Detected #{provider}"
+  puts "--------------------"
+end
+
+# Base Settings
+if var_provider_name == 'virtualbox'
+  box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+  var_vm1_name = var_prefix_name + "-" + var_vm1_name
+elsif var_provider_name == 'libvirt'
+  box_disks_num = 1
+  ENV['VAGRANT_DEFAULT_PROVIDER'] || 'libvirt'
+  ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+else 
+  puts "Not supported #{provider}, exiting..."
+  exit
+end
+
+## Storage Setup
+if var_provider_name == 'libvirt'
+  var_vm1_storage     = params['vm1']['storage_pool_name']
+  var_oradata_storage = params['env']['storage_pool_name']
+
+  if var_vm1_storage.to_s.empty?
+    var_vm1_storage = "default"
+  end
+  if var_oradata_storage.to_s.empty?
+    var_oradata_storage = "default"
+  end
+end
+if var_provider_name == 'virtualbox'
+  var_group           = "/" + var_prefix_name
+  var_vm1_u01_disk       = params['vm1']['u01_disk']
+  var_non_rotational     = params['env']['non_rotational']
+  var_oradata_disk_path  = params['env']['oradata_disk_path']
+
+  if ( (var_non_rotational != 'on') and (var_non_rotational != 'off') )
+    puts 'ERROR: non_rotational option can be on or off'
+    exit
+  end
+  if var_oradata_disk_path.to_s.empty?
+    var_oradata_disk_path = "./"
+  else
+    var_oradata_disk_path = var_oradata_disk_path + "/"
+  end
+  if var_vm1_u01_disk.to_s.empty?
+    var_vm1_u01_disk = "./primary_u01.vdi"
+  end
+end
+
+# -----------------------------------------------------------------
+# Variables check
+# -----------------------------------------------------------------
+class String
+  def is_ip?
+    !!IPAddr.new(self) rescue false
+  end
+end
+
+if !var_prefix_name.match? /\A[0-9a-zA-Z-]{1,14}\z/
+  puts 'ERROR: prefix_name \'' + var_prefix_name + '\' option can be any combination'
+  puts '  {1..13 chars} of lower and uppercase alphanumeric characters (a - z, A - Z, 0 - 9), and hyphen(-)'
+  exit
+end
+
+if var_vm1_mem_size.to_i < 6144
+  puts 'ERROR: vm1_mem_size option can not be less then 6 Gb'
+  exit
+end
+
+if var_sga_target.to_s.empty?
+  var_sga_target = var_vm1_mem_size * 70 / 100
+end
+var_hugepages = ((var_sga_target) * 1024 / 2048 * 1.05).to_i
+
+
+if var_oradata_disk_size.to_i < 10
+  puts 'ERROR: asm_disk_size option can not be less then 10 Gb'
+  exit
+end
+
+if ( (var_network != 'hostonly') and (var_network != 'public') )
+  puts "ERROR: network option can be 'public' or 'hostonly'"
+  exit
+end
+if (var_provider_name == 'libvirt')
+  if ( (var_network == 'public') and (var_bridge_nic.to_s.empty?))
+    puts "ERROR: bridge_nic is empty"
+    exit
+  end
+end
+
+if var_network == 'public'
+  if var_gateway.to_s.empty?
+   puts "ERROR: Using public network gateway must be defined"
+   exit
+  end
+  if var_netmask.to_s.empty?
+    puts "ERROR: Using public network netmask must be defined"
+    exit
+  end
+  if var_dns_public_ip.to_s.empty?
+    puts "ERROR: Using public network var_dns_public_ip must be defined"
+    exit
+  end
+
+  if ! var_netmask.is_ip?
+    puts "ERROR: netmask is not a valid IP address"
+    exit
+  end
+  if ! var_gateway.is_ip?
+    puts "ERROR: gateway is not a valid IP address"
+    exit
+  end
+  if ! var_dns_public_ip.is_ip?
+    puts "ERROR: var_dns_public_ip is not a valid IP address"
+    exit
+  end
+end
+
+if ! var_vm1_public_ip.is_ip?
+  puts 'ERROR: public_ip for vm1 is not a valid IP address'
+  exit
+end
+if ! var_vm1_private_ip.is_ip?
+  puts 'ERROR: private_ip for vm1 is not a valid IP address'
+  exit
+end
+
+if var_root_password.to_s.empty?
+ puts "ERROR: root_password is not defined"
+ exit
+end
+if var_oracle_password.to_s.empty?
+ puts "ERROR: oracle_password is not defined"
+ exit 
+end
+
+unless var_db_software.start_with?(EXPECTED_DB_SOFTWARE_PREFIX)
+  puts "ERROR: db_software (#{var_db_software}) does not match this project (expected prefix: #{EXPECTED_DB_SOFTWARE_PREFIX})"
+  exit
+end
+
+# Installer checksum manifest(s): each installer is verified against the shared
+# repo's db_installer.sha256 when that manifest lists it, else the project-local
+# db_installer.sha256 (see manifest_for) -- so a central and a local manifest can
+# be used together, entry by entry. Fail fast only if neither manifest exists.
+checksum_local   = File.expand_path('./db_installer.sha256', __dir__)
+checksum_central = File.join(SOFTWARE_REPO, 'db_installer.sha256')
+zip_path      = sw_zip(var_db_software)
+
+# Verify the base installer against the manifest (sha256 + readable-zip), not
+# just that the file exists — fail fast, before any VM boots.
+unless File.exist?(zip_path)
+  puts "ERROR: db_software does not exist: #{zip_path}"
+  puts "  Place the Oracle Database #{EXPECTED_DB_SOFTWARE_PREFIX[/\d+/]}* zip into ORCL_software/."
+  exit
+end
+unless File.exist?(checksum_local) || File.exist?(checksum_central)
+  puts "ERROR: installer checksum manifest 'db_installer.sha256' not found in shared repo (#{SOFTWARE_REPO}) or project dir (#{__dir__})"
+  exit
+end
+verify_installer!(manifest_for(var_db_software), zip_path, var_db_software, 'base installer')
+
+# Both RU zips or neither: the opatch shipped inside the home is too old to apply
+# a modern RU, so a half-configured pair is a mistake worth failing on.
+if var_opatch_software.empty? ^ var_db_ru_software.empty?
+  puts "ERROR: 'env.opatch_software' and 'env.db_ru_software' must be set together " \
+       "(opatch_software: '#{var_opatch_software}', db_ru_software: '#{var_db_ru_software}')"
+  exit
+end
+
+# The RU pair is optional, but once configured it gets the same treatment as the
+# base installer: present on disk, and pinned in the checksum manifest.
+[var_opatch_software, var_db_ru_software].reject(&:empty?).each do |ru_zip|
+  ru_zip_path = sw_zip(ru_zip)
+  unless File.exist?(ru_zip_path)
+    puts "ERROR: patch zip not found: #{ru_zip_path}"
+    puts "  Place it into ORCL_software/, or remove 'env.opatch_software' and " \
+         "'env.db_ru_software' to install at base release."
+    exit
+  end
+  verify_installer!(manifest_for(ru_zip), ru_zip_path, ru_zip, 'patch')
+end
+
+# The source-DB password file must be staged under SDB_files/ before boot: the
+# True Cache instance copies it into the home as orapw<instance_name>. Check on
+# the HOST so a missing file fails fast, instead of after the full OS + software
+# install (08_TrueCache_setup.sh would otherwise error near the very end).
+sdb_pwfiles = Dir.glob(File.expand_path('./SDB_files/orapw*', __dir__))
+if sdb_pwfiles.empty?
+  puts "ERROR: no source-DB password file found under SDB_files/ (expected orapw<SID>)"
+  puts "  Copy the source database password file into SDB_files/ before 'vagrant up'"
+  puts "  (it is staged on the True Cache node as orapw#{var_instance_name})."
+  exit
+end
+
+
+if var_oradata_disk_num.to_i < 2
+  puts 'ERROR: oradata_disk_num option can not be less then 2'
+  exit
+end
+
+
+if var_sdb_host_name.to_s.empty?
+ puts "ERROR: sdb_host_name is not defined"
+ exit
+end
+if var_sdb_service_name.to_s.empty?
+ puts "ERROR: sdb_service_name is not defined"
+ exit
+end
+
+if var_sdb_service_port.to_s.empty?
+  var_sdb_service_port = 1521
+end
+if var_db_files.to_s.empty?
+  var_db_files = 200
+end
+
+if var_db_unique_name.to_s.empty?
+ puts "ERROR: db_unique_name is not defined"
+ exit
+end
+if var_instance_name.to_s.empty?
+ puts "ERROR: instance_name is not defined"
+ exit
+end
+
+if var_instance_name.to_s.empty?
+ puts "ERROR: instance_name is not defined"
+ exit
+end
+
+if var_fal_server.to_s.empty?
+  var_fal_server = var_sdb_service_name
+end
+
+if var_fal_client.to_s.empty?
+  var_fal_client = var_db_unique_name
+end
+if var_local_listener.to_s.empty?
+  var_local_listener = var_db_unique_name
+end
+
+#------------------------------------------------------------------
+
+# Install required Vagrant plugin
+unless Vagrant.has_plugin?("vagrant-reload")
+  puts 'Installing vagrant-reload Plugin...'
+  system('vagrant plugin install vagrant-reload')
+end
+unless Vagrant.has_plugin?("vagrant-proxyconf")
+  puts 'Installing vagrant-proxyconf Plugin...'
+  system('vagrant plugin install vagrant-proxyconf')
+end
+
+if var_provider_name == 'libvirt'
+  unless Vagrant.has_plugin?("vagrant-libvirt")
+    puts 'Installing vagrant-libvirt Plugin...'
+    system('vagrant plugin install vagrant-libvirt')
+  end
+  unless Vagrant.has_plugin?("vagrant-kvm")
+    puts 'Installing vagrant-kvm Plugin...'
+    system('vagrant plugin install vagrant-kvm')
+  end
+end
+
+
+# Get host time zone for setting VM time zone
+offset_sec = Time.now.gmt_offset
+if (offset_sec % (60 * 60)) == 0
+  offset_hr = ((offset_sec / 60) / 60)
+  timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+  var_system_timezone = 'Etc/GMT' + timezone_suffix
+else
+  # if host time zone isn't an integer hour offset, fall back to UTC
+  var_system_timezone = 'UTC'
+end
+
+# VMs definition
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # --------------------- Shared Oracle software repository -------------------
+  # Mount the central installer repo (one shared copy for every lab) read-only
+  # at /software. Guest scripts read /software first, then fall back to the
+  # project-local /vagrant/ORCL_software. Mounted only when the repo exists on
+  # the host: NFS on libvirt (matching /vagrant), provider default otherwise.
+  if Dir.exist?(SOFTWARE_REPO)
+    if var_provider_name == 'libvirt'
+      config.vm.synced_folder SOFTWARE_REPO, '/software', type: 'nfs', nfs_udp: false, mount_options: ['ro']
+    else
+      config.vm.synced_folder SOFTWARE_REPO, '/software', mount_options: ['ro']
+    end
+  end
+  config.vm.box = var_box
+  config.vm.box_url = var_url
+
+  if var_provider_name == 'virtualbox'
+    config.vm.box_version = ">= 7.8.142"
+  end
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  config.vm.box_check_update = false
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    puts "getting Proxy Configuration from Host..."
+    if ENV["http_proxy"]
+      puts "http_proxy: " + ENV["http_proxy"]
+      config.proxy.http     = ENV["http_proxy"]
+    end
+    if ENV["https_proxy"]
+      puts "https_proxy: " + ENV["https_proxy"]
+      config.proxy.https    = ENV["https_proxy"]
+    end
+    if ENV["no_proxy"]
+      config.proxy.no_proxy = ENV["no_proxy"]
+    end
+  end
+
+  config.ssh.forward_x11 = true
+
+  if var_provider_name == 'libvirt'
+    # vm vm1
+    config.vm.define :vm1 do |vm1|
+      vm1.vm.hostname = var_vm1_name
+      if (var_network == 'hostonly')
+        vm1.vm.network "private_network", :libvirt__network_name => "vgt-hostonly_network", ip: var_vm1_public_ip
+      end
+      if (var_network == 'public')
+        vm1.vm.network :public_network,
+          :dev  => var_bridge_nic,
+          :mode => "bridge",
+          :type => "bridge",
+          ip: var_vm1_public_ip, netmask: var_netmask
+      end
+      #vm1.vm.network "private_network", :libvirt__network_name => "vgt-private_network", ip: var_vm1_private_ip
+      vm1.vm.provider :libvirt do |libvirt|
+        libvirt.default_prefix = var_prefix_name.end_with?('-') ? var_prefix_name : "#{var_prefix_name}-"
+        libvirt.driver = "kvm"
+        libvirt.memory = var_vm1_mem_size
+        libvirt.cpus   = var_vm1_cpus
+        libvirt.graphics_type = "none"
+
+        libvirt.storage_pool_name = var_vm1_storage
+        disk_num = 0
+        while disk_num < box_disks_num do
+          libvirt.storage :file,
+            #:path => '',       # automatically chosen if unspecified!
+            #:device => 'vdb',  # automatically chosen if unspecified!
+            #:type => 'qcow2'   # defaults to 'qcow2' if unspecified!
+            :size => '100G'      # defaults to 10G if unspecified!
+          disk_num += 1
+        end
+    
+        # Making oradata disks
+        libvirt.storage_pool_name = var_oradata_storage
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do 
+          oradata_disk_size = var_oradata_disk_size.to_s + "G"
+            libvirt.storage :file,
+              #:path => '',                 # automatically chosen if unspecified!
+              #:device => 'vdb',            # automatically chosen if unspecified!
+              :size => oradata_disk_size,  # defaults to 10G if unspecified!
+              :cache => 'none',
+              :type => 'raw'                # defaults to 'qcow2' if unspecified!
+          disk_num += 1
+          num += 1
+        end
+      end
+    end
+  end
+
+  if var_provider_name == 'virtualbox'
+    # vm vm1
+    config.vm.define :vm1 do |vm1|
+      vm1.vm.hostname = var_vm1_name
+      if (var_network == 'hostonly')
+        vm1.vm.network :private_network, ip: var_vm1_public_ip, virtualbox__hostonly: "vboxnet0"
+      end
+      if (var_network == 'public')
+        vm1.vm.network "public_network", ip: var_vm1_public_ip, :netmask => var_netmask, gateway: var_gateway
+      end
+      vm1.vm.network :private_network, ip: var_vm1_private_ip, virtualbox__intnet: "private"
+      vm1.vm.provider :virtualbox do |vb|
+        vb.name   = (var_prefix_name.end_with?('-') ? var_prefix_name : var_prefix_name + '-') + 'vm1'
+        vb.memory = var_vm1_mem_size
+        vb.cpus   = var_vm1_cpus
+        vb.customize ["modifyvm", :id, "--groups", var_group] unless var_group.nil?
+    
+        # Attach default guest vdisks
+        disk_num = 0
+        while disk_num < box_disks_num do
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--nonrotational', var_non_rotational]
+          disk_num += 1
+        end
+
+        # Make u01 vdisk
+        unless File.exist?(var_vm1_u01_disk)
+          vb.customize ['createhd', '--filename', var_vm1_u01_disk, '--size', 100 * 1024]
+        end
+        vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', var_vm1_u01_disk, '--nonrotational', var_non_rotational]
+
+        # Making oradata disks
+        disk_num = disk_num.to_i + 1
+        num = 0
+        while num < var_oradata_disk_num do 
+          oradata_disk = var_oradata_disk_path + "primary_oradata_disk" + num.to_s + ".vdi"
+          # Making oradata disks
+          unless File.exist?(oradata_disk)
+            vb.customize ['createhd', '--filename', oradata_disk, '--size', var_oradata_disk_size * 1024, '--format', 'VDI']
+          end
+          vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_num, '--device', 0, '--type', 'hdd', '--medium', oradata_disk, '--nonrotational', var_non_rotational]
+           disk_num += 1
+           num += 1
+        end
+      end
+    end
+  end
+
+  # Enable ssh password authentication
+  config.vm.provision "shell", inline: <<-SHELL
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+    /bin/systemctl restart sshd
+  SHELL
+
+  # Enable provisioning with a shell script
+  config.vm.provision "shell", path: "scripts/setup.sh", env: {
+      "PROVIDER"              => var_provider_name,
+      "BOX_DISK_NUM"          => box_disks_num,
+      "VM1_NAME"              => var_vm1_name,
+      "SYSTEM_TIMEZONE"       => var_system_timezone,
+      "PREFIX_NAME"           => var_prefix_name,
+      "DB_SOFTWARE"           => var_db_software,
+      "OPATCH_SOFTWARE"       => var_opatch_software,
+      "DB_RU_SOFTWARE"        => var_db_ru_software,
+      "DB_VERSION"            => DB_VERSION,
+      "DB_MAJOR"              => DB_MAJOR,
+      "ORA_LANGUAGES"         => var_ora_languages,
+      "NODE1_PUBLIC_IP"       => var_vm1_public_ip,
+      "NODE1_PRIV_IP"         => var_vm1_private_ip,
+      "DNS_PUBLIC_IP"         => var_dns_public_ip,
+      "DOMAIN_NAME"           => var_domain,
+      "ROOT_PASSWORD"         => var_root_password,
+      "ORACLE_PASSWORD"       => var_oracle_password,
+      "SDB_HOST_NAME"         => var_sdb_host_name,
+      "SDB_SERVICE_NAME"      => var_sdb_service_name,
+      "SDB_SERVICE_PORT"      => var_sdb_service_port,
+      "DB_FILES"              => var_db_files,
+      "DB_UNIQUE_NAME"        => var_db_unique_name,
+      "INSTANCE_NAME"         => var_instance_name,
+      "FAL_CLIENT"            => var_fal_client,
+      "FAL_SERVER"            => var_fal_server,
+      "LOCAL_LISTENER"        => var_local_listener,
+      "SGA_TARGET"            => var_sga_target,
+      "HUGEPAGES"             => var_hugepages
+  }
+
+end
+#----------------------------------------------------------
+# EndOfFile
+#----------------------------------------------------------
+

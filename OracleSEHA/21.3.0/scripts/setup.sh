@@ -35,7 +35,7 @@ if [[ "${ORESTART}" != "false" || "${DB_TYPE}" != "SEHA" ]]; then
   exit 1
 fi
 
-# SEHA is always a two-node cluster, so host2 is never optional.
+# SEHA is always a two-node cluster, so vm2 is never optional.
 for v in NODE2_PUBLIC_IP NODE2_PRIV_IP NODE2_VIP_IP; do
   if [[ -z "${!v:-}" ]]; then
     echo "ERROR: required environment variable '${v}' is missing (SEHA cluster mode)" >&2
@@ -175,11 +175,6 @@ if [[ "${PROVIDER}" == "virtualbox" ]] && ! mountpoint -q /vagrant; then
   log_info "Remounting /vagrant (vboxsf)"
   mount -t vboxsf vagrant /vagrant
 fi
-
-# Every installer is checked here, up front: the zips are the one input that
-# can be silently wrong, and everything below this line is expensive.
-log_section "Verifying Oracle installer checksums"
-verify_all_installer_cksums
 
 log_section "Fixing locale warnings"
 for line in 'LANG=en_US.utf-8' 'LC_ALL=en_US.utf-8'; do

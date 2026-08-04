@@ -9,3 +9,6 @@ CVS
 # Per-project vagrant config may contain credentials — commit .example only.
 */config/vagrant.yml
 
+
+# Installer-checksum verification stamps written by the Vagrantfile cache
+*.verified

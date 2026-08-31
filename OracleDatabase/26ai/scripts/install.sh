@@ -21,15 +21,15 @@ echo 'INSTALLER: Verifying database installer file'
 
 db_installer=/vagrant/LINUX.X64_2326100_db_home.zip
 
-[[ $(cksum "$db_installer") == $(< /vagrant/db_installer.cksum) ]] || {
+sha256sum --check /vagrant/db_installer.sha256 || {
   cat << EOF
 
 INSTALLER: Database installer file missing or invalid.
            Destroy this VM (vagrant destroy), then
            make sure that the database installer file
            is in the same directory as the Vagrantfile,
-           and that its checksum and file size match
-           the values in the db_installer.cksum file,
+           and that its SHA-256 digest matches the
+           value in the db_installer.sha256 file,
            before running vagrant up again.
 
 EOF

@@ -104,7 +104,7 @@ cat > /home/grid/.bash_profile <<EOF
 export ORACLE_BASE='${GRID_BASE}'
 export ORACLE_HOME='${GI_HOME}'
 export ORACLE_SID='+ASM${sid_suffix_grid}'
-export PATH="\${ORACLE_HOME}/bin:\${PATH}"
+export PATH="\${ORACLE_HOME}/bin:\${ORACLE_HOME}/perl/bin:\${ORACLE_HOME}/jdk/bin:\${PATH}"
 export LD_LIBRARY_PATH="\${ORACLE_HOME}/lib:\${LD_LIBRARY_PATH:-}"
 EOF
 chown grid:oinstall /home/grid/.bash_profile
@@ -116,7 +116,7 @@ cat > /home/oracle/.bash_profile <<EOF
 [ -f ~/.bashrc ] && . ~/.bashrc
 export ORACLE_BASE='${DB_BASE}'
 export ORACLE_HOME='${DB_HOME}'
-export PATH="\${ORACLE_HOME}/bin:\${PATH}"
+export PATH="\${ORACLE_HOME}/bin:\${ORACLE_HOME}/perl/bin:\${ORACLE_HOME}/jdk/bin:\${PATH}"
 export LD_LIBRARY_PATH="\${ORACLE_HOME}/lib:\${LD_LIBRARY_PATH:-}"
 EOF
 chown oracle:oinstall /home/oracle/.bash_profile

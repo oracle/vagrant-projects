@@ -3,8 +3,10 @@
 # LICENSE UPL 1.0
 # Copyright (c) 1982-2026 Oracle and/or its affiliates. All rights reserved.
 #
-# 15_db_software_installation.sh
-#   Silent, software-only RDBMS install (EE, cluster-aware). Runs as oracle.
+# 14_db_software_installation.sh
+#   Silent, software-only RDBMS install (EE, cluster-aware). Runs as grid —
+#   this home becomes an FPP gold image (see 17_Setup_FPP.sh), not a live
+#   database, so it's provisioned by the grid/FPP-server owner, not oracle.
 #------------------------------------------------------------------------------
 . /vagrant/scripts/_common.sh
 require_user grid
@@ -22,6 +24,7 @@ rsp_args=(
   ORACLE_BASE="${DB_BASE}"
   oracle.install.db.InstallEdition=EE
   oracle.install.db.OSDBA_GROUP=dba
+  oracle.install.db.OSOPER_GROUP=dbaoper
   oracle.install.db.OSBACKUPDBA_GROUP=backupdba
   oracle.install.db.OSDGDBA_GROUP=dgdba
   oracle.install.db.OSKMDBA_GROUP=kmdba

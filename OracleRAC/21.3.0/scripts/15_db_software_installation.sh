@@ -22,6 +22,7 @@ rsp_args=(
   ORACLE_BASE="${DB_BASE}"
   oracle.install.db.InstallEdition=EE
   oracle.install.db.OSDBA_GROUP=dba
+  oracle.install.db.OSOPER_GROUP=dbaoper
   oracle.install.db.OSBACKUPDBA_GROUP=backupdba
   oracle.install.db.OSDGDBA_GROUP=dgdba
   oracle.install.db.OSKMDBA_GROUP=kmdba

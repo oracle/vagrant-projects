@@ -46,6 +46,24 @@ EOF
 
 } > /etc/hosts
 
+log_section "Detecting upstream DNS resolver"
+# DHCP already handed the box a working nameserver on first boot, from
+# whichever provider network is in play (e.g. VirtualBox's NAT DNS proxy at
+# 10.0.2.3, or libvirt's management-network dnsmasq at a different address).
+# Capture it once and persist it, since by the second provisioning run
+# /etc/resolv.conf has already been overwritten to point at ourselves below.
+if [[ -n "${UPSTREAM_DNS_SERVER:-}" ]]; then
+  log_info "Using previously captured upstream DNS server: ${UPSTREAM_DNS_SERVER}"
+else
+  UPSTREAM_DNS_SERVER="$(awk '/^nameserver[[:space:]]/ { print $2; exit }' /etc/resolv.conf)"
+  if [[ -z "${UPSTREAM_DNS_SERVER}" ]]; then
+    log_error "no 'nameserver' line found in the pre-provisioning /etc/resolv.conf; cannot determine upstream DNS"
+    exit 1
+  fi
+  write_runtime_env_export UPSTREAM_DNS_SERVER "${UPSTREAM_DNS_SERVER}"
+  log_success "Captured upstream DNS server ${UPSTREAM_DNS_SERVER}"
+fi
+
 log_section "Configuring dnsmasq for SCAN round-robin"
 install -d -m 0755 /etc/dnsmasq.d
 
@@ -58,8 +76,13 @@ cat > /etc/dnsmasq.d/oracle-rac.conf <<EOF
 listen-address=127.0.0.1
 bind-interfaces
 
-# dnsmasq reads /etc/hosts by default; no upstream resolver needed in this lab.
+# dnsmasq reads /etc/hosts by default. Ignore the host's own /etc/resolv.conf
+# (we're about to point it back at 127.0.0.1 below) and instead forward
+# anything that isn't a local host-record to the provider's own upstream
+# resolver, so real external lookups (yum, NTP, OS package repos, etc.)
+# still work.
 no-resolv
+server=${UPSTREAM_DNS_SERVER}
 domain=${DOMAIN_NAME}
 expand-hosts
 

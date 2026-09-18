@@ -1,5 +1,5 @@
 # ==============================================================================
-# Oracle True Cache — Oracle Database 23ai (23.26.1) on Oracle Linux 9
+# Oracle True Cache — Oracle Database 26ai (23.26.1) on Oracle Linux 9
 # ==============================================================================
 #
 # This file drives the Vagrantfile. Uncomment the block for the provider you

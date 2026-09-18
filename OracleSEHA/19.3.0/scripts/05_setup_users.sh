@@ -87,14 +87,17 @@ chmod -R u+rwX,g+rwX     /u01
 log_section "Writing grid and oracle user profiles"
 host="$(hostname -s)"
 
-# Per-node ORACLE_SID suffix — only differs in clustered mode.
+# Per-node ORACLE_SID suffix for the grid ASM instance — real per-node ASM
+# instances (+ASM1, +ASM2) only exist in clustered mode. The RDBMS SID is
+# NOT suffixed: SEHA is active/passive failover, so dbca always creates the
+# database as plain DB_NAME on whichever node it runs on (see -sid in
+# 17_create_database.sh), never a per-node instance number like RAC.
 if [[ "${ORESTART}" == "true" ]]; then
   sid_suffix_grid=''
-  sid_suffix_db=''
 else
   case "${host}" in
-    "${NODE1_HOSTNAME}") sid_suffix_grid='1'; sid_suffix_db='1' ;;
-    "${NODE2_HOSTNAME}") sid_suffix_grid='2'; sid_suffix_db='2' ;;
+    "${NODE1_HOSTNAME}") sid_suffix_grid='1' ;;
+    "${NODE2_HOSTNAME}") sid_suffix_grid='2' ;;
     *)
       log_error "hostname '${host}' is neither ${NODE1_HOSTNAME} nor ${NODE2_HOSTNAME}"
       exit 1
@@ -109,7 +112,7 @@ cat > /home/grid/.bash_profile <<EOF
 export ORACLE_BASE='${GRID_BASE}'
 export ORACLE_HOME='${GI_HOME}'
 export ORACLE_SID='+ASM${sid_suffix_grid}'
-export PATH="\${ORACLE_HOME}/bin:\${PATH}"
+export PATH="\${ORACLE_HOME}/bin:\${ORACLE_HOME}/perl/bin:\${ORACLE_HOME}/jdk/bin:\${PATH}"
 export LD_LIBRARY_PATH="\${ORACLE_HOME}/lib:\${LD_LIBRARY_PATH:-}"
 EOF
 chown grid:oinstall /home/grid/.bash_profile
@@ -121,8 +124,8 @@ cat > /home/oracle/.bash_profile <<EOF
 [ -f ~/.bashrc ] && . ~/.bashrc
 export ORACLE_BASE='${DB_BASE}'
 export ORACLE_HOME='${DB_HOME}'
-export ORACLE_SID='${DB_NAME}${sid_suffix_db}'
-export PATH="\${ORACLE_HOME}/bin:\${PATH}"
+export ORACLE_SID='${DB_NAME}'
+export PATH="\${ORACLE_HOME}/bin:\${ORACLE_HOME}/perl/bin:\${ORACLE_HOME}/jdk/bin:\${PATH}"
 export LD_LIBRARY_PATH="\${ORACLE_HOME}/lib:\${LD_LIBRARY_PATH:-}"
 EOF
 chown oracle:oinstall /home/oracle/.bash_profile

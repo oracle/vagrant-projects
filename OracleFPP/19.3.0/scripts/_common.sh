@@ -100,9 +100,10 @@ require_var() {
 # disk's own identity and cannot be reordered.
 #
 # virtualbox uses SATA AHCI; the kernel discovers targets asynchronously and
-# may produce sd<letter> names that do not follow the SATA port order.  We
-# resolve through /dev/disk/by-path/pci-*-ata-N where N = idx + 1, which the
-# kernel populates from the SATA port number itself and is therefore stable.
+# may produce sd<letter> names that do not follow the SATA port order.  The
+# kernel may expose a SATA port as either ata-N or ata-N.0 in /dev/disk/by-path
+# (the latter includes the device number).  Match both exact forms, where
+# N = idx + 1, rather than relying on the guest's sd<letter> assignment.
 resolve_disk_device() {
   local idx="$1"
   local provider="$2"
@@ -139,10 +140,11 @@ resolve_disk_device() {
       local port=$((idx + 1))
       local matches=()
       shopt -s nullglob
-      matches=( /dev/disk/by-path/pci-*-ata-"${port}" )
+      matches=( /dev/disk/by-path/pci-*-ata-"${port}"
+                /dev/disk/by-path/pci-*-ata-"${port}".0 )
       shopt -u nullglob
       if (( ${#matches[@]} == 0 )); then
-        log_error "no /dev/disk/by-path entry for SATA port index ${idx} (ata-${port})"
+        log_error "no /dev/disk/by-path entry for SATA port index ${idx} (ata-${port} or ata-${port}.0)"
         return 1
       fi
       if (( ${#matches[@]} > 1 )); then

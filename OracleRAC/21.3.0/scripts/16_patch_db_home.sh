@@ -51,4 +51,11 @@ log_section "Applying GI RU ${GI_RU_PATCH_DIR##*/} to ${DB_HOME}"
   cd "${GI_RU_PATCH_DIR}"
   "${opatchauto}" apply "${GI_RU_PATCH_DIR}" -oh "${DB_HOME}"
 )
+
+# opatchauto runs as root and is the first thing to create ${DB_HOME}/log, so it
+# ends up root-owned and every later clusterware client run by the home owner
+# (dbca, srvctl) complains it cannot write its logs there (CLSD / LFI-01517).
+if [[ -d "${DB_HOME}/log" ]]; then
+  chown -R "$(stat -c '%U:%G' "${DB_HOME}")" "${DB_HOME}/log"
+fi
 log_success "GI RU ${GI_RU_PATCH_DIR##*/} applied to ${DB_HOME}"

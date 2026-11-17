@@ -17,7 +17,10 @@ for v in GI_HOME GRID_BASE ORA_INVENTORY ORA_LANGUAGES \
 done
 
 data_disks="$(ls -dm $(asm_disk_glob p1) | tr -d ' \n')"
-discovery_string='/dev/ORCL_*'
+# Partitions only: if the whole-disk /dev/ORCL_DISK<n> links are in the
+# discovery set, ASM opens them read-write and udev re-reads the partition
+# table on close, so the _p1/_p2 nodes briefly vanish mid-discovery.
+discovery_string='/dev/ORCL_DISK*_p*'
 
 rsp_args=(
   INVENTORY_LOCATION="${ORA_INVENTORY}"
@@ -92,3 +95,23 @@ case "${rc}" in
     ;;
   *) log_error   "gridSetup.sh -executeConfigTools failed with exit=${rc}"; exit "${rc}" ;;
 esac
+
+# INS-43080 above only says "some assistant failed"; it does not say which.
+# The one nothing downstream can live without is asmca, so confirm that it
+# really left the DATA diskgroup online instead of letting a later step trip
+# over a missing ASM instance (ORA-01034 in 13_make_reco_dg.sh).
+log_section "Verifying the DATA diskgroup is online"
+export ORACLE_HOME="${GI_HOME}"
+dg_status="$("${GI_HOME}/bin/srvctl" status diskgroup -diskgroup DATA 2>&1 || true)"
+log_info "${dg_status}"
+if ! grep -q 'is running' <<<"${dg_status}"; then
+  log_error "DATA diskgroup is not online: the ASM configuration assistant (asmca) failed"
+  asmca_log="$(ls -t "${GRID_BASE}"/cfgtoollogs/asmca/asmca-*.log 2>/dev/null | head -n 1 || true)"
+  if [[ -n "${asmca_log}" ]]; then
+    log_error "asmca errors from ${asmca_log}:"
+    grep -E '^(ORA|DBT|PRC[A-Z]|CRS)-[0-9]+|\[FATAL\]' "${asmca_log}" | sort -u >&2 || true
+  fi
+  log_error "installer logs: $(ls -dt "${ORA_INVENTORY}"/logs/GridSetupActions* 2>/dev/null | head -n 1 || true)"
+  exit 1
+fi
+log_success "DATA diskgroup is online"

@@ -42,12 +42,14 @@ useradd oracle \
   -G dbaoper,dba,asmadmin,asmdba,backupdba,dgdba,kmdba,racdba \
   -p '!'
 
-# Grid owner for the Grid Infrastructure home — NOT in the db* groups.
+# Grid owner for the Grid Infrastructure home — NOT in the db* groups, except
+# racdba: the GI owner must be a member of the OSRACDBA group, and on Oracle
+# Restart the RDBMS installer refuses to continue otherwise (INS-30215).
 useradd grid \
   -d /home/grid -m \
   -s /bin/bash \
   -g oinstall \
-  -G dbaoper,asmadmin,asmoper,asmdba \
+  -G dbaoper,asmadmin,asmoper,asmdba,racdba \
   -p '!'
 
 log_section "Setting grid + oracle shell limits"

@@ -32,7 +32,10 @@ if [[ -z "${data_disks}" ]]; then
   log_error "no DATA disks found using glob '$(asm_disk_glob p1)'"
   exit 1
 fi
-discovery_string='/dev/ORCL_*'
+# Partitions only: if the whole-disk /dev/ORCL_DISK<n> links are in the
+# discovery set, ASM opens them read-write and udev re-reads the partition
+# table on close, so the _p1/_p2 nodes briefly vanish mid-discovery.
+discovery_string='/dev/ORCL_DISK*_p*'
 
 # --- Assemble rsp parameters ------------------------------------------------
 rsp_args=(
